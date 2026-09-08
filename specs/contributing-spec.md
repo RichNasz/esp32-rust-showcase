@@ -3,11 +3,13 @@
 ## SDD Contribution Rules (AI-first)
 
 - Never edit generated files directly.
-- Only edit files inside `/specs/` or `FunctionalSpec.md`, `CodingSpec.md`, `TestSpec.md` inside `examples/`.
+- Humans only edit `specs/`, `shared-specs/`, and `examples/*/specs/{Functional,Coding,Test}Spec.md`.
 - After any spec change: "Activate esp32-sdd-documentation-generator and rebuild all documentation."
 - Submit PRs with spec changes only — generated files are regenerated, not hand-edited.
 
 This keeps the repository 100% spec-driven.
+
+License: MIT. Copyright holder: Richard Naszcyniec.
 
 ---
 
@@ -27,25 +29,27 @@ All commits must follow the Conventional Commits format:
 - `chore` — maintenance (gitignore, tooling, non-spec files)
 - `docs` — documentation corrections that do not involve spec changes
 
-**Scope:** optional, use the folder name (e.g., `blink`, `skills`, `shared-specs`).
+**Scope:** optional, use the folder name (e.g., `blinky`, `skills`, `shared-specs`).
 
 **Examples:**
 ```
-feat(blink): add FunctionalSpec for LED blink example
+feat(blinky): add FunctionalSpec for LED blink example
 gen: regenerate docs after contributing-spec update
-fix(shared-specs): correct ESP-IDF version reference to v5.4
-chore: update .gitignore to exclude sdkconfig.old
+fix(shared-specs): correct esp-hal version pin to 1.2.1
+chore: update .gitignore to exclude target/
+spec: retarget coding conventions to no_std
 ```
 
 Short summary: imperative mood, lowercase, no trailing period, ≤72 characters total.
 
 **AI attribution trailer:**
 
-For `gen:` and `spec+gen:` commits, append the following trailer so that AI involvement is
-machine-readable in `git log` and searchable across the repository history:
+For `gen:` and `spec+gen:` commits, append a `Generated-by:` trailer so that AI involvement is
+machine-readable in `git log` and searchable across the repository history. Use the
+**invoking agent name** (the agent that produced the commit), not a hardcoded product string.
 
 ```
-Generated-by: Claude Code
+Generated-by: <invoking agent name>
 ```
 
 Full example:
@@ -53,7 +57,7 @@ Full example:
 ```
 gen: regenerate CONTRIBUTING.md after contributing-spec update
 
-Generated-by: Claude Code
+Generated-by: <invoking agent name>
 ```
 
 This aligns with the OpenSSF Security-Focused Guide for AI Code Assistant Instructions

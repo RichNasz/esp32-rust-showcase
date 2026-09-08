@@ -4,15 +4,18 @@ This file is the single source of truth for ALL Markdown documentation.
 
 ## Core Rules
 
-- Human input strictly limited to `/specs/` folder.
+- Human input strictly limited to `/specs/`, `/shared-specs/`, and `examples/*/specs/{Functional,Coding,Test}Spec.md`.
 - Generated files:
   - Root: README.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
   - GitHub templates: `.github/ISSUE_TEMPLATE/spec-improvement.md`, `.github/ISSUE_TEMPLATE/bug-report.md`, `.github/PULL_REQUEST_TEMPLATE.md`
   - Extended docs: `/docs/`, example READMEs, `board-specs/README.md`, `skills/README.md`, etc.
 - Every generated `.md` file must carry the standard agent-generated header.
+- Generated Rust files carry `// AGENT-GENERATED — DO NOT EDIT BY HAND` on line 1.
 - Tone: professional, precise, enthusiastic, community-focused.
 - Every generated file that describes or depicts example directory layout must match `specs/example-project-structure-spec.md` exactly.
 - **NEVER generate files inside `.github/workflows/`** — GitHub restricts access to this directory without workflow scope.
+- Primary build / flash / monitor tool is **Cargo + espflash** (`cargo run --release`). Do **not** present `idf.py` or ESP-IDF as the build system.
+- Purpose of this repository: Spec-Driven Development for **rust-on-metal ESP32** (`no_std` `esp-hal` on ESP32-C6).
 
 ---
 
@@ -29,25 +32,50 @@ The root `README.md` must contain the following 13 sections in this exact order:
 | 4 | Features: 4–6 bullets covering unique value props |
 | 5 | Table of contents with jump links |
 | 6 | Quick Start |
-| 7 | Prerequisites (ESP-IDF v5.x, Claude Code, XIAO ESP32S3 or compatible) |
+| 7 | Prerequisites (rustup stable, rust-src, riscv32imac-unknown-none-elf, espflash/cargo-espflash, ESP32-C6-DevKitC-1-N8 or XIAO ESP32-C6) |
 | 8 | Examples table (all examples: name + one-line description + link) |
 | 9 | Skills table (all skills: skill name + purpose) |
 | 10 | Full Documentation link table |
 | 11 | Contributing (one paragraph + link to CONTRIBUTING.md) |
 | 12 | License (MIT — see LICENSE) |
-| 13 | Footer (generated-by credit) |
+| 13 | Footer (generated-by credit using the **invoking agent name**, not a hardcoded vendor) |
 
 ### Badge Row (exact markdown)
 
 ```markdown
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.x-blue)
-![Chip](https://img.shields.io/badge/chip-ESP32--S3-orange)
-![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-blueviolet)
+![Rust](https://img.shields.io/badge/Rust-stable-orange)
+![esp-hal](https://img.shields.io/badge/esp--hal-1.2-blue)
+![Chip](https://img.shields.io/badge/chip-ESP32--C6-orange)
 ```
 
-Do not add a CI/build-status badge — `.github/workflows/` is off-limits and a broken badge is
-worse than no badge.
+Do not add an ESP-IDF badge. Do not add a CI/build-status badge — `.github/workflows/` is off-limits and a broken badge is worse than no badge.
+
+### Quick Start (root README)
+
+From `examples/<name>`:
+
+```sh
+cargo run --release
+```
+
+Optional XIAO board:
+
+```sh
+cargo run --release --no-default-features --features board-xiao-c6
+```
+
+### Prerequisites (root README)
+
+Must list:
+
+- rustup **stable** (MSRV 1.95.0; see `shared-specs/rust-toolchain.md`)
+- rustup component `rust-src`
+- rustup target `riscv32imac-unknown-none-elf`
+- `espflash` and/or `cargo-espflash`
+- Hardware: ESP32-C6-DevKitC-1-N8 (required default) or XIAO ESP32-C6
+
+Must **not** list ESP-IDF, `idf.py`, or `espup` as prerequisites.
 
 ---
 
@@ -87,9 +115,10 @@ Guided form for spec change requests. Must include:
 
 Guided form for reporting generated-code defects. Must include:
 - YAML front matter: `name`, `about`, `labels: ["bug"]`, `assignees: ""`
-- Sections: Which example, ESP-IDF version, Board, Describe the bug, Steps to reproduce,
-  Expected behaviour, Actual behaviour, Build log (code block), Checklist (confirmed not a
-  hand-edit of generated files).
+- Sections: Which example, rustc / `esp-hal` version, Board, Describe the bug, Steps to reproduce,
+  Expected behaviour, Actual behaviour, `cargo build --release` log (code block), Checklist
+  (confirmed not a hand-edit of generated files).
+- Do **not** ask for an ESP-IDF version.
 
 ### .github/PULL_REQUEST_TEMPLATE.md
 
@@ -107,7 +136,7 @@ PR checklist enforcing SDD rules. Must include:
 
 ## CodingSpec.md Standard
 
-CodingSpec.md is high-level guidance — architecture, constraints, preferred libraries,
+CodingSpec.md is high-level guidance — architecture, constraints, preferred crates,
 non-functional requirements, and gotchas. It must never contain code snippets, specific function
 calls, or step-by-step implementation instructions. When generating or reviewing documentation
 that describes CodingSpec.md, reflect this standard accurately.
@@ -120,10 +149,12 @@ Every example README.md must include a **Testing** section generated from `specs
 
 ### Testing Philosophy (enforce in every generated Testing section)
 
-- Automated testing using native ESP-IDF tools is strongly preferred.
-- Additional tools (Wokwi CLI, pytest-embedded) are only included when TestSpec.md provides
-  explicit justification and documented setup steps.
+- Automated testing using native Cargo / rustc tools is strongly preferred
+  (`cargo build --release`, `cargo clippy -- -D warnings`, `cargo run --release` / Wokwi).
+- Additional tools are only included when TestSpec.md provides explicit justification and
+  documented setup steps.
 - Manual testing steps are only included when no practical automated alternative exists.
+- Do not mention Unity, `idf.py`, or ESP-IDF test components.
 
 ### Generated Testing Section Structure
 
@@ -136,7 +167,8 @@ The Testing section must appear after "Key Concepts" and before "Spec Files". It
    Only include if TestSpec.md specifies manual steps. Explain in a note why automation is not
    practical for each step.
 4. Never mix automated and manual steps in the same numbered list.
-5. Provide beginner-friendly wording — assume the reader has ESP-IDF installed but is not an expert.
+5. Provide beginner-friendly wording — assume the reader has rustup + espflash installed but is
+   not an embedded-Rust expert.
 
 ### When TestSpec.md Is Absent
 
@@ -174,6 +206,14 @@ rather than discovering the gap at deployment time.
 
 ---
 
+## Radio / `unstable` Honesty
+
+Every example that enables `esp-hal` feature `unstable` (radio, some sleep / RTC APIs) **must**
+state in its README that those APIs are unstable and may change with `esp-hal` minor releases.
+`esp-radio` 1.0.0-beta.0 is a beta crate — radio example READMEs must say so.
+
+---
+
 ## Supported Boards Auto-Discovery
 
 When generating an example README.md, the Supported Boards section **must be
@@ -182,14 +222,18 @@ FunctionalSpec.md. The FunctionalSpec provides only the compatibility requiremen
 (Board Compatibility Checklist) and the default board name; the generator derives
 everything else from board-spec files.
 
+v1 catalog is ESP32-C6 only. Default board: **Espressif ESP32-C6-DevKitC-1-N8**.
+Also supported: **Seeed XIAO ESP32-C6**. Other C-showcase chips are not in v1.
+
 ### Discovery workflow
 
 1. **Scan `board-specs/**/*.md`**, excluding any file named `README.md`.
 2. **Apply the FunctionalSpec's Board Compatibility Checklist** to each board-spec.
    Required checks (any failure = exclude the board):
-   - WiFi radio present (802.11b/g/n or ax) — check board-spec Module/SoC table.
-   - Deep sleep with RTC timer wakeup supported — check board-spec Power Management.
-   - `idf.py` target listed as **Supported** in `shared-specs/esp-idf-version.md`.
+   - SoC is ESP32-C6 — check board-spec Module/SoC table. Non-C6 boards fail this check in v1.
+   - Chip listed as **Required** (or supported) in `shared-specs/rust-toolchain.md` (ESP32-C6 required; others not in v1).
+   - Example-specific radios (Wi-Fi, BLE, ESP-NOW) present when the FunctionalSpec requires them.
+   - Deep sleep with RTC timer wakeup supported when the FunctionalSpec requires it — check board-spec Power Management.
    - At least one user-controllable LED documented in board-spec Onboard Peripherals.
 3. **Derive Supported Boards table columns** from board-spec data:
 
@@ -197,20 +241,20 @@ everything else from board-spec files.
    | --- | --- |
    | Board name | Product heading / name |
    | board-spec file | Relative path under `board-specs/` |
-   | idf.py target | "idf.py Target" field |
+   | Chip feature | `esp32c6` (from SoC; v1 has no other chip feature) |
+   | Board Cargo feature | DevKitC-C6 → `board-devkitc-c6`; XIAO C6 → `board-xiao-c6` |
    | LED GPIO | Onboard Peripherals table — user LED row, GPIO column |
    | LED polarity | Onboard Peripherals table — active HIGH / active LOW note |
    | LED type | Onboard Peripherals table — "Simple GPIO" or "WS2812 RGB" / "SK6812" |
-   | USB console sdkconfig entry | USB Serial/Console section: UART bridge → `None (chip name)`; Native USB Serial/JTAG → `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y`; Native USB CDC → `CONFIG_ESP_CONSOLE_USB_CDC=y` |
+   | USB console | USB Serial/Console section: UART bridge chip → "UART bridge (`espflash` on the UART-C port)"; Native USB Serial/JTAG → "USB Serial/JTAG"; Native USB CDC → "USB CDC". Do **not** emit `CONFIG_ESP_CONSOLE_*` sdkconfig lines — there is no sdkconfig. |
 
 4. **Mark the default board** with `*(default)*` using the board name stated in
-   FunctionalSpec (e.g. `> Default board: Seeed XIAO ESP32S3`).
+   FunctionalSpec (e.g. `> Default board: Espressif ESP32-C6-DevKitC-1-N8`).
 5. **Add WS2812 footnote** automatically whenever any row in the table has LED type
-   WS2812 or SK6812. Standard footnote text: "`gpio_set_level()` alone produces no
-   visible output — use an RMT driver to generate the 800 kHz NRZ waveform."
+   WS2812 or SK6812. Standard footnote text: "A GPIO level alone produces no
+   visible output — use an RMT (or equivalent `esp-hal`) driver to generate the 800 kHz NRZ waveform."
 6. **Add exclusion callout** for any board-spec in the catalog that fails a required
-   check, naming the specific reason (e.g. "ESP32-H2 boards: no WiFi radio —
-   incompatible with ESP-NOW").
+   check, naming the specific reason (e.g. "ESP32-S3 boards: not in v1 — C6 only").
 
 ### Why auto-discovery, not FunctionalSpec tables
 
@@ -219,6 +263,7 @@ the auto-discovery rule ensures it appears in all compatible example READMEs the
 time the documentation generator runs — with no manual FunctionalSpec edit required.
 The FunctionalSpec remains the source of truth for *what makes a board compatible*;
 the board-spec files are the source of truth for *the hardware facts of each board*.
+v1 still filters to ESP32-C6.
 
 ---
 
@@ -248,9 +293,9 @@ Behavior table.
 
 | Column | Derivation rule |
 | --- | --- |
-| Serial monitor during deep sleep | UART bridge chip (CP2104, CH340, etc.) → "Stays connected throughout sleep"; Native USB Serial/JTAG → "Drops and reconnects on wake (USB Serial/JTAG)"; Native USB CDC → "Drops and reconnects on wake (USB CDC)" |
+| Serial monitor during deep sleep | UART bridge chip (CP2104, CH343P, etc.) → "Stays connected throughout sleep"; Native USB Serial/JTAG → "Drops and reconnects on wake (USB Serial/JTAG)"; Native USB CDC → "Drops and reconnects on wake (USB CDC)" |
 | LED feedback | WS2812/SK6812 → "Color: green = success, red = failure, off = sleep (WS2812)"; Simple GPIO active LOW → "On / off, active LOW"; Simple GPIO active HIGH → "On / off, active HIGH" |
-| WiFi scan coverage | Dual-band WiFi 6 (e.g. ESP32-C5) → "**2.4 GHz + 5 GHz** (dual-band WiFi 6)"; Single-band WiFi 6 → "2.4 GHz (WiFi 6 ax)"; WiFi 4 (802.11n) → "2.4 GHz only" |
+| WiFi scan coverage | Dual-band WiFi 6 (e.g. ESP32-C5) → "**2.4 GHz + 5 GHz** (dual-band WiFi 6)"; Single-band WiFi 6 → "2.4 GHz (WiFi 6 ax)"; WiFi 4 (802.11n) → "2.4 GHz only". v1 C6 boards are 2.4 GHz WiFi 6. |
 | Deep sleep floor | From board-spec Power Management table deep sleep current figure; use "See board-spec" if no figure is documented |
 
 ### Formatting rules
@@ -264,3 +309,18 @@ Behavior table.
 - If any board in the table has dual-band WiFi, add a sentence noting that it is the
   only board that can scan 5 GHz APs and may report RSSI values invisible to other
   boards.
+
+---
+
+## Build & Flash Section Generation
+
+Example READMEs must document:
+
+```sh
+cargo build --release
+cargo clippy -- -D warnings
+cargo run --release
+```
+
+and the XIAO feature variant. Do **not** document `idf.py build`, `idf.py flash`, or
+`idf.py monitor` as the primary workflow.

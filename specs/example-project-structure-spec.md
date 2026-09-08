@@ -10,36 +10,40 @@ This file defines the official, immutable structure for every example in the rep
 
 ```
 examples/<kebab-name>/
-├── specs/                          ← Human-only (FunctionalSpec.md + CodingSpec.md + TestSpec.md)
+├── specs/                          ← human-only
 │   ├── FunctionalSpec.md
 │   ├── CodingSpec.md
-│   └── TestSpec.md                 ← NEW: Human-written testing requirements
-├── main/                           ← Official ESP-IDF main component (100% agent-generated)
-│   ├── main.c
-│   ├── CMakeLists.txt
-│   └── Kconfig.projbuild           ← Optional; required for multi-board Kconfig choices
-├── CMakeLists.txt                  ← Root CMakeLists.txt (generated)
-├── sdkconfig.defaults              ← ESP-IDF config (generated)
-├── idf_component.yml               ← Dependencies (generated when needed)
-├── README.md                       ← Generated
-├── .gitignore                      ← Generated
-└── build/                          ← gitignored
+│   └── TestSpec.md
+├── src/                            ← 100% agent-generated
+│   └── main.rs                     ← #![no_std] #![no_main]; extra modules as needed
+├── Cargo.toml
+├── build.rs
+├── .cargo/config.toml              ← target = riscv32imac-unknown-none-elf, runner = espflash
+├── README.md
+├── .gitignore
+└── target/                         ← gitignored
 ```
+
+Examples are **standalone Cargo packages**, not members of a repository-level workspace. There is no root `Cargo.toml` workspace, no `sdkconfig`, no `main.c`, and no `CMakeLists.txt`.
+
+Board selection is via mutually exclusive Cargo features: default `board-devkitc-c6`, optional `board-xiao-c6`. Chip feature `esp32c6` only in v1. Generated `src/board.rs` holds GPIO/LED/button constants derived from `board-specs/` — never hardcode pins in `main.rs`.
+
+`src/main.rs` is always present and is `#![no_std]` `#![no_main]`. Additional modules (`src/board.rs`, `src/<subsystem>.rs`) are generated as needed.
 
 ## CodingSpec.md — Abstraction Level
 
 CodingSpec.md is high-level technical guidance for the AI model generating the project. It must describe **what** the system should do and **why** — not **how** to implement it.
 
 **Include in CodingSpec.md:**
-- Architecture and component breakdown
+- Architecture and module breakdown
 - Key timing, memory, power, and security constraints
-- Preferred libraries and APIs (and the reason for each choice)
-- Non-functional requirements (error recovery philosophy, logging expectations, thread safety)
-- Trade-off decisions (e.g., QoS 0 vs 1, polling vs interrupt-driven)
-- Known gotchas specific to the hardware or ESP-IDF version
+- Preferred crates and APIs (and the reason for each choice)
+- Non-functional requirements (error recovery philosophy, logging expectations, concurrency)
+- Trade-off decisions (e.g., QoS 0 vs 1, polling vs interrupt-driven, heap vs static buffers)
+- Known gotchas specific to the hardware, `esp-hal`, or the pinned crate versions
 
 **Never include in CodingSpec.md:**
-- Code snippets, `#define` statements, or pseudo-code
+- Code snippets, `const` item definitions, or pseudo-code
 - Specific function signatures or API call sequences
 - Exact log message strings
 - Numbered step-by-step implementation instructions
@@ -51,11 +55,13 @@ CodingSpec.md is high-level technical guidance for the AI model generating the p
 TestSpec.md is the third human-written spec file. It defines testing requirements for the example.
 
 **Philosophy (enforced in every TestSpec.md):**
-> Automated testing using native ESP-IDF tools is strongly preferred. Additional tools are only allowed with explicit justification and documented benefits. Manual testing is used only when no practical automated alternative exists.
+> Automated testing using native Cargo / rustc tools is strongly preferred. Additional tools are only allowed with explicit justification and documented benefits. Manual testing is used only when no practical automated alternative exists.
 
 **Tiers (in priority order):**
-1. **Automated — native ESP-IDF**: `idf.py build` (zero-warning check), Unity test components built with the project, Wokwi simulation via `wokwi-cli`. No extra tooling required beyond the standard ESP-IDF installation.
-2. **Automated — additional tools**: Wokwi CI integration, Host-side pytest via `pytest-embedded`. Allowed only with explicit justification and documented setup steps in TestSpec.md.
+1. **Automated — native Cargo / rustc**: `cargo build --release` (zero `rustc` warnings on the C6 target), `cargo clippy -- -D warnings`, `cargo run --release` / Wokwi. No extra tooling required beyond rustup + the RISC-V target + espflash (or Wokwi).
+2. **Automated — additional tools**: Wokwi CI integration, host-side tests that cannot run on the device. Allowed only with explicit justification and documented setup steps in TestSpec.md.
 3. **Manual — hardware-only**: Visual or physical observation that cannot be simulated (LED polarity, haptics, RF behaviour). Required steps must be numbered and beginner-friendly.
+
+Do **not** specify `idf.py`, ESP-IDF Unity test components, or any CMake-based test harness. Those tools are not part of this repository.
 
 This structure is permanent and must be strictly enforced by the full-project-generator skill in every example, now and forever.

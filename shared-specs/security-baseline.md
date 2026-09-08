@@ -7,11 +7,11 @@
 
 ## Threat Model Scope
 
-This baseline addresses the threat model relevant to ESP32 firmware examples in this showcase:
+This baseline addresses the threat model relevant to ESP32-C6 rust-on-metal firmware examples in this showcase:
 
 - **Firmware confidentiality** — prevent extraction of proprietary algorithms or credentials stored in flash.
 - **Firmware integrity** — prevent unauthorized firmware modification (physical or OTA).
-- **Credential protection** — prevent extraction of Wi-Fi PSKs, API keys, TLS private keys stored in NVS.
+- **Credential protection** — prevent extraction of Wi-Fi PSKs, API keys, TLS private keys stored in flash / NVS-like storage.
 - **Communication security** — prevent eavesdropping or tampering of OTA updates and cloud connections.
 
 Out of scope for this baseline: physical decapping attacks, RF-layer attacks, denial-of-service, cloud backend security.
@@ -24,11 +24,12 @@ These apply regardless of whether an example is production-targeted.
 
 | Requirement | Implementation |
 |---|---|
-| No hardcoded credentials | Wi-Fi PSK, API keys, and tokens must come from NVS or Kconfig (not `#define` in source) |
-| No debug UART credential leakage | Credentials must never be printed via `ESP_LOGI` or any log level |
+| No hardcoded credentials | Wi-Fi PSK, API keys, and tokens must not appear in committed source. Provision via gitignored config, compile-time env, or `esp-storage` / NVS-like flash — never `const` secrets in `src/` |
+| No log leakage of secrets | Credentials must never be printed via `log::*`, `esp_println`, or `defmt` at any level |
 | Input validation at system boundaries | All data received over UART, BLE, or network must be length-checked before use |
-| Stack overflow protection | `CONFIG_FREERTOS_CHECK_STACKOVERFLOW_CANARY=y` in all sdkconfig.defaults |
-| Watchdog enabled | `CONFIG_ESP_TASK_WDT_EN=y`; see `coding-conventions.md` |
+| No `unwrap()` on fallible HAL/radio in production paths | See `coding-conventions.md`; init may panic if the process cannot continue |
+
+ESP-IDF Kconfig symbols (`CONFIG_FREERTOS_CHECK_STACKOVERFLOW_*`, `CONFIG_ESP_TASK_WDT_EN`, `CONFIG_SECURE_*`) **do not apply**. There is no sdkconfig.
 
 ---
 
@@ -36,55 +37,33 @@ These apply regardless of whether an example is production-targeted.
 
 Examples with `Production Target: yes` in their FunctionalSpec.md must also satisfy:
 
-### Flash Encryption
+### Flash encryption and Secure Boot (eFuse, not Kconfig)
 
-```
-CONFIG_SECURE_FLASH_ENC_ENABLED=y
-CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT=y  # dev boards only
-# CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE=y    # enable for production eFuse burn
-```
+IDF `CONFIG_SECURE_FLASH_ENC_ENABLED` / `CONFIG_SECURE_BOOT*` Kconfig **does not apply**.
 
-- Flash encryption uses AES-XTS-256 on all supported targets (ESP32 uses AES-XTS-128 due to hardware).
-- The encryption key is generated on-device during first boot and burned into eFuse. Never extract or store it.
-- `esptool.py` flash operations require `--no-stub` and appropriate encryption flags when flash encryption is active.
+- Use Espressif eFuse-based flash encryption and Secure Boot v2 as documented for ESP32-C6.
+- Use `esp-bootloader-esp-idf` for IDF-compatible application descriptors and partition metadata so a standard ESP-IDF bootloader can verify and select the image. This crate is **not** ESP-IDF itself.
+- Encryption and signing keys are generated or burned on-device / offline. Never commit private keys or eFuse key material.
+- Once Secure Boot is enabled in production, it cannot be disabled without reflashing eFuses (irreversible).
 
-### Secure Boot v2
+### Storage encryption
 
-```
-CONFIG_SECURE_BOOT=y
-CONFIG_SECURE_BOOT_V2_ENABLED=y
-CONFIG_SECURE_BOOT_SIGNING_KEY="secure_boot_signing_key.pem"
-CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y
-```
-
-- RSA-PSS 3072-bit signing key. Store the private key offline (not in the repository).
-- Secure Boot v2 supports key revocation; plan for at most 3 signing keys per device.
-- Once Secure Boot is enabled in production, it cannot be disabled without reflashing the eFuses (irreversible).
-
-### NVS Encryption
-
-```
-CONFIG_NVS_ENCRYPTION=y
-```
-
-- Requires flash encryption to be enabled first.
-- NVS encryption key partition must be declared in the partition table (see `partition-table-profiles.md`).
-- Use `nvs_sec_provider` component for key provisioning in production.
+- Production-targeted examples that persist credentials must encrypt that storage (flash encryption + encrypted NVS-like partition, or equivalent `esp-storage` usage).
+- Encryption keys live in eFuse or a dedicated key partition — never in source.
 
 ### TLS/HTTPS Requirements
 
 - All outbound HTTP connections must use HTTPS with server certificate verification enabled.
-- `esp_http_client` must be configured with `cert_pem` pointing to the CA bundle or server certificate.
-- Do not use `use_global_ca_store = true` without understanding which CA bundle is embedded.
-- Minimum TLS version: TLS 1.2. Disable TLS 1.0 and 1.1 via mbedTLS Kconfig.
+- Do not disable certificate verification to "make it work".
+- Minimum TLS version: TLS 1.2.
 - Certificate expiry must be handled gracefully — log and alert rather than silently failing.
+- Heap (`esp-alloc`) for TLS buffers is allowed only when the CodingSpec justifies it.
 
 ### OTA Update Security
 
 - OTA updates must be fetched over HTTPS with certificate verification.
-- Verify the incoming firmware signature before writing to the OTA partition (requires Secure Boot v2 app signing).
-- Always boot-verify the new partition before committing: use `esp_ota_mark_app_valid_cancel_rollback()` only after confirming connectivity.
-- Keep at least one verified rollback partition available at all times.
+- Verify the incoming firmware signature before committing the new image (Secure Boot app signing / `esp-bootloader-esp-idf` image metadata).
+- Keep a rollback slot. Mark the new image valid only after confirming the device can still connect.
 
 ---
 
@@ -92,10 +71,10 @@ CONFIG_NVS_ENCRYPTION=y
 
 | Credential Type | Storage | Notes |
 |---|---|---|
-| Wi-Fi PSK | NVS namespace `wifi_cfg` | Provisioned via BLE/SmartConfig on first boot; never in sdkconfig.defaults |
-| API keys / tokens | NVS namespace `credentials` | Injected at provisioning; encrypted NVS if production-targeted |
-| TLS private key | NVS or dedicated DS (Digital Signature) peripheral | Use DS peripheral on ESP32-S3/C3 for production; private key never leaves hardware |
-| OTA signing public key | Embedded in firmware via Secure Boot config | Part of the signed binary |
+| Wi-Fi PSK | Encrypted flash / gitignored provision file | Never in committed `src/` or Cargo features |
+| API keys / tokens | Encrypted flash namespace | Injected at provisioning |
+| TLS private key | Dedicated storage or hardware-backed key when available | Private key never logged |
+| OTA signing public key | Embedded in the signed image metadata | Part of the signed binary |
 
 ---
 
@@ -105,12 +84,12 @@ The full-project-generator must not emit code that exhibits these patterns:
 
 | Vulnerability | Pattern to Avoid |
 |---|---|
-| Buffer overflow | Unbounded `strcpy`, `sprintf`, `memcpy` with user-supplied lengths |
-| Format string | `printf(user_input)` — always use `printf("%s", user_input)` |
-| Integer overflow | Unchecked arithmetic on lengths before `malloc` |
-| Use after free | Accessing a handle after `esp_xxx_driver_delete()` |
-| TOCTOU | Checking a flag then acting on a shared resource without a mutex |
-| Hardcoded IV/nonce | Using a fixed IV with AES-CBC — always use random IV per message |
+| Buffer overflow | Unbounded copies from BLE / network / UART into fixed buffers |
+| Format string | Passing untrusted input as a `log!` / format string |
+| Integer overflow | Unchecked arithmetic on lengths before allocation or indexing |
+| Unwrap of fallible I/O | `unwrap()` / `expect()` on HAL, radio, TLS, or OTA in production paths |
+| Hardcoded IV/nonce | Using a fixed IV with AES-CBC — always use a random IV per message |
+| Secret logging | Printing PSK, tokens, or private keys |
 
 ---
 
@@ -118,13 +97,11 @@ The full-project-generator must not emit code that exhibits these patterns:
 
 Before marking an example as production-ready, verify:
 
-- [ ] Flash encryption enabled and key generated on-device.
-- [ ] Secure Boot v2 enabled and signing key stored offline.
-- [ ] NVS encryption enabled.
-- [ ] All credentials stored in NVS, not in source or sdkconfig.
+- [ ] Flash encryption / Secure Boot plan uses eFuse + `esp-bootloader-esp-idf`, not IDF Kconfig.
+- [ ] Signing keys stored offline; never committed.
+- [ ] Credentials stored outside committed source.
 - [ ] TLS certificate verification enabled for all outbound connections.
 - [ ] OTA update path uses HTTPS and signature verification.
 - [ ] No debug logs expose credentials.
-- [ ] Stack canary enabled.
-- [ ] Watchdog enabled and task subscriptions confirmed.
-- [ ] Input validation at all external data boundaries.
+- [ ] BLE / network input is length-checked.
+- [ ] No `unwrap()` on fallible HAL/radio in production paths.

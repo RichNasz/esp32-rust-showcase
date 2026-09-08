@@ -1,0 +1,11 @@
+target/
+**/*.rs.bk
+build/
+*.bin
+*.elf
+*.map
+.DS_Store
+.vscode/
+.idea/
+.claude/settings.local.json
+.cache/

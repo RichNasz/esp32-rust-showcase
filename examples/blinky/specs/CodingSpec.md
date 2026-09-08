@@ -49,8 +49,11 @@ Do not run the RMT WS2812 encoder on this board.
 
 - Breathing period: 4 seconds total (2 s up, 2 s down) on both paths.
 - No heap. No `std`. No FreeRTOS. No `sdkconfig`.
-- Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0. Do not git-pin the
-  radio stack.
+- Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0,
+  `esp-bootloader-esp-idf` 0.6.0. Do not git-pin the radio stack.
+- The image must include an ESP-IDF-compatible application descriptor
+  (`esp-bootloader-esp-idf`). Current `espflash` will not flash without it.
+  This crate is image metadata, not ESP-IDF.
 - `build.rs` emits `-Tlinkall.x` last.
 - Embassy entry: `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`. Do not use
   blocking `#[esp_hal::main]`.
@@ -64,6 +67,9 @@ Do not run the RMT WS2812 encoder on this board.
 - `esp-hal` LEDC for the simple LED (reason: hardware PWM without spinning the core).
 - `embassy-time` for the breath cadence (reason: cooperative delay; no busy-wait).
 - `log` + `esp-println` (`log-04`) for INFO operational events.
+- `esp-bootloader-esp-idf` for the application descriptor `espflash` requires
+  (reason: the 2nd-stage bootloader and current `espflash` reject images without
+  it; this is not an ESP-IDF project).
 
 ## Non-Functional Requirements
 
@@ -81,3 +87,6 @@ Do not run the RMT WS2812 encoder on this board.
   no sdkconfig console symbol.
 - RMT and LEDC live behind `esp-hal` `unstable` on this pin — document that in the README.
 - Do not mix crates.io `esp-rtos` 0.4.0 with git `esp-hal`. This example is non-radio.
+- A missing application descriptor fails at `espflash` with "ESP-IDF App
+  Descriptor missing" — the firmware never reaches the board. That is not a
+  serial-port or `--release` problem.

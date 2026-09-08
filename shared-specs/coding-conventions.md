@@ -70,6 +70,11 @@
 
 ---
 
+## Image metadata
+
+- Every firmware crate must emit an ESP-IDF-compatible application descriptor via `esp-bootloader-esp-idf` (`esp_app_desc!()` in `src/main.rs`) so `espflash` and the 2nd-stage bootloader can accept the image.
+- This is image metadata, not an ESP-IDF project. Do not add `sdkconfig`, `main.c`, or `idf.py` to "satisfy" the descriptor.
+
 ## Code Layout
 
 - `src/main.rs` is the entry point and top-level wiring only (`#![no_std]` `#![no_main]`).

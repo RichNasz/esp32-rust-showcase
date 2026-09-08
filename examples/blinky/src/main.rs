@@ -12,6 +12,8 @@ use esp_hal::timer::timg::TimerGroup;
 
 mod board;
 
+esp_bootloader_esp_idf::esp_app_desc!();
+
 const BREATH_HALF_MS: u64 = 2000;
 #[cfg(feature = "board-devkitc-c6")]
 const BRIGHTNESS_CAP: u8 = 64;

@@ -42,6 +42,7 @@ embassy-executor = "0.10"
 embassy-time = "0.5"
 esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }
 esp-println = { version = "0.18.0", features = ["esp32c6", "log-04"] }
+esp-bootloader-esp-idf = { version = "0.6.0", features = ["esp32c6"] }
 log = "0.4"
 
 [features]
@@ -56,6 +57,7 @@ Radio examples **must not** mix crates.io crates from the `esp-hal` monorepo wit
 esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
 esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
 esp-rtos = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6"] }
 # when the CodingSpec justifies a heap:
 esp-alloc = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1" }
 embassy-executor = "0.10"
@@ -70,7 +72,8 @@ Rules:
 - `esp-rtos` (features `esp32c6` + `embassy`) is the Embassy integration path. Time is `embassy_time`. Radio examples also enable `esp-rtos` feature `esp-radio` and git-pin `esp-rtos` at tag `esp-hal-v1.2.1`. Non-radio examples use crates.io `esp-rtos` 0.4.0.
 - `esp-radio` is **only** for radio examples. Git pin at tag `esp-hal-v1.2.1` with the rest of the monorepo stack — see `rust-toolchain.md`. Treat it as an unstable beta. Enable `wifi` / `ble` / `esp-now` features as the example requires.
 - `esp-alloc` is **only** when the CodingSpec justifies a heap. Radio examples that need it git-pin it from the same tag; non-radio examples use crates.io 0.11.0.
-- `esp-bootloader-esp-idf` and `esp-storage` are **only** when the example needs IDF-compatible image metadata or flash storage.
+- `esp-bootloader-esp-idf` is **required on every example** (feature `esp32c6`). Current `espflash` will not flash an `esp-hal` image that lacks the ESP-IDF-compatible application descriptor. Invoke `esp_bootloader_esp_idf::esp_app_desc!()` in `src/main.rs`. This crate is **not** ESP-IDF. Non-radio examples use crates.io 0.6.0; radio examples git-pin it at tag `esp-hal-v1.2.1` with the rest of the monorepo stack.
+- `esp-storage` is **only** when the example needs flash storage.
 - Board features `board-devkitc-c6` (default) and `board-xiao-c6` are **mutually exclusive**. Generated `src/board.rs` (or `main.rs`) must `compile_error!` if both are enabled or if neither is enabled.
 - Do not add a chip feature other than `esp32c6` in v1.
 
@@ -138,3 +141,4 @@ cargo run --release --no-default-features --features board-xiao-c6
 | Both board features enabled without `compile_error!` | Pins would be silently wrong |
 | crates.io `esp-radio = "1.0.0-beta.0"` with crates.io `esp-hal = "1.2.1"` | crates.io radio depends on `esp-hal ~1.1.0` and will not resolve |
 | crates.io `esp-rtos = "0.4.0"` with git `esp-hal` | crates.io `esp-rtos` pulls crates.io `esp-hal`; Cargo then builds two HAL packages |
+| Firmware without `esp-bootloader-esp-idf` / `esp_app_desc!()` | Current `espflash` refuses to flash (`ESP-IDF App Descriptor missing`) |

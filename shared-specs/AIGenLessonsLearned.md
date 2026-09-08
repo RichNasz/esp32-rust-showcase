@@ -46,6 +46,8 @@
 
 - **Do not emit or "fix" sdkconfig.** This repository has no `sdkconfig`, `Kconfig.projbuild`, or `idf.py`. Chip, board, and optional behaviour are Cargo features plus generated `src/board.rs`. (Sep 2026)
 
+- **Every firmware image must emit an ESP-IDF-compatible application descriptor.** Current `espflash` refuses to flash without it (`ESP-IDF App Descriptor missing`). Depend on `esp-bootloader-esp-idf` (crates.io 0.6.0 for non-radio; git tag `esp-hal-v1.2.1` for radio so HAL unifies) with feature `esp32c6`, and invoke `esp_bootloader_esp_idf::esp_app_desc!()` in `src/main.rs`. This crate is **not** ESP-IDF: it only writes image metadata the 2nd-stage bootloader and `espflash` already expect. Omitting it looks like a flasher/port problem until the descriptor is present. (Sep 2026)
+
 ## Required Workflow When Something Goes Wrong
 1. Read this file.
 2. Check `shared-specs/coding-conventions.md`, `shared-specs/cargo-conventions.md`, `shared-specs/rust-toolchain.md`, and the relevant board-spec.

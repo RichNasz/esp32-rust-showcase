@@ -42,6 +42,6 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    - `espsecure.py` / `espefuse.py` C-IDF script stubs as the primary workflow
    - Hardcoded credentials in source
 
-6. If the FunctionalSpec asks for IDF-compatible image metadata or partition tables (OTA, secure boot cooperation with a standard bootloader), add `esp-bootloader-esp-idf` (pin from `rust-toolchain.md`) and document that this crate is **not** ESP-IDF. Flash encryption and Secure Boot v2 remain eFuse operations, not Kconfig.
+6. Every example already depends on `esp-bootloader-esp-idf` for the application descriptor (`esp_app_desc!()`). If the FunctionalSpec also asks for IDF-compatible partition tables (OTA, secure boot cooperation with a standard bootloader), keep using that crate (pin from `rust-toolchain.md`) and document that it is **not** ESP-IDF. Flash encryption and Secure Boot v2 remain eFuse operations, not Kconfig.
 
 7. Document all security decisions, trade-offs, and irreversible eFuse operations in the example README security section. Enable `esp-hal` `unstable` and say so.

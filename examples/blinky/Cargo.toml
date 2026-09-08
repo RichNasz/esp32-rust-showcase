@@ -16,6 +16,7 @@ embassy-executor = "0.10"
 embassy-time = "0.5"
 esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }
 esp-println = { version = "0.18.0", features = ["esp32c6", "log-04"] }
+esp-bootloader-esp-idf = { version = "0.6.0", features = ["esp32c6"] }
 log = "0.4"
 
 [features]

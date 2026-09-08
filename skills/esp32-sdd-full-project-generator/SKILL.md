@@ -57,8 +57,8 @@ Do **not** seed, write, or overwrite `specs/FunctionalSpec.md` (or any file unde
 
 ## Radio pin (do not contradict rust-toolchain.md)
 
-- **Non-radio:** crates.io `esp-hal` 1.2.1 + `esp-rtos` 0.4.0 (and crates.io `esp-alloc` 0.11.0 only if the CodingSpec justifies a heap).
-- **Radio:** git tag `esp-hal-v1.2.1` for `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` when heap is justified. Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`.
+- **Non-radio:** crates.io `esp-hal` 1.2.1 + `esp-rtos` 0.4.0 + crates.io `esp-bootloader-esp-idf` 0.6.0 (and crates.io `esp-alloc` 0.11.0 only if the CodingSpec justifies a heap).
+- **Radio:** git tag `esp-hal-v1.2.1` for `esp-hal`, `esp-radio`, `esp-rtos`, `esp-bootloader-esp-idf`, and `esp-alloc` when heap is justified. Never mix crates.io `esp-rtos = "0.4.0"` (or crates.io `esp-bootloader-esp-idf`) with git `esp-hal`.
 
 Enable `esp-hal` feature `unstable` in addition to `esp32c6` when the example uses radio (Wi-Fi / BLE / ESP-NOW) or sleep / RTC APIs that require it. Document that honesty in the README.
 
@@ -71,7 +71,7 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
 3. Read any `shared-specs/` files referenced in either spec (`coding-conventions.md`, `cargo-conventions.md`, `rust-toolchain.md`, plus domain specs as needed).
 4. Generate the full crate using the mandatory layout above:
    - `Cargo.toml` — package `name` is the kebab folder with hyphens → underscores; `edition = "2024"`; `publish = false`; license MIT; feature `esp32c6`; mutually exclusive board features `board-devkitc-c6` (default) and `board-xiao-c6`. Copy dependency pins from `rust-toolchain.md` / `cargo-conventions.md`.
-   - `src/main.rs` — line 1 `// AGENT-GENERATED — DO NOT EDIT BY HAND`, then `#![no_std]` `#![no_main]`. Embassy entry is `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`. Do **not** use `#[esp_hal::main]` for Embassy — `esp-hal` 1.2.1 `#[esp_hal::main]` is blocking `fn main() -> !`. After `esp_hal::init`, call `esp_rtos::start` on TIMG0 + `FROM_CPU_INTR0` on C6. Top-level wiring only.
+   - `src/main.rs` — line 1 `// AGENT-GENERATED — DO NOT EDIT BY HAND`, then `#![no_std]` `#![no_main]`. Invoke `esp_bootloader_esp_idf::esp_app_desc!()` in this file (required; current `espflash` refuses to flash without the ESP-IDF-compatible application descriptor). Embassy entry is `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`. Do **not** use `#[esp_hal::main]` for Embassy — `esp-hal` 1.2.1 `#[esp_hal::main]` is blocking `fn main() -> !`. After `esp_hal::init`, call `esp_rtos::start` on TIMG0 + `FROM_CPU_INTR0` on C6. Top-level wiring only.
    - `src/board.rs` — generated from board-specs. `compile_error!` if both board features are enabled or if neither is enabled. Application code must not hardcode pin numbers.
    - `build.rs` — linker / `esp-hal` build-time config; embed the LP-core image when applicable. Do not shell out to CMake. Emit `println!("cargo:rustc-link-arg=-Tlinkall.x");` **last** so the crate links (`linkall.x` must be the last linker script).
    - `.cargo/config.toml` — `target = "riscv32imac-unknown-none-elf"`, `runner = "espflash flash --monitor"`, `build-std = ["core"]` (add `"alloc"` only when the CodingSpec justifies a heap).

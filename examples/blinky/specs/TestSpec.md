@@ -52,7 +52,9 @@ cd examples/blinky
 cargo run --release
 ```
 
-Pass criterion: flash succeeds; monitor shows LED-driver init and loop start.
+Pass criterion: flash succeeds (no "ESP-IDF App Descriptor missing"); monitor
+shows LED-driver init and loop start. The image must carry the application
+descriptor from `esp-bootloader-esp-idf`.
 
 Hardware required for the flash step. The *build* half of this crate is covered by T-A1 without a board.
 

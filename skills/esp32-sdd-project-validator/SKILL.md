@@ -131,6 +131,11 @@ If any board is mentioned in `FunctionalSpec.md`, the corresponding `board-specs
 
 These files belong to ESP-IDF. This repository is rust-on-metal. Their presence is never a warning. `lp-core/` is an allowed nested **Cargo** crate, not an exception for CMake.
 
+### CHECK-14a — Application descriptor
+`Cargo.toml` must depend on `esp-bootloader-esp-idf` with feature `esp32c6` (crates.io 0.6.0 for non-radio, or git tag `esp-hal-v1.2.1` for radio). `src/main.rs` must invoke `esp_bootloader_esp_idf::esp_app_desc!()`.
+
+**FAIL** if the dependency or the macro invocation is absent.
+
 ### CHECK-14 — No extra top-level files
 Only these names are permitted at the example root:
 
@@ -163,9 +168,10 @@ CHECK-10  Board module                     ✅ PASS
 CHECK-11  Multi-board feature guard        ✅ PASS
 CHECK-12  Board-spec files exist           ✅ PASS
 CHECK-13  No ESP-IDF artifacts             ✅ PASS
+CHECK-14a Application descriptor           ✅ PASS
 CHECK-14  No extra top-level files         ✅ PASS
 ─────────────────────────────────────────────────────
-Result: 14/14 PASS  |  0 FAIL  |  0 WARNING
+Result: 15/15 PASS  |  0 FAIL  |  0 WARNING
 ```
 
 Then output one of:

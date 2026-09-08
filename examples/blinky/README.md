@@ -90,6 +90,7 @@ blinky: Fade down
 - **WS2812 via RMT** — GRB byte order, 800 kHz NRZ, brightness cap 64/255; `esp-hal` RMT is an **unstable** API
 - **LEDC PWM** — XIAO C6 inverts duty so the breath still starts dark and brightens first; LEDC is an **unstable** API
 - **Embassy time** — 4 s breath cadence with `embassy_time`; no busy-wait
+- **Application descriptor** — `esp-bootloader-esp-idf` `esp_app_desc!()`; current `espflash` will not flash without it. This is image metadata, not ESP-IDF.
 
 ## Testing
 
@@ -123,7 +124,7 @@ Testing philosophy: automated first, manual only when hardware observation is un
    cargo run --release
    ```
 
-   Pass: image flashes; serial log shows LED driver init and breathing loop start.
+   Pass: image flashes (no missing application descriptor); serial log shows LED driver init and breathing loop start.
 
 ### Manual Tests — hardware required
 

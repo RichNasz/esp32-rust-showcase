@@ -1,148 +1,126 @@
-# Testing Specification — Deep Sleep Timer Node
+# Testing Specification — Deep Sleep Timer Node (ESP32-C6)
 
 ## Testing Philosophy
 
-Automated testing using native ESP-IDF tools is strongly preferred.
+Automated testing using native Cargo / rustc tools is strongly preferred.
 Additional tools are only allowed with explicit justification and documented benefits.
 Manual testing is used only when no practical automated alternative exists.
+
+Do not specify `idf.py`, ESP-IDF Unity, or CMake-based harnesses.
 
 ---
 
 ## Automated Tests
 
-### T-A1a — Zero-Warning Build: esp32 (Adafruit HUZZAH32)
+### T-A1 — Zero-warning build (ESP32-C6-DevKitC-1-N8, default features)
 
-**Tool**: `idf.py` (native)
-
-```sh
-cd examples/deep-sleep-timer-node
-idf.py set-target esp32 && idf.py build
-```
-
-Pass: exit code 0, zero compiler warnings.
-
----
-
-### T-A1b — Zero-Warning Build: esp32s3 (YEJMKJ DevKitC primary)
-
-**Tool**: `idf.py` (native)
+**Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
+**What it verifies**: The crate compiles cleanly for the default board (DevKitC-C6, WS2812 / RMT + RTC sleep path) with no `rustc` or clippy warnings.
 
 ```sh
 cd examples/deep-sleep-timer-node
-idf.py set-target esp32s3 && idf.py build
+cargo build --release
+cargo clippy --release -- -D warnings
 ```
 
-Pass: exit code 0, zero compiler warnings. Verifies WS2812 RMT path compiles correctly.
+Pass criterion: both commands exit 0 with no warnings.
 
 ---
 
-### T-A1c — Zero-Warning Build: esp32c5 (Seeed XIAO ESP32-C5)
+### T-A2 — Zero-warning build (Seeed XIAO ESP32-C6)
 
-**Tool**: `idf.py` (native)
+**Tool**: `cargo` (native)
+**What it verifies**: The GPIO LED + RTC sleep path compiles cleanly when the XIAO board feature is selected.
 
 ```sh
 cd examples/deep-sleep-timer-node
-idf.py set-target esp32c5 && idf.py build
+cargo build --release --no-default-features --features board-xiao-c6
+cargo clippy --release --no-default-features --features board-xiao-c6 -- -D warnings
 ```
 
-Pass: exit code 0, zero compiler warnings.
+Pass criterion: both commands exit 0 with no warnings.
 
 ---
 
-### T-A1d — Zero-Warning Build: esp32c6 (Espressif ESP32-C6-DevKitC primary)
+### T-A3 — Flash via espflash runner (DevKitC-C6)
 
-**Tool**: `idf.py` (native)
+**Tool**: `cargo run` with the crate runner (`espflash flash --monitor`)
+**What it verifies**: The image flashes; serial log shows first boot or a timer wake, LED-driver init, and sleep entry.
 
 ```sh
 cd examples/deep-sleep-timer-node
-idf.py set-target esp32c6 && idf.py build
+cargo run --release
 ```
 
-Pass: exit code 0, zero compiler warnings. Verifies WS2812 RMT path compiles on C6.
+Pass criterion: flash succeeds; monitor shows boot/wake log and sleep entry.
 
----
+Hardware required for the flash step. The *build* half of this crate is covered by T-A1 without a board.
 
-### T-A2 — Binary Size Check
-
-**Tool**: `idf.py` (native)
-
-```sh
-idf.py size | grep "Total binary size"
-```
-
-Pass: reported size < 1 MB.
-
----
-
-### T-A3 — Wokwi Simulation (boot counter + serial log)
-
-**Tool**: Wokwi CLI — justification: simulates RTC timer wakeup cycles and serial output without physical hardware, enabling CI verification of the sleep/wake/log loop.
-
-Prerequisites: `curl -L https://wokwi.com/ci/install.sh | sh`; `wokwi.toml` + `diagram.json` at example root.
-
-```sh
-wokwi-cli --timeout 20000 --expect "Wake #3" .
-```
-
-Pass: the string `Wake #3` appears in simulated serial output within 20 seconds (3 full 5-second cycles).
+Use the **left** USB-C UART-C port so the monitor stays connected through deep sleep. Native USB Serial/JTAG will drop the port on the first sleep; that is not a firmware failure.
 
 ---
 
 ## Manual Tests
 
-*Manual tests are used only when automated simulation cannot replicate the exact hardware behaviour.*
+*Manual tests are used only when no practical automated alternative exists. Each step explains
+why automation is not applicable.*
 
-### T-M1 — Boot Counter Persistence Through Real Deep Sleep
+### T-M1 — Boot counter persistence through real deep sleep
 
-**Why manual**: `RTC_DATA_ATTR` persistence depends on the actual hardware power domain staying live through a true deep-sleep state. Wokwi models this but real silicon power behaviour is the authoritative test.
+**Why manual**: Persistent RAM depends on the hardware RTC domain staying live through a true
+deep-sleep state. A host build cannot certify retention.
 
-**Board selection**: Use the Adafruit HUZZAH32 or the Espressif ESP32-C6-DevKitC-1-N8 (left
-USB-C UART bridge port) for this test. Both use a hardware UART bridge chip that stays powered
-during deep sleep, so `idf.py monitor` remains connected and shows a gap in output during sleep.
+Hardware required: Espressif ESP32-C6-DevKitC-1-N8, USB-C on the **left** UART-C port
+(UART bridge; typically `/dev/cu.usbserial-*` on macOS) so the monitor stays connected.
 
-USB-native boards (YEJMKJ DevKitC, XIAO ESP32S3, XIAO ESP32-C5, XIAO ESP32-C6) disconnect from
-the host when the ESP32 enters deep sleep — the native USB peripheral is powered off. `idf.py
-monitor` will exit on the first sleep entry and cannot observe subsequent wakeups.
+Steps:
 
-1. Flash to Adafruit HUZZAH32: `idf.py set-target esp32 && idf.py build flash monitor`
-2. Observe 5 consecutive wakeups — confirm `Wake #1`, `Wake #2`, ..., `Wake #5` with no gaps.
-3. Power-cycle the board (disconnect USB, reconnect).
-4. Confirm counter resets: output must show `First boot` then `Wake #1`.
+1. From `examples/deep-sleep-timer-node/`: `cargo run --release`
+2. Observe several consecutive wakeups (at least five). Confirm the boot counter increments
+   by 1 each cycle with no gaps, and that timer wakeup is logged after the first boot.
+3. Confirm the monitor stays connected through the silent sleep interval (~5 s).
+4. Power-cycle the board (disconnect USB, reconnect) and flash/monitor again if needed.
+5. Confirm the log shows first boot and the counter has reset.
 
-Pass: counter increments monotonically; resets only on power-cycle; monitor stays connected across sleep cycles.
-
----
-
-### T-M2 — LED Heartbeat Visibility (GPIO boards)
-
-**Why manual**: Visual LED observation (on/off timing, single blink per cycle) requires real hardware.
-
-1. Flash to a simple GPIO board (e.g. Adafruit HUZZAH32 or Seeed XIAO ESP32-C5).
-2. Observe LED blinks exactly once on each wake.
-3. LED must remain off during the 5-second sleep period.
-4. Blink duration must be visibly brief (~100 ms) — not a long flash.
-
-Pass: single brief blink per cycle, off during sleep.
+Pass criterion: counter increments monotonically across sleep; resets only on power-cycle;
+monitor stays connected across sleep on the UART-C port.
 
 ---
 
-### T-M3 — WS2812 Random-Colour Heartbeat
+### T-M2 — LED heartbeat (Seeed XIAO ESP32-C6)
 
-**Why manual**: Verifying that the LED colour changes across wakeup cycles requires observing the physical LED. The hardware RNG cannot be meaningfully exercised in simulation.
+**Why manual**: Visual on/off timing and active-LOW polarity require real hardware.
 
-**Monitor note**: USB-native boards (YEJMKJ DevKitC, all XIAO variants) disconnect from the
-host during deep sleep. For this test, observe the LED directly — serial monitoring is not
-required. Use the Espressif ESP32-C6-DevKitC-1-N8 (left USB-C UART bridge port) if serial
-output during sleep cycles is needed.
+Hardware required: Seeed XIAO ESP32-C6, USB-C cable.
 
-1. Flash to a WS2812 board (YEJMKJ ESP32-S3-DevKitC-1-N16R8 or Espressif ESP32-C6-DevKitC-1-N8).
-2. Observe 5+ consecutive wakeups by watching the LED.
-3. Confirm the LED colour changes at least once across the sequence — the colour must not be
-   identical on every cycle. (A single fixed colour across all cycles indicates the RNG is not
-   being applied; uniform colour is astronomically unlikely with a 6-colour palette.)
-4. Confirm each blink colour is clearly visible (not dim or off) — brightness must be at the
-   64/255 level, not 8/255.
-5. Confirm the LED returns to off (dark) between blinks and during the 5-second sleep period.
+The USB Serial/JTAG port drops when the chip enters deep sleep; `espflash monitor` will
+exit. Observe the LED directly.
 
-Pass: colour varies across cycles; each blink is clearly visible; LED is off between blinks
-and during sleep.
+Steps:
+
+1. From `examples/deep-sleep-timer-node/`: `cargo run --release --no-default-features --features board-xiao-c6`
+2. Observe the blue user LED on GPIO 15.
+3. Confirm a single brief blink per ~5 s wake; LED off during sleep.
+
+Pass criterion: single brief blink per cycle, off during sleep, correct active-LOW polarity.
+
+---
+
+### T-M3 — WS2812 random-colour heartbeat (ESP32-C6-DevKitC-1-N8)
+
+**Why manual**: Colour variation, GRB order, and 64/255 room-light visibility require
+observing the physical LED. A GPIO-level bug looks the same as an unsoldered jumper.
+
+Hardware required: Espressif ESP32-C6-DevKitC-1-N8. Serial is optional; use the **left**
+USB-C UART-C port if you also want T-M1 logs.
+
+Steps:
+
+1. From `examples/deep-sleep-timer-node/`: `cargo run --release`
+2. Observe 5+ consecutive wakeups by watching the onboard RGB LED.
+3. Confirm the colour is not identical every cycle (a 6-colour palette making one colour
+   forever means the RNG is not applied).
+4. Confirm each blink is clearly visible in room light (not 8/255-dim) and that the LED
+   is dark between blinks and during the ~5 s sleep.
+
+Pass criterion: colour varies; blinks visible; LED off during sleep.

@@ -1,104 +1,129 @@
-# ==================== BOARD SELECTION ====================
-# Change only this section, then regenerate the project
-#
-# Primary boards (sdkconfig.defaults.<target> configured for):
-#   esp32    → Adafruit HUZZAH32          (GPIO 13, active HIGH)
-#   esp32s3  → YEJMKJ ESP32-S3-DevKitC-1-N16R8  (GPIO 48, WS2812)
-#   esp32c5  → Seeed XIAO ESP32-C5        (GPIO 27, active LOW)
-#   esp32c6  → Espressif ESP32-C6-DevKitC-1-N8  (GPIO 8,  WS2812)
-#
-# Secondary boards (require menuconfig override after set-target):
-#   esp32s3  → Seeed XIAO ESP32S3         (GPIO 21, active LOW, USB CDC)
-#   esp32c6  → Seeed XIAO ESP32-C6        (GPIO 15, active LOW)
-#
-# =======================================================
-# Institutional Memory: shared-specs/AIGenLessonsLearned.md — read before regenerating
+<!-- See shared-specs/AIGenLessonsLearned.md — read before generating. -->
 
-# Coding Specification — Deep Sleep Timer Node
+# Coding Specification — Deep Sleep Timer Node (ESP32-C6)
 
 ## Architecture
 
-Minimal single-shot firmware. App_main runs once per wake cycle: increment the boot counter,
-detect wakeup cause, log status, blink the LED, then immediately enter deep sleep. There
-are no FreeRTOS tasks beyond app_main's implicit task, no event loops, and no persistent
-connections. The entire active window is synchronous and linear.
+Single-shot Embassy firmware. Entry is an async main provided by `esp-rtos`; after
+`esp_hal::init`, start the Embassy executor on TIMG0 + `FROM_CPU_INTR0` (C6). Each reset
+(including a deep-sleep wake) runs main once: persist the boot count, log the wakeup
+cause, blink the LED, arm the RTC timer, enter deep sleep. Deep sleep does not return;
+the chip resets on wake. There is no long-lived task loop and no radio.
+
+Top-level wiring lives in `src/main.rs`. Board-specific GPIO, LED kind, and polarity live
+only in generated `src/board.rs`. Two compile-time LED paths, selected by mutually
+exclusive Cargo board features:
+
+- **WS2812 path** (default `board-devkitc-c6`): RMT generates 800 kHz NRZ. One colour
+  frame, then black, then sleep.
+- **GPIO LED path** (`board-xiao-c6`): simple active-LOW LED. One binary blink, then sleep.
+  Do not run the RMT encoder on this board.
+
+## Board Abstraction
+
+`src/board.rs` is generated from `board-specs/`. It exposes LED GPIO, LED kind
+(WS2812 vs simple GPIO), and polarity. `compile_error!` if both `board-devkitc-c6` and
+`board-xiao-c6` are enabled, or if neither is. Application code must not hardcode pin
+numbers. Chip feature is `esp32c6` only.
+
+## Persistence
+
+Store the boot counter in RTC-backed RAM that survives deep sleep and is lost on
+power-cycle. Use `#[esp_hal::ram(persistent)]` or the equivalent
+`#[ram(unstable(...))]` form required by the pinned `esp-hal` 1.2.1 proc-macro
+(`persistent` is an unstable option and, on C6, belongs in RTC fast memory). Types must
+be persistable bit-patterns as required by that attribute.
+
+Treat uninitialized or corrupted persistent RAM as first boot: a distinctive magic plus
+a checksum (or equivalent) so a reset that races zero-init cannot look like a huge
+count. Increment the counter as the first application action after HAL/Embassy init,
+before branching on wakeup cause. Do not use NVS or flash for this integer.
+
+## Sleep and wakeup
+
+Enable `esp-hal` feature `unstable` — sleep, RTC, and RMT APIs require it on this pin.
+Arm an RTC timer wakeup for about 5 seconds measured from sleep entry (absolute
+deadline so work between arming and sleep does not shorten the sleep). Enter deep
+sleep via the 1.2-line `LowPower` / `sleep_deep` API. Panic only if no wakeup source is
+armed; otherwise never abort the sleep loop.
+
+Read wakeup cause after init. Empty cause is first boot / not-from-sleep. Timer is the
+expected subsequent cause. Any other cause logs a warning and still sleeps.
+
+This example has no radio, so there is no `esp-radio` teardown. GPIO 9 is not an RTC
+wakeup pin; do not attempt button wakeup on the XIAO boot button.
+
+Drive the LED to its inactive/dark level before sleep. There is no public per-pad hold
+API on this HAL pin that the application must call; do not emit sdkconfig sleep
+fragments.
+
+## WS2812 path
+
+Use `esp_hal::rmt` (`PulseCode` newtype on the 1.2 line). Encode 800 kHz NRZ (T0H ~300 ns
+/ T0L ~900 ns, T1H ~900 ns / T1L ~300 ns) and a reset/latch of at least 50 µs low,
+preferably in the RMT buffer. Hold the line LOW after a frame. Pack colours as GRB, not
+RGB.
+
+Write black once at init so the LED starts dark. Cap every channel at 64/255 (a
+maximum, not a floor). Select one of red, green, blue, cyan, magenta, amber via the
+hardware RNG (no software seed). Display that colour for about 100 ms, then black for
+about 100 ms. Time those waits with Embassy, not busy-wait. Log GPIO, GRB order, and
+that RMT is driving NRZ at INFO before the heartbeat.
+
+## GPIO LED path
+
+Drive the XIAO LED at the polarity documented in its board-spec (active LOW). On for
+about 100 ms, off for about 100 ms. No PWM, no LEDC, no RMT — a brief binary blink
+needs none of it.
 
 ## Key Constraints
 
-- Sleep duration: 5 seconds.
-- Active window budget: 200 ms maximum. This includes ESP-IDF boot time, LED blink, logging,
-  and serial flush. Anything beyond 200 ms active time indicates a regression.
-  The 200 ms budget is most constraining on USB-CDC boards (XIAO ESP32S3 needs ~50 ms for
-  USB enumeration); WS2812 primary boards (USB Serial/JTAG or UART bridge) have no enumeration
-  delay and meet the budget more readily. Keep all targets under 200 ms.
-- Persistence: RTC_DATA_ATTR is the correct mechanism for the boot counter. NVS is
-  unnecessary overhead for a single integer that may reset on power-cycle.
-- The boot counter must be incremented as the first action in app_main, before any
-  conditional branching or logging, so every wake cycle produces an accurate count.
+- Sleep duration: 5 seconds from sleep entry.
+- Active window budget: about 200 ms (heartbeat plus log). Keep the path linear.
+- No heap. No `std`. No FreeRTOS. No `sdkconfig`. No NVS.
+- Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0. Do not git-pin the
+  radio stack.
+- `build.rs` emits `-Tlinkall.x` last.
+- Embassy entry: `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`. Do not use
+  blocking `#[esp_hal::main]`.
+- Zero `unwrap()` / `expect()` on fallible HAL in the wake path. Init may halt if
+  clocks or RMT cannot start.
 
-## LED Architecture
+## Preferred Crates and APIs
 
-Two LED code paths, selected at compile time by `CONFIG_EXAMPLE_LED_WS2812`:
-
-**`#if CONFIG_EXAMPLE_LED_WS2812` — WS2812 RMT path:**
-- `led_init()` configures the RMT channel and bytes encoder (10 MHz resolution, GRB byte order).
-  Clears the LED to dark immediately after init regardless of prior state.
-- `led_heartbeat()` selects a random palette index via the hardware RNG (`esp_random()`), writes
-  the chosen colour for 100 ms, then writes `(0,0,0)` for 100 ms before returning.
-- Colour palette (6 entries, each with at least one channel at 64/255; no channel above 64/255):
-  red (64,0,0), green (0,64,0), blue (0,0,64), cyan (0,64,64), magenta (64,0,64), amber (64,32,0).
-  All entries meet the 64/255 minimum brightness floor from `shared-specs/AIGenLessonsLearned.md`.
-- `esp_random()` reads directly from the hardware entropy source — no seeding, no srand() call.
-
-**`#else` — Simple GPIO path:**
-- `led_init()` calls `gpio_hold_dis()` to clear any deep-sleep hold on the LED GPIO, configures
-  the pin as output, and drives it to the inactive level.
-- `led_heartbeat()` sets the GPIO to its active level for 100 ms, then back to inactive for 100 ms.
-- No PWM, no LEDC, no RMT — a brief binary blink requires none of it.
-
-`gpio_hold_dis()` must be called before driving the LED GPIO in both paths. Deep sleep holds
-GPIO pad states from the previous cycle; attempting to drive a held pin has no effect.
-
-## Kconfig Symbols
-
-Three symbols required in `main/Kconfig.projbuild`, inside `menu "Example Configuration"`:
-
-- `EXAMPLE_LED_GPIO` (int, range 0–48): GPIO driving the onboard LED. Default is the primary
-  board's GPIO; overridden per target via `sdkconfig.defaults.<target>`.
-- `EXAMPLE_LED_WS2812` (bool, default n): when enabled, selects the WS2812 RMT code path.
-  `EXAMPLE_LED_ACTIVE_LEVEL` is ignored when this symbol is enabled. Enable for WS2812 primary
-  boards via `sdkconfig.defaults.<target>`; secondary GPIO-LED boards leave it disabled.
-- `EXAMPLE_LED_ACTIVE_LEVEL` (int, range 0–1, default 0): logic level that turns the GPIO LED ON.
-  0 = active LOW, 1 = active HIGH. Not used when `EXAMPLE_LED_WS2812` is enabled.
-
-## Component Dependencies
-
-`main/CMakeLists.txt REQUIRES` must always include `esp_driver_rmt` — even on targets where
-`EXAMPLE_LED_WS2812=n`. This avoids conditional CMake complexity and is harmless when the
-`#if CONFIG_EXAMPLE_LED_WS2812` guard compiles out all RMT code paths.
-
-## Preferred Libraries and APIs
-
-Use `esp_sleep` for wakeup configuration and `esp_sleep_get_wakeup_cause()` to distinguish
-first boot from timer wakeup. Use `gpio` for simple GPIO LED feedback — LEDC is unnecessary
-overhead for a single binary blink. Use `esp_random()` for WS2812 colour selection (hardware
-entropy, no seeding required).
+- `esp-hal` RTC / `LowPower` for timer wakeup and deep sleep (reason: metal sleep APIs;
+  there is no `esp_deep_sleep_start` / sdkconfig).
+- `esp-hal` ram persistent attribute for the boot counter (reason: RTC RAM without NVS).
+- `esp-hal` RMT for WS2812 (reason: hardware NRZ; a GPIO level produces no light).
+- `esp-hal` RNG for palette index (reason: hardware entropy, no seed).
+- `embassy-time` for the 100 ms heartbeat waits (reason: cooperative delay; no busy-wait).
+- `log` + `esp-println` (`log-04`) for INFO operational events.
 
 ## Non-Functional Requirements
 
-- Wakeup cause must be checked on every boot. First power-on and timer wakeup are distinct
-  states and should produce distinct log messages.
-- Unrecognised wakeup causes must log a warning and proceed to sleep — never abort. The
-  deep-sleep loop must be robust to unexpected causes.
-- A brief delay is needed after app_main entry for USB-CDC to enumerate before the first
-  log line is emitted. This applies only to XIAO ESP32S3 (USB-CDC). Other boards may omit it.
+- Logging: INFO for first boot, timer wake + count, LED init, and sleep entry. WARN for
+  unexpected wakeup causes. No debug in the heartbeat.
+- Concurrency: one Embassy task is enough; do not spawn extra tasks.
+- Error recovery: log RMT transmit errors and still enter sleep. Unrecognised wakeup
+  causes must not abort.
+- Allow the UART-bridge console a brief drain after the last log line so the monitor
+  captures “sleeping” before the chip powers down.
 
 ## Gotchas
 
-- `gpio_hold_dis()` must be called before driving the LED GPIO on each wake. Deep sleep can
-  hold GPIO pad states, and attempting to drive a held pin has no effect.
-- RTC_DATA_ATTR variables survive deep sleep but reset on a full power-cycle or power-on
-  reset. This is expected and correct behaviour; document it in the README.
-- WS2812 colour values of 8/255 are effectively invisible under normal room lighting and
-  indistinguishable from a hardware fault. Always use 64/255 as the brightness floor
-  (see `shared-specs/AIGenLessonsLearned.md`).
+- Persistent RAM is retained across deep sleep but cleared on power-on. Document that;
+  it is not a bug. A checksum/magic is required because a reset can skip zero-init.
+- GPIO 9 cannot wake C6 from deep sleep. Timer-only is the correct XIAO design.
+- A GPIO level on the DevKitC WS2812 produces no light — indistinguishable from an
+  unsoldered LED jumper until NRZ + brightness ≥ room-light visibility are confirmed.
+- Channel values above 64/255 are painfully bright; 8/255 is invisible in room light.
+- XIAO LED is active LOW: forgetting polarity looks like “stuck on” or “never on”.
+- DevKitC serial for persistence tests is the **left** USB-C UART-C port. Native USB
+  Serial/JTAG (DevKitC right port, XIAO) drops the host CDC port on true deep sleep;
+  `espflash monitor` exiting is expected, not a crash.
+- Sleep, RTC, and RMT live behind `esp-hal` `unstable` on this pin — document that in
+  the README.
+- Do not mix crates.io `esp-rtos` 0.4.0 with git `esp-hal`. This example is non-radio.
+- `sleep_deep` panics if no wakeup source is enabled or if the timer deadline is already
+  too near to catch. Arm the 5 s deadline immediately before sleep, not at the start of
+  a long active window.

@@ -12,7 +12,7 @@ This example enables `esp-hal` feature **`unstable`** (radio + sleep / RTC + RMT
 
 ## Overview
 
-Production IoT pattern on ESP32-C6. Wakes from deep sleep, reads temperature, humidity, and pressure from a BME280 over I2C, connects to Wi-Fi, publishes a JSON payload via MQTT 3.1.1 QoS 0, tears down `esp-radio`, then returns to deep sleep inside a 15-second active-window deadline.
+Production IoT pattern on ESP32-C6. Wakes from deep sleep, reads temperature, humidity, and pressure from a BME280 over I2C, connects to Wi-Fi, publishes a JSON payload via MQTT 3.1.1 QoS 0, tears down `esp-radio`, then returns to deep sleep inside a **15-second Instant deadline from wake** covering sense + STA + MQTT + LED. Serial pressure is **hPa** at the same scale as MQTT `pres` (sea-level ≈ 1013.1, not ≈ 10.1).
 
 On DevKitC-C6, GPIO 0 (boot button, RTC-capable) can trigger an immediate wakeup. On XIAO ESP32-C6 the boot button is GPIO 9, which is **not** an RTC GPIO — this firmware arms GPIO 0 (D0) for an external active-LOW button instead. Timer wakeup (~15 s) is always armed.
 
@@ -118,7 +118,7 @@ deep_sleep_bme280_mqtt_sensor: radio teardown; sleeping
 deep_sleep_bme280_mqtt_sensor: Sleeping for 15 s
 ```
 
-JSON payload shape: `{"temp":22.5,"hum":48.2,"pres":1013.1,"boot":42}` on topic `sdd/sensor/bme280`.
+JSON payload shape: `{"temp":22.5,"hum":48.2,"pres":1013.1,"boot":42}` on topic `sdd/sensor/bme280`. Serial `P=` is hPa with one decimal, matching `pres`.
 
 If `WIFI_SSID` is the placeholder `unset`, the log skips MQTT and still sleeps.
 
@@ -126,7 +126,8 @@ Persistent RAM is retained across deep sleep but cleared on power-on.
 
 ## Key Concepts
 
-- **Duty-cycled STA + MQTT** — bounded 15 s active window; disconnect and drop `esp-radio` before sleep
+- **Duty-cycled STA + MQTT** — one Instant, 15 s from wake (sense+STA+MQTT+LED); stage waits use remaining time so they cannot stack past 15 s; disconnect and drop `esp-radio` before sleep (including on deadline expiry)
+- **Serial and MQTT pressure** — hPa, same conversion from Pascal (`Pa/100` and `(Pa/10)%10`)
 - **`esp-radio` Wi-Fi** — unstable beta; git-pin `esp-hal` / `esp-radio` / `esp-rtos` / `esp-alloc` at tag `esp-hal-v1.2.1`
 - **`embassy-net` + MQTT 3.1.1 QoS 0** — TCP publish, no long-lived MQTT session crate
 - **Compile-time credentials** — `env!` / Cargo `[env]`; never log the PSK
@@ -196,10 +197,10 @@ Why manual: real I2C and sensor coefficients require physical hardware.
 
 1. Wire BME280: VCC 3.3 V, GND, SDA/SCL to the board-spec I2C pins.
 2. `cargo run --release`
-3. Confirm temperature 10–40 °C, humidity 10–90 %, pressure 900–1100 hPa.
+3. Confirm temperature 10–40 °C, humidity 10–90 %, pressure **900–1100 hPa**. Serial `P=` and MQTT `pres` match at that scale (sea-level ≈ **1013.1**, not ≈10.1).
 4. Breathe on the sensor — humidity should increase.
 
-Pass: all three readings in range; humidity responds.
+Pass: all three readings in range; humidity responds; serial hPa matches MQTT `pres`.
 
 ---
 
@@ -230,9 +231,9 @@ Pass: GPIO 0 wakes the device. (XIAO boot GPIO 9 cannot do this.)
 Why manual: requires deliberately invalid Wi-Fi credentials.
 
 1. Configure a non-existent SSID (or leave `WIFI_SSID=unset` to skip).
-2. Confirm the device logs a timeout/skip (no PSK) and sleeps within 15 seconds — no hang.
+2. Confirm the device logs a timeout/skip (no PSK) and **sleeps within 15 seconds of wake** — no hang. Stacked associate + DHCP + MQTT waits must not keep the chip awake past that Instant.
 
-Pass: sleeps on network failure.
+Pass: sleeps on network failure (or I2C timeout) within the 15 s whole-cycle window.
 
 ## Spec Files
 

@@ -75,10 +75,12 @@ Steps:
 
 1. Wire BME280: VCC 3.3 V, GND, SDA/SCL to the board-spec I2C pins (DevKitC GPIO 6/7; XIAO GPIO 22/23).
 2. From `examples/deep-sleep-bme280-mqtt-sensor/`: `cargo run --release` (add `--no-default-features --features board-xiao-c6` for XIAO).
-3. Confirm temperature about 10–40 °C, humidity 10–90 %, pressure 900–1100 hPa.
+3. Confirm temperature about 10–40 °C, humidity 10–90 %, pressure **900–1100 hPa**.
+   Serial `P=` and MQTT `pres` must match at that hPa scale (sea-level ≈ **1013.1**, not
+   ≈10.1).
 4. Breathe on the sensor — humidity should increase.
 
-Pass criterion: all three readings in range; humidity responds.
+Pass criterion: all three readings in range; humidity responds; serial hPa matches MQTT `pres`.
 
 ---
 
@@ -115,11 +117,11 @@ Pass criterion: GPIO 0 wakes the device. GPIO 9 must not be required.
 
 ### T-M4 — Active window timeout
 
-**Why manual**: Requires deliberately invalid Wi-Fi credentials.
+**Why manual**: Requires deliberately invalid Wi-Fi credentials (or a stuck I2C bus) and a wall clock.
 
 Steps:
 
 1. Set `WIFI_SSID` to a non-existent network (not the documented `unset` skip path if you want a real associate timeout; `unset` is also a valid skip).
-2. Confirm the device logs a timeout/skip (no PSK) and sleeps within 15 seconds — no hang.
+2. Confirm the device logs a timeout/skip (no PSK) and **sleeps within 15 seconds of wake** — no hang. Sense + STA + MQTT + LED together must not stay awake past that Instant; stacked stage waits (associate + DHCP + MQTT) must not add up past 15 s.
 
-Pass criterion: sleeps on network failure within the active window.
+Pass criterion: sleeps on network failure (or I2C timeout) within the 15 s whole-cycle window.

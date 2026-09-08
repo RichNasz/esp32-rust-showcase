@@ -4,8 +4,8 @@
 use embassy_time::{Duration, Timer};
 use esp_hal::Blocking;
 use esp_hal::gpio::AnyPin;
-use esp_hal::i2c::master::{Config, I2c};
-use esp_hal::time::Rate;
+use esp_hal::i2c::master::{BusTimeout, Config, I2c, SoftwareTimeout};
+use esp_hal::time::{Duration as HalDuration, Rate};
 
 const ID_REG: u8 = 0xD0;
 const RESET_REG: u8 = 0xE0;
@@ -26,6 +26,13 @@ pub struct Sample {
     pub hum_milli: u32,
     /// Pressure in Pascal
     pub pressure_pa: u32,
+}
+
+impl Sample {
+    /// Integer hPa and one-tenth digit (Pa → hPa). Same scale as MQTT `pres`.
+    pub fn pressure_hpa_parts(&self) -> (u32, u32) {
+        (self.pressure_pa / 100, (self.pressure_pa / 10) % 10)
+    }
 }
 
 struct Calib {
@@ -54,7 +61,11 @@ pub async fn read_bme280(
     sda: AnyPin<'static>,
     scl: AnyPin<'static>,
 ) -> Option<Sample> {
-    let config = Config::default().with_frequency(Rate::from_khz(400));
+    // Software + hardware timeouts so a stuck SCL cannot consume the 15 s window.
+    let config = Config::default()
+        .with_frequency(Rate::from_khz(400))
+        .with_software_timeout(SoftwareTimeout::Transaction(HalDuration::from_millis(200)))
+        .with_timeout(BusTimeout::BusCycles(1_000));
     let mut i2c = match I2c::new(i2c0, config) {
         Ok(i2c) => i2c.with_sda(sda).with_scl(scl),
         Err(_) => {

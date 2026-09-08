@@ -38,10 +38,18 @@ and **cannot** wake the chip from deep sleep. Do not invent a GPIO-9 wakeup work
   bytes after a raced reset are first boot, not a huge count. Lost on power-cycle.
 - Read BME280 over I2C in **forced** mode (one-shot, then standby). Pins from generated
   `src/board.rs` (DevKitC default SDA/SCL GPIO 6/7; XIAO D4/D5 GPIO 22/23). Probe 0x76
-  then 0x77. Temperature °C, humidity %, pressure hPa.
-- Connect Wi-Fi STA (WPA2-Personal) via `esp-radio` + `embassy-net` DHCPv4. Association
-  timeout about 10 s. Hard active-window deadline **15 s** for the whole pipeline — if
-  the cycle is not done, abandon and sleep. Never block indefinitely on network or I2C.
+  then 0x77. Temperature °C, humidity %RH, pressure **hPa**.
+- Serial INFO for a sample uses the **same units and one-decimal scale** as the MQTT JSON
+  (`temp` °C, `hum` %, `pres` hPa). Sea-level pressure is about **`1013.1` hPa** on serial
+  (`P=1013.1 hPa`) and in `"pres":1013.1`. Compensation stores Pascal internally; do **not**
+  log Pascal, and do **not** log a 100×-smaller hPa figure (that would show ~10.1 at sea
+  level).
+- Connect Wi-Fi STA (WPA2-Personal) via `esp-radio` + `embassy-net` DHCPv4. Association is
+  capped at about 10 s **or** whatever remains of the active window, whichever is shorter.
+  Hard wall-clock deadline **15 s from wake** covers the **whole** cycle (sense + STA +
+  MQTT + LED). If that deadline expires, tear the radio down if it is up and sleep. Do not
+  let independent stage timeouts stack past 15 s. Never block indefinitely on network or
+  I2C (a stuck I2C bus must time out so it cannot consume the window).
 - Publish a single MQTT 3.1.1 QoS 0 message (retain false, no TLS) to topic
   `sdd/sensor/bme280` with JSON
   `{"temp":22.5,"hum":48.2,"pres":1013.1,"boot":42}`.
@@ -124,7 +132,7 @@ the 15 s figure is a hard timeout, not the expected duration.
 - **`cargo run --release`** flashes via `espflash` on DevKitC-C6 (**left** USB-C / UART-C). With valid compile-time credentials, a live AP, broker, and BME280: serial shows wake + readings; broker receives well-formed JSON; `boot` increments; device sleeps. Monitor stays connected across sleep on UART-C.
 - Optional XIAO: `cargo run --release --no-default-features --features board-xiao-c6`. USB monitor dropping on first sleep is expected.
 - BME280 readings in plausible ranges when the sensor is present (about 10–40 °C, 10–90 %, 900–1100 hPa).
-- Unreachable AP / broker / missing sensor: log a recoverable error (no secrets) and sleep within the 15 s active window — no hang.
+- Unreachable AP / broker / missing sensor / stuck I2C: log a recoverable error (no secrets) and sleep within the 15 s active window — no hang. Serial pressure and MQTT `pres` agree in hPa.
 - GPIO 0 (DevKitC BOOT, or XIAO external on D0) wakes the device. GPIO 9 is not used for wakeup.
 - No stack overflow or watchdog across 10+ consecutive cycles in stable RF conditions.
 

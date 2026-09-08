@@ -7,8 +7,9 @@ use core::net::Ipv4Addr;
 
 use embassy_net::tcp::TcpSocket;
 use embassy_net::{Ipv4Address, Stack};
-use embassy_time::{Duration, with_timeout};
+use embassy_time::{Duration, Instant, with_timeout};
 
+use crate::remaining;
 use crate::sensor::Sample;
 
 pub const TOPIC: &str = "sdd/sensor/bme280";
@@ -19,7 +20,7 @@ pub fn format_payload(sample: &Sample, boot: u32, out: &mut [u8]) -> Option<usiz
     let mut w = BufWriter { buf: out, pos: 0 };
     let temp_x10 = sample.temp_centi / 10;
     let hum_x10 = (sample.hum_milli / 100) as i32;
-    let pres_x10 = (sample.pressure_pa / 10) as i32;
+    let (pres_hpa, pres_tenth) = sample.pressure_hpa_parts();
     write!(
         w,
         "{{\"temp\":{}.{},\"hum\":{}.{},\"pres\":{}.{},\"boot\":{}}}",
@@ -27,8 +28,8 @@ pub fn format_payload(sample: &Sample, boot: u32, out: &mut [u8]) -> Option<usiz
         (temp_x10 % 10).unsigned_abs(),
         hum_x10 / 10,
         (hum_x10 % 10).unsigned_abs(),
-        pres_x10 / 10,
-        (pres_x10 % 10).unsigned_abs(),
+        pres_hpa,
+        pres_tenth,
         boot
     )
     .ok()?;
@@ -41,7 +42,12 @@ pub async fn publish_once(
     port: u16,
     client_id: &str,
     payload: &[u8],
+    deadline: Instant,
 ) -> bool {
+    let Some(left) = remaining(deadline) else {
+        log::warn!("Active window expired; skipping MQTT");
+        return false;
+    };
     let ip = match host.parse::<Ipv4Addr>() {
         Ok(ip) => {
             let o = ip.octets();
@@ -56,10 +62,10 @@ pub async fn publish_once(
     let mut rx = [0u8; 1536];
     let mut tx = [0u8; 1536];
     let mut socket = TcpSocket::new(stack, &mut rx, &mut tx);
-    socket.set_timeout(Some(Duration::from_secs(8)));
-
+    let tcp_wait = left.min(Duration::from_secs(8));
+    socket.set_timeout(Some(tcp_wait));
     let endpoint = (ip, port);
-    match with_timeout(Duration::from_secs(8), socket.connect(endpoint)).await {
+    match with_timeout(tcp_wait, socket.connect(endpoint)).await {
         Ok(Ok(())) => {}
         Ok(Err(_)) | Err(_) => {
             log::warn!("MQTT TCP connect failed or timed out");
@@ -72,11 +78,11 @@ pub async fn publish_once(
         Some(n) => n,
         None => return false,
     };
-    if write_all(&mut socket, &pkt[..n]).await.is_err() {
+    if write_all(&mut socket, &pkt[..n], deadline).await.is_err() {
         log::warn!("MQTT CONNECT write failed");
         return false;
     }
-    if !read_connack(&mut socket).await {
+    if !read_connack(&mut socket, deadline).await {
         log::warn!("MQTT CONNACK failed");
         return false;
     }
@@ -85,33 +91,46 @@ pub async fn publish_once(
         Some(n) => n,
         None => return false,
     };
-    if write_all(&mut socket, &pkt[..n]).await.is_err() {
+    if write_all(&mut socket, &pkt[..n], deadline).await.is_err() {
         log::warn!("MQTT PUBLISH write failed");
         return false;
     }
 
     let n = encode_disconnect(&mut pkt);
-    let _ = write_all(&mut socket, &pkt[..n]).await;
+    let _ = write_all(&mut socket, &pkt[..n], deadline).await;
     socket.close();
     true
 }
 
-async fn write_all(socket: &mut TcpSocket<'_>, mut data: &[u8]) -> Result<(), ()> {
+async fn write_all(
+    socket: &mut TcpSocket<'_>,
+    mut data: &[u8],
+    deadline: Instant,
+) -> Result<(), ()> {
     while !data.is_empty() {
-        match socket.write(data).await {
-            Ok(0) => return Err(()),
-            Ok(n) => data = &data[n..],
-            Err(_) => return Err(()),
+        let left = remaining(deadline).ok_or(())?;
+        socket.set_timeout(Some(left));
+        match with_timeout(left, socket.write(data)).await {
+            Ok(Ok(0)) | Ok(Err(_)) | Err(_) => return Err(()),
+            Ok(Ok(n)) => data = &data[n..],
         }
     }
     Ok(())
 }
 
-async fn read_connack(socket: &mut TcpSocket<'_>) -> bool {
+async fn read_connack(socket: &mut TcpSocket<'_>, deadline: Instant) -> bool {
     let mut buf = [0u8; 4];
     let mut filled = 0usize;
     while filled < 4 {
-        match with_timeout(Duration::from_secs(5), socket.read(&mut buf[filled..])).await {
+        let Some(left) = remaining(deadline) else {
+            return false;
+        };
+        match with_timeout(
+            left.min(Duration::from_secs(5)),
+            socket.read(&mut buf[filled..]),
+        )
+        .await
+        {
             Ok(Ok(0)) | Err(_) | Ok(Err(_)) => return false,
             Ok(Ok(n)) => filled += n,
         }

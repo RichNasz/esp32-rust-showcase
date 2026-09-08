@@ -2,8 +2,8 @@
 //! Wi-Fi STA via esp-radio + embassy-net (HAL 1.2 embassy_dhcp pattern).
 
 use embassy_executor::Spawner;
-use embassy_net::{Config as NetConfig, Runner, StackResources};
-use embassy_time::{Duration, with_timeout};
+use embassy_net::{Config as NetConfig, Runner, Stack, StackResources};
+use embassy_time::{Duration, Instant, with_timeout};
 use esp_hal::rng::Rng;
 use esp_radio::wifi::sta::StationConfig;
 use esp_radio::wifi::{
@@ -12,10 +12,12 @@ use esp_radio::wifi::{
 use static_cell::StaticCell;
 
 use crate::mqtt;
+use crate::remaining;
 use crate::sensor::Sample;
 
-const WIFI_TIMEOUT: Duration = Duration::from_secs(10);
-const DHCP_TIMEOUT: Duration = Duration::from_secs(10);
+const WIFI_CAP: Duration = Duration::from_secs(10);
+const DHCP_CAP: Duration = Duration::from_secs(10);
+const TEARDOWN_CAP: Duration = Duration::from_secs(2);
 
 macro_rules! mk_static {
     ($t:ty, $val:expr) => {{
@@ -54,19 +56,49 @@ pub async fn publish_sample(
     sample: &Sample,
     boot: u32,
     c: &Creds,
+    deadline: Instant,
 ) -> bool {
+    if remaining(deadline).is_none() {
+        log::warn!("Active window expired; skipping Wi-Fi");
+        return false;
+    }
+
+    let wifi_interface = Interface::station();
+    let mut controller = match start_controller(wifi, c) {
+        Some(controller) => controller,
+        None => return false,
+    };
+
+    let ok = associate_and_publish(
+        &mut controller,
+        wifi_interface,
+        spawner,
+        sample,
+        boot,
+        c,
+        deadline,
+    )
+    .await;
+    teardown(controller).await;
+    ok
+}
+
+fn start_controller(
+    wifi: esp_hal::peripherals::WIFI<'static>,
+    c: &Creds,
+) -> Option<WifiController<'static>> {
     let ssid = match c.wifi_ssid.try_into() {
         Ok(s) => s,
         Err(_) => {
             log::error!("Wi-Fi SSID rejected");
-            return false;
+            return None;
         }
     };
     let password = match c.wifi_password.try_into() {
         Ok(p) => p,
         Err(_) => {
             log::error!("Wi-Fi password rejected");
-            return false;
+            return None;
         }
     };
 
@@ -77,18 +109,64 @@ pub async fn publish_sample(
     );
 
     log::info!("Starting Wi-Fi STA");
-    let wifi_interface = Interface::station();
-    let mut controller = match WifiController::new(
+    match WifiController::new(
         wifi,
         ControllerConfig::default().with_initial_config(station_config),
     ) {
-        Ok(c) => c,
+        Ok(c) => Some(c),
         Err(_) => {
             log::error!("Wi-Fi controller init failed");
-            return false;
+            None
         }
+    }
+}
+
+async fn associate_and_publish(
+    controller: &mut WifiController<'static>,
+    wifi_interface: Interface,
+    spawner: Spawner,
+    sample: &Sample,
+    boot: u32,
+    c: &Creds,
+    deadline: Instant,
+) -> bool {
+    let Some(stack) = bring_up_net(controller, wifi_interface, spawner, deadline).await else {
+        return false;
     };
 
+    let mut payload = [0u8; 96];
+    let Some(n) = mqtt::format_payload(sample, boot, &mut payload) else {
+        return false;
+    };
+
+    if remaining(deadline).is_none() {
+        log::warn!("Active window expired before MQTT");
+        return false;
+    }
+
+    let ok = mqtt::publish_once(
+        stack,
+        c.mqtt_host,
+        c.mqtt_port,
+        c.mqtt_client_id,
+        &payload[..n],
+        deadline,
+    )
+    .await;
+    if ok {
+        log::info!("MQTT publish ok  topic={}", mqtt::TOPIC);
+    } else {
+        log::warn!("MQTT publish failed");
+    }
+    ok
+}
+
+async fn bring_up_net(
+    controller: &mut WifiController<'static>,
+    wifi_interface: Interface,
+    spawner: Spawner,
+    deadline: Instant,
+) -> Option<Stack<'static>> {
     let rng = Rng::new();
     let seed = (u64::from(rng.random()) << 32) | u64::from(rng.random());
     let (stack, runner) = embassy_net::new(
@@ -102,21 +180,22 @@ pub async fn publish_sample(
         Ok(token) => token,
         Err(_) => {
             log::error!("net task spawn failed");
-            return false;
+            return None;
         }
     };
     spawner.spawn(token);
 
-    match with_timeout(WIFI_TIMEOUT, controller.connect_async()).await {
+    let wifi_wait = remaining(deadline)?.min(WIFI_CAP);
+    match with_timeout(wifi_wait, controller.connect_async()).await {
         Ok(Ok(_)) => log::info!("Wi-Fi associated"),
         Ok(Err(_)) | Err(_) => {
             log::warn!("Wi-Fi associate failed or timed out");
-            teardown(controller).await;
-            return false;
+            return None;
         }
     }
 
-    match with_timeout(DHCP_TIMEOUT, stack.wait_config_up()).await {
+    let dhcp_wait = remaining(deadline)?.min(DHCP_CAP);
+    match with_timeout(dhcp_wait, stack.wait_config_up()).await {
         Ok(()) => {
             if let Some(cfg) = stack.config_v4() {
                 log::info!("Got IP {}", cfg.address);
@@ -124,41 +203,15 @@ pub async fn publish_sample(
         }
         Err(_) => {
             log::warn!("DHCP timed out");
-            teardown(controller).await;
-            return false;
+            return None;
         }
     }
-
-    let mut payload = [0u8; 96];
-    let n = match mqtt::format_payload(sample, boot, &mut payload) {
-        Some(n) => n,
-        None => {
-            teardown(controller).await;
-            return false;
-        }
-    };
-
-    let ok = mqtt::publish_once(
-        stack,
-        c.mqtt_host,
-        c.mqtt_port,
-        c.mqtt_client_id,
-        &payload[..n],
-    )
-    .await;
-    if ok {
-        log::info!("MQTT publish ok  topic={}", mqtt::TOPIC);
-    } else {
-        log::warn!("MQTT publish failed");
-    }
-
-    teardown(controller).await;
-    ok
+    Some(stack)
 }
 
 async fn teardown(mut controller: WifiController<'static>) {
     if controller.is_connected() {
-        let _ = with_timeout(Duration::from_secs(2), controller.disconnect_async()).await;
+        let _ = with_timeout(TEARDOWN_CAP, controller.disconnect_async()).await;
     }
     log::info!("radio teardown; sleeping");
     drop(controller);

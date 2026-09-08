@@ -1,8 +1,10 @@
 // AGENT-GENERATED — DO NOT EDIT BY HAND
 //! Status LED: three visible blinks, then dark. Pins from `board`.
 
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, Instant, Timer};
 use esp_hal::gpio::AnyPin;
+
+use crate::remaining;
 
 const BLINK_MS: u64 = 100;
 const BLINKS: u8 = 3;
@@ -14,12 +16,24 @@ pub async fn show_result(
     #[cfg(feature = "board-devkitc-c6")] rmt: esp_hal::peripherals::RMT<'static>,
     led_pin: AnyPin<'static>,
     success: bool,
+    deadline: Instant,
 ) {
+    if remaining(deadline).is_none() {
+        log::warn!("Active window expired; skipping LED");
+        return;
+    }
+
     #[cfg(feature = "board-devkitc-c6")]
-    show_ws2812(rmt, led_pin, success).await;
+    show_ws2812(rmt, led_pin, success, deadline).await;
 
     #[cfg(feature = "board-xiao-c6")]
-    show_gpio(led_pin, success).await;
+    show_gpio(led_pin, success, deadline).await;
+}
+
+async fn blink_gap(deadline: Instant) {
+    if let Some(left) = remaining(deadline) {
+        Timer::after(left.min(Duration::from_millis(BLINK_MS))).await;
+    }
 }
 
 #[cfg(feature = "board-devkitc-c6")]
@@ -36,6 +50,7 @@ async fn show_ws2812(
     rmt: esp_hal::peripherals::RMT<'static>,
     led_pin: AnyPin<'static>,
     success: bool,
+    deadline: Instant,
 ) {
     use esp_hal::gpio::Level;
     use esp_hal::rmt::{Rmt, TxChannelConfig, TxChannelCreator};
@@ -85,11 +100,15 @@ async fn show_ws2812(
         (BRIGHTNESS_CAP, 0, 0)
     };
     for _ in 0..BLINKS {
+        if remaining(deadline).is_none() {
+            break;
+        }
         write_ws2812(&mut channel, r, g, b, &timing).await;
-        Timer::after(Duration::from_millis(BLINK_MS)).await;
+        blink_gap(deadline).await;
         write_ws2812(&mut channel, 0, 0, 0, &timing).await;
-        Timer::after(Duration::from_millis(BLINK_MS)).await;
+        blink_gap(deadline).await;
     }
+    write_ws2812(&mut channel, 0, 0, 0, &timing).await;
 }
 
 #[cfg(feature = "board-devkitc-c6")]
@@ -130,7 +149,7 @@ async fn write_ws2812(
 }
 
 #[cfg(feature = "board-xiao-c6")]
-async fn show_gpio(led_pin: AnyPin<'static>, success: bool) {
+async fn show_gpio(led_pin: AnyPin<'static>, success: bool, deadline: Instant) {
     use esp_hal::gpio::{Level, Output, OutputConfig};
 
     let off = if crate::board::LED_ACTIVE_LOW {
@@ -154,9 +173,13 @@ async fn show_gpio(led_pin: AnyPin<'static>, success: bool) {
         return;
     }
     for _ in 0..BLINKS {
+        if remaining(deadline).is_none() {
+            break;
+        }
         led.set_level(on);
-        Timer::after(Duration::from_millis(BLINK_MS)).await;
+        blink_gap(deadline).await;
         led.set_level(off);
-        Timer::after(Duration::from_millis(BLINK_MS)).await;
+        blink_gap(deadline).await;
     }
+    led.set_level(off);
 }

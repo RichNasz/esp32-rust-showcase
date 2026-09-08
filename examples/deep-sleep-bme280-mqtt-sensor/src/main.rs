@@ -7,13 +7,13 @@
 use core::ptr::addr_of_mut;
 
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, Instant, Timer};
 use esp_backtrace as _;
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio::{Event, Input, InputConfig, Pull, WakeupConfig};
 use esp_hal::rtc_cntl::sleep::{LowPower, RtcSleepConfig};
 use esp_hal::rtc_cntl::{WakeupSource, wakeup_cause};
-use esp_hal::time::{Duration as HalDuration, Instant};
+use esp_hal::time::{Duration as HalDuration, Instant as HalInstant};
 use esp_hal::timer::timg::TimerGroup;
 
 mod board;
@@ -23,6 +23,7 @@ mod net;
 mod sensor;
 
 const SLEEP_SECS: u64 = 15;
+const ACTIVE_WINDOW: Duration = Duration::from_secs(15);
 const UART_DRAIN_MS: u64 = 20;
 const PERSIST_MAGIC: u32 = 0xC6B2_80E0;
 const PERSIST_MAGIC_IDX: usize = 0;
@@ -31,6 +32,12 @@ const PERSIST_CHECK_IDX: usize = 2;
 
 #[esp_hal::ram(unstable(rtc_fast, persistent))]
 static mut BOOT_PERSIST: [u32; 3] = [0; 3];
+
+/// Remaining time until the wake Instant deadline, if the window is still open.
+pub(crate) fn remaining(deadline: Instant) -> Option<Duration> {
+    let now = Instant::now();
+    (now < deadline).then(|| deadline - now)
+}
 
 #[esp_rtos::main]
 async fn main(spawner: Spawner) -> ! {
@@ -44,6 +51,7 @@ async fn main(spawner: Spawner) -> ! {
     esp_rtos::start(timg0.timer0, peripherals.FROM_CPU_INTR0);
     esp_println::logger::init_logger(log::LevelFilter::Info);
 
+    let deadline = Instant::now() + ACTIVE_WINDOW;
     let boot_count = take_boot_count();
     log_wakeup(boot_count);
     log::info!(
@@ -63,30 +71,21 @@ async fn main(spawner: Spawner) -> ! {
     )
     .await;
 
-    let mut success = false;
-    if let Some(ref s) = sample {
-        log::info!(
-            "T={}.{} C  H={}.{} %  P={}.{} hPa",
-            s.temp_centi / 100,
-            (s.temp_centi % 100).unsigned_abs() / 10,
-            s.hum_milli / 1000,
-            (s.hum_milli / 100) % 10,
-            s.pressure_pa / 10000,
-            (s.pressure_pa / 1000) % 10
-        );
-        let c = net::creds();
-        if net::wifi_configured(&c) {
-            success = net::publish_sample(spawner, peripherals.WIFI, s, boot_count, &c).await;
-        } else {
-            log::warn!("Wi-Fi SSID not configured (compile-time env); skipping MQTT");
-        }
-    }
+    let success = run_cycle(
+        spawner,
+        peripherals.WIFI,
+        sample.as_ref(),
+        boot_count,
+        deadline,
+    )
+    .await;
 
     led::show_result(
         #[cfg(feature = "board-devkitc-c6")]
         peripherals.RMT,
         board::take_status_led(),
         success,
+        deadline,
     )
     .await;
 
@@ -95,8 +94,44 @@ async fn main(spawner: Spawner) -> ! {
     Timer::after(Duration::from_millis(UART_DRAIN_MS)).await;
 
     let mut lp = LowPower::new(peripherals.LPWR);
-    lp.set_wakeup_deadline(Instant::now() + HalDuration::from_secs(SLEEP_SECS));
+    lp.set_wakeup_deadline(HalInstant::now() + HalDuration::from_secs(SLEEP_SECS));
     lp.sleep_deep(RtcSleepConfig::deep());
+}
+
+async fn run_cycle(
+    spawner: Spawner,
+    wifi: esp_hal::peripherals::WIFI<'static>,
+    sample: Option<&sensor::Sample>,
+    boot_count: u32,
+    deadline: Instant,
+) -> bool {
+    if remaining(deadline).is_none() {
+        log::warn!("Active window expired; sleeping");
+        return false;
+    }
+    let Some(s) = sample else {
+        return false;
+    };
+    log_sample(s);
+    let c = net::creds();
+    if !net::wifi_configured(&c) {
+        log::warn!("Wi-Fi SSID not configured (compile-time env); skipping MQTT");
+        return false;
+    }
+    net::publish_sample(spawner, wifi, s, boot_count, &c, deadline).await
+}
+
+fn log_sample(s: &sensor::Sample) {
+    let (pres_hpa, pres_tenth) = s.pressure_hpa_parts();
+    log::info!(
+        "T={}.{} C  H={}.{} %  P={}.{} hPa",
+        s.temp_centi / 100,
+        (s.temp_centi % 100).unsigned_abs() / 10,
+        s.hum_milli / 1000,
+        (s.hum_milli / 100) % 10,
+        pres_hpa,
+        pres_tenth
+    );
 }
 
 fn persist_state() -> &'static mut [u32; 3] {

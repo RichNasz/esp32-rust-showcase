@@ -11,8 +11,11 @@ bring up Wi-Fi STA + `embassy-net`, publish one MQTT message, tear the radio dow
 the LED, arm wakeup sources, enter deep sleep. Deep sleep does not return; the chip resets
 on wake.
 
-Each pipeline stage has an independent timeout. Failure skips remaining network stages and
-still sleeps. A 15-second wall-clock deadline covers the whole active window.
+Capture **one Embassy `Instant` deadline at wake** for a 15-second active window that
+covers **sense + STA + MQTT + LED**. Every stage wait is remaining time until that Instant
+(optionally further capped, e.g. about 10 s for association) so stacked stage budgets
+**cannot exceed 15 s**. On expiry: tear the radio down if it is up, skip leftover work,
+and sleep. Failure of any stage skips remaining network work and still sleeps.
 
 Top-level wiring lives in `src/main.rs`. Board GPIO, LED kind, polarity, I2C pins, and the
 RTC wake pin live only in generated `src/board.rs`. Additional modules for the sensor,
@@ -69,6 +72,12 @@ driver (Bosch compensation formulas) over a heavyweight registry component; the 
 ESP-IDF `bosch/bme280` component does not apply. Probe I2C 0x76 then 0x77. If the chip
 id is missing, skip MQTT and sleep — do not hang on NAK.
 
+Configure the I2C master so a stuck SCL/SDA cannot consume the 15 s window: set a HAL
+software transaction timeout and a hardware bus timeout (`BusTimeout` / equivalent on
+this pin). Compensated pressure is **Pascal**. Serial and MQTT both present **hPa with
+one decimal** from the same conversion (integer hPa = `pressure_pa / 100`, tenth =
+`(pressure_pa / 10) % 10`) so sea-level ~1013.1 cannot drift between log and `pres`.
+
 ## Radio, network, and MQTT
 
 This is a **radio** example. Git-pin `esp-hal`, `esp-radio` (features `esp32c6`,
@@ -91,7 +100,8 @@ matches the FunctionalSpec and the `esp-hal` 1.2 embassy-net examples. No TLS. D
 this choice in the README.
 
 JSON is formatted into a stack buffer (no serde). Payload shape is fixed: temp, hum,
-pres, boot. Pressure in hPa.
+pres, boot. Pressure field `pres` is hPa with one decimal, same scale as the serial
+pressure log.
 
 ## Credentials
 
@@ -105,7 +115,10 @@ skip association and still sleep.
 ## Key Constraints
 
 - Sleep duration: 15 seconds from sleep entry.
-- Hard active-window deadline: 15 seconds. Wi-Fi associate timeout: about 10 seconds.
+- Hard active-window deadline: one Instant, 15 seconds from wake, covering sense + STA +
+  MQTT + LED. Wi-Fi associate is still capped at about 10 seconds, but that cap (and every
+  other stage wait) is `min(stage cap, time remaining)`. Stacked independent budgets must
+  not be able to keep the chip awake past 15 s.
 - MQTT: QoS 0, retain false, one publish per cycle, MQTT 3.1.1, no TLS, no auth required
   (optional username/password are out of scope).
 - Heap is justified for Wi-Fi + embassy-net only. No `std`. No FreeRTOS. No `sdkconfig`.
@@ -129,9 +142,10 @@ skip association and still sleep.
 
 ## Non-Functional Requirements
 
-- Logging: INFO for first boot / timer / GPIO wake + count, sensor values, MQTT success
-  (topic only), radio teardown, and sleep entry. WARN for timeouts and unexpected wakeup
-  causes. ERROR for init failures. Never print SSID+password together; never print the PSK.
+- Logging: INFO for first boot / timer / GPIO wake + count, sensor values (pressure in
+  hPa at the MQTT `pres` scale), MQTT success (topic only), radio teardown, and sleep
+  entry. WARN for timeouts, active-window expiry, and unexpected wakeup causes. ERROR for
+  init failures. Never print SSID+password together; never print the PSK.
 - Concurrency: one net-stack runner task plus main. Do not spawn reconnect loops that
   outlive the active window.
 - Error recovery: any failed stage logs and continues to teardown + sleep.
@@ -157,3 +171,10 @@ skip association and still sleep.
   (Cargo env-cache bug). Document that in the README.
 - BME280 forced mode needs a short conversion wait; skipping it yields zeros that look
   like a wiring fault.
+- Default C6 I2C bus timeout is disabled. Without a software and/or hardware I2C timeout,
+  a stuck bus hangs the wake path past the 15 s window.
+- Independent 10 s associate + 10 s DHCP + multi-second MQTT waits **stack**. They must
+  share the one Instant deadline; do not give each stage a full budget that can sum past
+  15 s.
+- Serial pressure using `pressure_pa / 10000` is ~100× too small (sea-level ~10.1 hPa).
+  Use Pa → hPa (`/ 100` and `(Pa / 10) % 10`), matching MQTT `pres`.

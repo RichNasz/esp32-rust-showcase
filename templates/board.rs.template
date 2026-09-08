@@ -1,0 +1,19 @@
+// AGENT-GENERATED — DO NOT EDIT BY HAND
+//! GPIO / LED / button constants generated from board-specs/. Application code
+//! must not hardcode pin numbers.
+
+#[cfg(all(feature = "board-devkitc-c6", feature = "board-xiao-c6"))]
+compile_error!("board features are mutually exclusive: enable only one of board-devkitc-c6, board-xiao-c6");
+
+#[cfg(not(any(feature = "board-devkitc-c6", feature = "board-xiao-c6")))]
+compile_error!("select a board feature: board-devkitc-c6 (default) or board-xiao-c6");
+
+#[cfg(feature = "board-devkitc-c6")]
+pub mod pins {
+    // FILL from board-specs/espressif/esp32-c6-devkitc-1-n8.md
+}
+
+#[cfg(feature = "board-xiao-c6")]
+pub mod pins {
+    // FILL from board-specs/seeed/xiao-esp32c6.md
+}

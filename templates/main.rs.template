@@ -1,0 +1,29 @@
+// AGENT-GENERATED — DO NOT EDIT BY HAND
+#![no_std]
+#![no_main]
+
+//! High-level Embassy + esp-hal init stub for a standalone ESP32-C6 crate.
+//! Fill in tasks from the example FunctionalSpec / CodingSpec. Do not hardcode pins —
+//! read GPIO / LED / button constants from `board`.
+
+use embassy_executor::Spawner;
+use embassy_time::{Duration, Timer};
+use esp_backtrace as _;
+use esp_hal::timer::timg::TimerGroup;
+
+mod board;
+
+#[esp_hal::main]
+async fn main(spawner: Spawner) {
+    let peripherals = esp_hal::init(esp_hal::Config::default());
+
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+    esp_rtos::start(timg0.timer0, peripherals.FROM_CPU_INTR0);
+
+    // Spawn Embassy tasks described by the FunctionalSpec.
+    let _ = spawner;
+
+    loop {
+        Timer::after(Duration::from_secs(1)).await;
+    }
+}

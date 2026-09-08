@@ -1,15 +1,13 @@
 ---
 name: esp32-sdd-project-validator
-description: Validates any example folder against the permanent locked structure in specs/example-project-structure-spec.md. Checks structure, spec file content, multi-board guards, agent-generated headers, and AIGenLessonsLearned.md compliance. Reports PASS/FAIL for every check.
-version: "1.0.0"
+description: Validates any example folder against the permanent locked no_std Cargo crate structure in specs/example-project-structure-spec.md. Checks structure, spec file content, Cargo board-feature guards, agent-generated headers, and AIGenLessonsLearned.md compliance. Fails if main.c, CMakeLists.txt, or sdkconfig.defaults appear. Reports PASS/FAIL for every check.
+version: "2.0.0"
 author: Richard Naszcyniec
-keywords: sdd, esp32, validator, structure, compliance, audit
+keywords: sdd, esp32, validator, structure, compliance, audit, rust, esp-hal, no_std, cargo
 ---
 
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
-     Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-02-22 | Agent: Claude Code
      ================================================ -->
 
 # ESP32 SDD Project Validator
@@ -39,14 +37,15 @@ Verify that every required path exists (relative to the example root):
 |---|---|
 | `specs/FunctionalSpec.md` | Required |
 | `specs/CodingSpec.md` | Required |
-| `main/main.c` | Required |
-| `main/CMakeLists.txt` | Required |
-| `CMakeLists.txt` | Required |
-| `sdkconfig.defaults` | Required |
+| `src/main.rs` | Required |
+| `Cargo.toml` | Required |
+| `build.rs` | Required |
+| `.cargo/config.toml` | Required |
 | `README.md` | Required |
 | `.gitignore` | Required |
-| `Kconfig.projbuild` | Allowed (present when Kconfig options needed) |
-| `idf_component.yml` | Allowed (present when external deps needed) |
+| `src/board.rs` | Required when the example supports more than one board, or whenever FunctionalSpec references board-specs for GPIO / LED / button. Treat as required in v1 (C6 DevKitC + XIAO). |
+| `partitions.csv` / `espflash.toml` | Allowed (OTA / custom partition table) |
+| `lp-core/` (nested crate) | Allowed when FunctionalSpec requires LP-core firmware |
 
 **FAIL** if any Required file is absent.
 
@@ -56,7 +55,7 @@ Verify that every required path exists (relative to the example root):
 **FAIL** if any file other than `FunctionalSpec.md`, `CodingSpec.md`, or `TestSpec.md` is found inside `specs/`.
 
 ### CHECK-03 — No generated files have been placed inside specs/
-`specs/FunctionalSpec.md` and `specs/CodingSpec.md` must NOT start with the agent-generated comment header (`<!-- AGENT-GENERATED` or `/* AGENT-GENERATED`).
+`specs/FunctionalSpec.md` and `specs/CodingSpec.md` must NOT start with the agent-generated comment header (`<!-- AGENT-GENERATED` or `// AGENT-GENERATED`).
 
 **FAIL** if either spec file starts with an agent-generated header.
 
@@ -68,10 +67,14 @@ Every generated `.md` file at the example root (`README.md`) must begin with:
 ```
 **FAIL** if `README.md` is missing this header.
 
-### CHECK-05 — Agent-generated comment present in main.c
-`main/main.c` must begin with `/* AGENT-GENERATED` on line 1.
+### CHECK-05 — src/main.rs is no_std no_main with agent header
+`src/main.rs` must:
 
-**FAIL** if the comment is absent.
+1. Start with `// AGENT-GENERATED` on line 1.
+2. Contain `#![no_std]`.
+3. Contain `#![no_main]`.
+
+**FAIL** if any of these three are absent.
 
 ### CHECK-06 — AIGenLessonsLearned.md referenced in CodingSpec.md
 `specs/CodingSpec.md` line 1 must contain a reference to `shared-specs/AIGenLessonsLearned.md`.
@@ -79,47 +82,62 @@ Every generated `.md` file at the example root (`README.md`) must begin with:
 **FAIL** if the reference is absent.
 
 ### CHECK-07 — .gitignore correctness
-`.gitignore` must exclude all of: `build/`, `sdkconfig`, `sdkconfig.old`, `*.bin`, `*.elf`, `*.map`.
+`.gitignore` must exclude `target/` and firmware binaries (`*.bin`, `*.elf`, `*.map`).
 
-**FAIL** if any of these entries is missing.
+**FAIL** if `target/` is missing or binaries are not excluded.
 
-### CHECK-08 — sdkconfig.defaults sets at least one CONFIG_ key
-`sdkconfig.defaults` must be non-empty and contain at least one `CONFIG_` assignment.
+### CHECK-08 — Cargo.toml has feature `esp32c6`
+`Cargo.toml` must enable `esp-hal` feature `esp32c6` (for example `esp-hal = { version = "1.2.1", features = ["esp32c6"] }` or the git-pin equivalent). v1 has no other chip feature.
 
-**FAIL** if the file is empty or contains no `CONFIG_` lines.
+**FAIL** if `esp32c6` is absent from `Cargo.toml`.
+**FAIL** if a chip feature other than `esp32c6` is declared (`esp32`, `esp32s3`, `esp32c3`, `esp32c5`, `esp32h2`, …).
 
-### CHECK-09 — Root CMakeLists.txt is minimal and correct
-`CMakeLists.txt` must contain:
-- `cmake_minimum_required`
-- `include($ENV{IDF_PATH}/tools/cmake/project.cmake)`
-- `project(<name>)`
+### CHECK-09 — .cargo/config.toml target and runner
+`.cargo/config.toml` must contain:
 
-**FAIL** if any of these three lines is absent.
+- `target = "riscv32imac-unknown-none-elf"`
+- `runner = "espflash flash --monitor"` (additional `--partition-table` args are allowed)
 
-### CHECK-10 — main/CMakeLists.txt uses idf_component_register
-`main/CMakeLists.txt` must call `idf_component_register`.
+**FAIL** if either value is absent or a different `--target` / runner (`probe-rs`, CMake) is selected.
+**FAIL** if an Xtensa target is selected.
 
-**FAIL** if the call is absent.
+### CHECK-10 — Board module
+`src/board.rs` (or equivalent board module) must exist and hold GPIO / LED / button constants derived from `board-specs/`. `src/main.rs` must not hardcode pin numbers.
 
-### CHECK-11 — Multi-board guard (if Kconfig.projbuild exists)
-If `Kconfig.projbuild` is present:
-- It must contain a `choice` block.
-- `main/main.c` must contain at least one `#if CONFIG_BOARD_` guard and a matching `#error` fallback.
-- The `#error` message must instruct the user to set `CONFIG_BOARD_*` in `sdkconfig.defaults`.
+**FAIL** if the board module is missing when FunctionalSpec references board-specs.
+**FAIL** if `src/main.rs` contains hardcoded GPIO numbers that belong in `board.rs`.
 
-**FAIL** if `Kconfig.projbuild` exists but `main.c` has no `#if CONFIG_BOARD_` guard.
-**FAIL** if no `#error` fallback exists.
+### CHECK-11 — Multi-board Cargo feature guard
+`src/board.rs` (or `src/main.rs`) must `compile_error!` if both `board-devkitc-c6` and `board-xiao-c6` are enabled, or if neither is enabled.
 
-### CHECK-12 — Board-spec references in FunctionalSpec.md
+**FAIL** if the mutually exclusive board-feature guard is absent.
+
+### CHECK-12 — Board-spec files exist
 If any board is mentioned in `FunctionalSpec.md`, the corresponding `board-specs/<vendor>/<board>.md` file must exist.
 
 **FAIL** if a referenced board-spec file is not found on disk.
 
-### CHECK-13 — No extra top-level files
-Only these names are permitted at the example root:
-`specs/`, `main/`, `CMakeLists.txt`, `sdkconfig.defaults`, `README.md`, `.gitignore`, `Kconfig.projbuild`, `idf_component.yml`, `components/`, `build/`
+### CHECK-13 — Forbidden ESP-IDF artifacts (hard FAIL)
+**FAIL** if any of the following exist anywhere under the example folder:
 
-**WARNING** (not FAIL) for any other file at the root — report the unexpected filename so the user can decide.
+- `main.c` (including `main/main.c` and `src/main.c`)
+- `CMakeLists.txt` (root, `main/`, or any subdirectory except an unrelated nested crate that must still not use CMake)
+- `sdkconfig.defaults` (including `sdkconfig.defaults.<target>`)
+- `sdkconfig`, `sdkconfig.old`
+- `Kconfig.projbuild`
+- `idf_component.yml`
+
+These files belong to ESP-IDF. This repository is rust-on-metal. Their presence is never a warning.
+
+### CHECK-14 — No extra top-level files
+Only these names are permitted at the example root:
+
+`specs/`, `src/`, `Cargo.toml`, `build.rs`, `.cargo/`, `README.md`, `.gitignore`, `target/`
+
+**Allowed extra** (not a FAIL): `Cargo.lock`, `partitions.csv`, `espflash.toml`, `lp-core/` (nested LP-core crate when FunctionalSpec requires LP-core wakeup / firmware).
+
+**FAIL** for any forbidden IDF file listed in CHECK-13 even if it would otherwise be "extra".
+**WARNING** (not FAIL) for any other unexpected file at the root — report the unexpected filename so the user can decide.
 
 ---
 
@@ -134,17 +152,18 @@ CHECK-01  Required files present           ✅ PASS
 CHECK-02  specs/ contains only human files ✅ PASS
 CHECK-03  No generated files in specs/     ✅ PASS
 CHECK-04  README.md agent header           ✅ PASS
-CHECK-05  main.c agent comment             ✅ PASS
+CHECK-05  main.rs no_std/no_main + header  ✅ PASS
 CHECK-06  AIGenLessonsLearned ref          ✅ PASS
 CHECK-07  .gitignore completeness          ✅ PASS
-CHECK-08  sdkconfig.defaults non-empty     ✅ PASS
-CHECK-09  Root CMakeLists.txt              ✅ PASS
-CHECK-10  main/CMakeLists.txt              ✅ PASS
-CHECK-11  Multi-board guard                ✅ PASS
+CHECK-08  Cargo.toml esp32c6 feature       ✅ PASS
+CHECK-09  .cargo/config.toml target/runner ✅ PASS
+CHECK-10  Board module                     ✅ PASS
+CHECK-11  Multi-board feature guard        ✅ PASS
 CHECK-12  Board-spec files exist           ✅ PASS
-CHECK-13  No extra top-level files         ✅ PASS
+CHECK-13  No ESP-IDF artifacts             ✅ PASS
+CHECK-14  No extra top-level files         ✅ PASS
 ─────────────────────────────────────────────────────
-Result: 13/13 PASS  |  0 FAIL  |  0 WARNING
+Result: 14/14 PASS  |  0 FAIL  |  0 WARNING
 ```
 
 Then output one of:

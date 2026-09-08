@@ -1,15 +1,13 @@
 ---
 name: esp32-ble-beacon-engineer
-description: Designs and generates BLE advertising/beaconing configurations for ESP32. Handles NimBLE stack init/teardown, non-connectable advertising, manufacturer data PDU construction, bounded advertising windows, and BLE stack teardown before deep sleep.
-version: "1.0.0"
+description: Designs and generates BLE advertising/beaconing for ESP32-C6 rust-on-metal firmware using esp-radio + TrouBLE. Handles non-connectable advertising, manufacturer data PDUs, bounded advertising windows via embassy_time, git-pin of the radio stack, and full teardown before deep sleep.
+version: "2.0.0"
 author: Richard Naszcyniec
-keywords: sdd, esp32, ble, nimble, beacon, advertising, ibeacon, manufacturer-data, deep-sleep, power-budget
+keywords: sdd, esp32, ble, trouble, esp-radio, beacon, advertising, manufacturer-data, deep-sleep, power-budget, rust
 ---
 
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
-     Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-03-10 | Agent: Claude Code
      ================================================ -->
 
 # ESP32 BLE Beacon Engineer
@@ -17,65 +15,54 @@ keywords: sdd, esp32, ble, nimble, beacon, advertising, ibeacon, manufacturer-da
 ## When to use
 Any time a FunctionalSpec requires BLE advertising, beaconing, manufacturer data payloads, or iBeacon/Eddystone frames. Invoked automatically as a sub-workflow by `esp32-sdd-full-project-generator` when BLE advertising or beaconing is specified. Can also be run standalone.
 
+v1 BLE is rust-on-metal: `esp-radio` (controller) + **TrouBLE** (`trouble-host`). There is no NimBLE C stack, no Bluedroid, and no `CONFIG_BT_*`.
+
 ## Workflow (follow exactly)
+MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before doing anything else. Then follow `shared-specs/ble-patterns.md` as the BLE source of truth.
 
-1. **Read FunctionalSpec BLE requirements**: Extract advertising type (connectable vs. non-connectable), payload format (manufacturer data, iBeacon, Eddystone), advertising interval, advertising window duration, and target chip. Note whether deep sleep follows the advertising window.
+1. **Read FunctionalSpec BLE requirements**: Extract advertising type (connectable vs. non-connectable), payload format (manufacturer data, iBeacon, Eddystone), advertising interval, advertising window duration, and whether deep sleep follows the advertising window.
 
-2. **Select BLE stack**: Choose **NimBLE** for beacon/deep-sleep patterns — it has a lighter init/teardown path, faster startup time (~50 ms vs ~200 ms for Bluedroid), and a cleaner `nimble_port_stop()` sequence. Choose **Bluedroid** only if GATT services or Classic BT (A2DP, SPP, HFP) are also required by the FunctionalSpec. Document the rationale in a comment at the top of `main/ble_beacon.c`.
+2. **Select the stack**: TrouBLE + `esp-radio` for every BLE example in v1, including beacons and beacon+sleep. Do not generate NimBLE C, Bluedroid, or sdkconfig.
 
-3. **Generate sdkconfig.defaults fragment** for the BLE stack selection:
-   - For NimBLE (beacon/sleep use case):
-     ```
-     CONFIG_BT_ENABLED=y
-     CONFIG_BT_NIMBLE_ENABLED=y
-     CONFIG_BT_CONTROLLER_ENABLED=y
-     CONFIG_BT_NIMBLE_ROLE_BROADCASTER=y
-     CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
-     CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
-     CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=n
-     CONFIG_BT_NIMBLE_MAX_CONNECTIONS=0
-     CONFIG_BT_NIMBLE_SECURITY_ENABLE=n
-     ```
-     The `CONFIG_BT_NIMBLE_SECURITY_ENABLE=n` line is mandatory — without it, broadcaster-only builds fail with `undefined reference to 'ble_sm_deinit'` (ESP-IDF 5.5.x bug). A non-connectable broadcaster has no use for the security manager.
-   - For Bluedroid (GATT/Classic use case): include `CONFIG_BT_BLUEDROID_ENABLED=y` and disable NimBLE keys. Consult `shared-specs/ble-patterns.md` for the full symbol list.
+3. **Git-pin the radio stack** per `shared-specs/rust-toolchain.md`. Radio examples **must** git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` (when heap is justified) from tag `esp-hal-v1.2.1`. Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`. Enable:
+   - `esp-hal` features `esp32c6` + `unstable`
+   - `esp-radio` features `esp32c6` + `ble` + `unstable`
+   - `esp-rtos` features `esp32c6` + `embassy` + `esp-radio`
+   Document in the README that `esp-radio` is an unstable beta.
 
-4. **Generate advertising init/start sequence** in `main/ble_beacon.c`:
-   - **Prerequisite**: `nvs_flash_init()` must be called before any BLE API. The BLE controller stores PHY calibration data in NVS — missing this causes `BLE_INIT: controller init failed`. Also add `nvs_flash` to `REQUIRES` in `main/CMakeLists.txt`.
-   - Call order: `nvs_flash_init()` → `nimble_port_init()` → set `ble_hs_cfg.sync_cb` → `nimble_port_freertos_init(ble_host_task)`
-   - **Important**: Do NOT call `esp_bt_controller_init()` or `esp_bt_controller_enable()` explicitly. In ESP-IDF 5.5.x, `nimble_port_init()` handles both internally. Calling them before `nimble_port_init()` causes a double-init crash. No `#include "esp_bt.h"` is needed.
-   - In the sync callback, configure advertising parameters:
-     - `conn_mode = BLE_GAP_CONN_MODE_NON` (non-connectable)
-     - `disc_mode = BLE_GAP_DISC_MODE_NON` (non-discoverable) unless the spec requires discoverability
-     - `itvl_min` / `itvl_max` from FunctionalSpec (units: 0.625 ms; e.g., 160 = 100 ms)
-   - Build the manufacturer data PDU: total advertising payload must not exceed 31 bytes. Layout: `FF <company_id_lo> <company_id_hi> <payload...>`. Reference `shared-specs/ble-patterns.md` for the byte map.
-   - Start advertising via `ble_gap_adv_start()`.
+4. **Heap**: TrouBLE + radio blobs typically need `esp-alloc`. The example CodingSpec **must** justify the heap. Git-pin `esp-alloc` from the same tag. Do not allocate after init unless that justification covers it. Set `.cargo/config.toml` `build-std = ["core", "alloc"]`.
 
-5. **Generate bounded advertising window** using a semaphore or event group:
-   - Create a `SemaphoreHandle_t adv_complete_sem` before starting the NimBLE host task.
-   - Create an `esp_timer` for the advertising window duration specified in the FunctionalSpec.
-   - On timer expiry (timer callback runs in timer task context): call `ble_gap_adv_stop()` then `xSemaphoreGive(adv_complete_sem)`.
-   - In `app_main`: after `nimble_port_freertos_init()`, block on `xSemaphoreTake(adv_complete_sem, portMAX_DELAY)`.
-   - **Never** use `vTaskDelay` alone as the advertising timeout — NimBLE callbacks run on the NimBLE host task, not on `app_main`, so `vTaskDelay` in `app_main` does not block advertising correctly.
-   - **Task WDT note**: If the advertising window exceeds the default task watchdog timeout (5 s), unsubscribe `app_main`'s task from the WDT before blocking on the semaphore and resubscribe after: `esp_task_wdt_delete(NULL)` before `xSemaphoreTake`, `esp_task_wdt_add(NULL)` after.
+5. **Init order** (`ble-patterns.md`):
+   1. `esp_hal::init`
+   2. Start `esp-rtos` (`esp_rtos::start` on TIMG0 + `FROM_CPU_INTR0` on C6) **before** constructing `BleConnector`
+   3. `BleConnector` + TrouBLE `ExternalController` + `Host` / `Peripheral`
+   4. `join` the TrouBLE `runner.run()` task with the advertise task
 
-6. **Generate complete BLE stack teardown sequence** (mandatory before deep sleep):
-   Execute in this exact order after the semaphore is taken:
-   ```c
-   ble_gap_adv_stop();          // idempotent — safe to call again
-   nimble_port_stop();          // signals host task to exit
-   nimble_port_deinit();        // frees NimBLE resources + controller disable/deinit
-   ```
-   **Important**: Do NOT call `esp_bt_controller_disable()` or `esp_bt_controller_deinit()` explicitly. In ESP-IDF 5.5.x, `nimble_port_deinit()` handles both internally. Calling them after `nimble_port_deinit()` causes a double-deinit crash. No `#include "esp_bt.h"` is needed.
-   Skipping teardown leaves the BLE radio powered during deep sleep, destroying the power budget.
+   Radio init is internal to `BleConnector::new` / the radio types. Do not generate `nvs_flash_init()` C calls or ESP-IDF controller APIs.
 
-7. **Coordinate with deep sleep** (if FunctionalSpec specifies a wakeup strategy):
-   - Teardown sequence (step 6) must complete before `esp_deep_sleep_start()` is called.
-   - The `esp32-deep-sleep-engineer` sub-workflow owns the `esp_deep_sleep_start()` call and wakeup source configuration — do not duplicate that logic here.
-   - Add a note to the README power budget table that the active window includes BLE teardown time (~5–10 ms).
-   - If `gpio_hold_en()` is used for peripheral power gating (from the deep-sleep engineer output), ensure it is called after BLE teardown and before `esp_deep_sleep_start()`.
+6. **Non-connectable advertising** for beacons:
+   - `Advertisement::NonconnectableScannableUndirected`
+   - Intervals via `embassy_time::Duration` (100 ms → `Duration::from_millis(100)`)
+   - Size TrouBLE `HostResources` for **zero connections** when the example never accepts a link
+   - Do not enable a security manager / bonding path for a non-connectable beacon
 
-8. **Document in the example README**:
-   - NimBLE vs. Bluedroid choice rationale (one sentence).
-   - Advertising payload byte map (table: offset, length, value, description).
-   - Power budget breakdown: sleep current (µA) + active window current (mA) × duration (ms) = average µA.
-   - Reference to `shared-specs/ble-patterns.md` for extended pattern documentation.
+7. **Manufacturer data PDU** — total advertising payload must not exceed **31 bytes**. Encode with TrouBLE `AdStructure::encode_slice` (Flags + ManufacturerSpecificData). Max application payload is 24 bytes after Flags (3) + mfr header (4). Fail closed if `len` would exceed 31. Reference `shared-specs/ble-patterns.md` for the byte map.
+
+8. **Bounded advertising window** with `embassy_time` (`Timer` / `select`), not a FreeRTOS semaphore or `esp_timer`. When the timer fires, drop the advertiser (stops advertising). TrouBLE callbacks run on the Embassy executor.
+
+9. **Teardown before deep sleep** (mandatory). Deviation leaves the radio powered:
+
+   1. Stop advertising (drop the TrouBLE `Advertiser`).
+   2. Stop the TrouBLE host runner (`runner.run()`).
+   3. Drop the controller / `BleConnector` (`esp-radio` tears down on `Drop`).
+   4. **Then** enter deep sleep. The `esp32-deep-sleep-engineer` sub-workflow owns the sleep call — do not duplicate it here.
+
+   After wakeup the chip resets; bring the scheduler and radio up again from `main`.
+
+10. **GPIO hold** (if used for peripheral power gating) is applied after BLE teardown and before deep sleep (deep-sleep engineer).
+
+11. **Document in the example README**:
+    - TrouBLE + `esp-radio` choice; unstable-beta honesty; git tag `esp-hal-v1.2.1`
+    - Advertising payload byte map (table: offset, length, value, description)
+    - Power budget breakdown: sleep current (µA) + active window current (mA) × duration (ms) = average µA, including BLE teardown time (~5–10 ms)
+    - Reference to `shared-specs/ble-patterns.md`

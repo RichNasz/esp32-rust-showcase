@@ -10,7 +10,7 @@
 
 | Item | Value |
 | --- | --- |
-| SoC | <!-- FILL: e.g. ESP32-S3R8 (dual-core Xtensa LX7, up to 240 MHz) --> |
+| SoC | <!-- FILL: e.g. ESP32-C6 (RISC-V HP + LP cores, up to 160 MHz) --> |
 | Module | <!-- FILL: e.g. ESP32-WROOM-32 , or "Bare SoC (no module)" --> |
 | Flash | <!-- FILL: e.g. 8 MB SPI NOR (quad-SPI) --> |
 | PSRAM | <!-- FILL: e.g. 8 MB OPI PSRAM, or "None" --> |
@@ -52,12 +52,15 @@ Example: ADC2 is disabled when Wi-Fi is active. ADC1 channels are always availab
 
 ### USB Serial / Console
 
-<!-- FILL: Note whether the board uses a USB-UART bridge (e.g. CP2104) or native USB-CDC.
-If native USB: include the required sdkconfig.defaults line in an ```ini code block:
-  CONFIG_ESP_CONSOLE_USB_CDC=y          (ESP32-S2/S3 USB OTG)
-  CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y  (ESP32-C3/C6 USB Serial/JTAG)
-If bridge: include the bridge chip name and TX/RX GPIO assignments.
-NOTE: Always specify a language on fenced code blocks (e.g. ```ini, ```sh, ```c). -->
+<!-- FILL: Note whether the board uses a USB-UART bridge (e.g. CH343P, CP2104) or native USB.
+There is no sdkconfig. Firmware logs via esp-println; flash/monitor via espflash.
+
+Classify as exactly one of:
+- UART bridge (`espflash` on the UART-C port) — name the bridge chip and TX/RX GPIOs
+- USB Serial/JTAG
+- USB CDC
+
+NOTE: Always specify a language on fenced code blocks (e.g. ```toml, ```sh, ```rust). -->
 
 ### Reserved / Internal Pins (do not use in user code)
 
@@ -94,12 +97,19 @@ Typical items to consider:
 
 - <!-- FILL -->
 
-## idf.py Target
+## Cargo chip / board features
 
-```sh
-idf.py set-target <!-- FILL: esp32 | esp32s2 | esp32s3 | esp32c3 | esp32c6 | esp32h2 -->
+v1 firmware generation consumes **ESP32-C6** only. Other SoCs may still be documented here as hardware reference — mark them **not in v1**.
+
+| Item | Value |
+| --- | --- |
+| SoC | <!-- FILL: ESP32-C6 or other; non-C6 = not in v1 --> |
+| Chip Cargo feature | <!-- FILL: `esp32c6` or "not in v1" --> |
+| Board Cargo feature | <!-- FILL: `board-devkitc-c6` / `board-xiao-c6` / none --> |
+| RTC / LP GPIOs | <!-- FILL: C6 = GPIO 0–7 only; GPIO 9 is not RTC --> |
+
+```toml
+# Example v1 C6 board: enable one board feature (default is board-devkitc-c6)
+# cargo run --release
+# cargo run --release --no-default-features --features board-xiao-c6
 ```
-
-<!-- FILL: Add any required sdkconfig.defaults reminders here, e.g.:
-> Remember to set `CONFIG_ESP_CONSOLE_USB_CDC=y` in `sdkconfig.defaults` for USB-C serial output.
--->

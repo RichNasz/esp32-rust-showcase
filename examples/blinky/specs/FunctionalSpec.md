@@ -1,70 +1,70 @@
-# Breathing LED (Multi-Board)
+# Breathing LED (ESP32-C6)
 
 ## Overview
-Baseline SDD example. Demonstrates the full spec-to-firmware pipeline. Drives a smooth
-breathing effect on the onboard status LED using either the ESP-IDF LEDC driver (hardware
-PWM, for simple GPIO LEDs) or the RMT peripheral (800 kHz NRZ protocol, for WS2812 RGB LEDs),
-selected at compile time via a Kconfig bool. Covers four boards across three manufacturers.
 
-## Supported Boards
-- Adafruit HUZZAH32 (ESP32 Feather)
-- Seeed XIAO ESP32S3
-- Seeed XIAO ESP32-C5
-- Espressif ESP32-C6-DevKitC-1-N8 (default C6 target; WS2812 RGB LED)
+Baseline SDD example. Demonstrates the full spec-to-firmware pipeline on rust-on-metal
+ESP32-C6 (`no_std` `esp-hal`). Drives a smooth breathing effect on the onboard status LED
+using the RMT peripheral (800 kHz NRZ, WS2812 RGB) or LEDC PWM (simple GPIO LED), selected
+at compile time by mutually exclusive Cargo board features. Chip is ESP32-C6 only.
 
-Note: Seeed XIAO ESP32-C6 is also compatible but requires manual menuconfig override
-(set EXAMPLE_LED_WS2812=n, EXAMPLE_LED_GPIO=15) since both share the esp32c6 IDF target.
+## Target Hardware
 
-## Requirements
-- Breathe the onboard status LED of whichever board is selected.
-- Breathing period: 4 seconds (2 s fade-up, 2 s fade-down), continuous.
-- For simple GPIO LED boards: use hardware PWM (ESP-IDF `ledc` driver) — no busy-wait loops.
-- For WS2812 RGB LED boards (DevKitC): use RMT peripheral to drive 800 kHz NRZ protocol;
-  breathing is implemented as RGB brightness cycling in a software loop; the color advances
-  through a fixed sequence (red, green, blue, cyan, magenta, amber) at the start of each new
-  breath cycle.
-- Board selection is driven by per-target `sdkconfig.defaults.<target>` files that
-  automatically inject the correct LED GPIO, LED type, and console config when the
-  user runs `idf.py set-target <chip>`. No menuconfig step is required for listed boards.
+v1 chip: **ESP32-C6** only (`esp32c6`). Other SoCs are not in v1.
+
+### Board Compatibility Checklist
+
+- [x] **Espressif ESP32-C6-DevKitC-1-N8** *(default)* — `board-specs/espressif/esp32-c6-devkitc-1-n8.md` — Cargo feature `board-devkitc-c6`
+- [x] **Seeed XIAO ESP32-C6** — `board-specs/seeed/xiao-esp32c6.md` — Cargo feature `board-xiao-c6`
+
+Do not add non-C6 boards. Adafruit HUZZAH32, Seeed XIAO ESP32S3, Seeed XIAO ESP32-C5, and
+YEJMKJ ESP32-S3 boards are **not in v1**.
+
+RTC / LP GPIOs on C6 are **0–7 only**; GPIO 9 (XIAO boot button) is **not** RTC-capable.
+This example does not sleep, so that constraint is informational only.
+
+## Features
+
+- Breathe the onboard status LED of whichever C6 board is selected, continuously.
+- Breathing period: 4 seconds (2 s fade-up, 2 s fade-down). The sequence always starts
+  dark and brightens first.
+- **DevKitC-C6 (default, `board-devkitc-c6`)**: WS2812 RGB LED on GPIO 8, driven by the
+  `esp-hal` RMT peripheral (not a GPIO level — a level produces no visible output).
+  Brightness cycles through a fixed colour sequence (red, green, blue, cyan, magenta,
+  amber). Each channel is capped at 64/255. Colour advances at the start of each new
+  4-second breath cycle. GRB byte order, 800 kHz NRZ.
+- **XIAO ESP32-C6 (`board-xiao-c6`)**: simple user LED on GPIO 15, **active LOW**. Drive
+  with LEDC PWM if practical on the pinned `esp-hal`; otherwise Embassy-timed duty.
+  No busy-wait loops. Invert duty so dark is still the start of the breath.
+- Pin numbers live in generated `src/board.rs`. Application code must not hardcode GPIOs.
+- Board selection is a Cargo feature, not menuconfig. Default features select DevKitC-C6.
+  XIAO: `cargo run --release --no-default-features --features board-xiao-c6`.
+- Serial log at INFO confirms LED path (WS2812/RMT vs GPIO/LEDC), GPIO, and breathing
+  loop start (`log` + `esp-println`).
+
+## Wakeup Strategy
+
+Not applicable. This example runs continuously; it does not enter deep sleep.
+
+## Connectivity
+
+None. Non-radio crate pin: crates.io `esp-hal` 1.2.1 + `esp-rtos` 0.4.0.
+
+## Security Requirements
+
+None.
 
 ## Hardware Dependencies
-- Board-spec: board-specs/adafruit/huzzah32.md (ESP32, LED GPIO 13, active HIGH, simple GPIO)
-- Board-spec: board-specs/seeed/xiao-esp32s3.md (ESP32-S3, LED GPIO 21, active LOW, simple GPIO)
-- Board-spec: board-specs/seeed/xiao-esp32c5.md (ESP32-C5, LED GPIO 27, active LOW, simple GPIO)
-- Board-spec: board-specs/espressif/esp32-c6-devkitc-1-n8.md (ESP32-C6, LED GPIO 8, WS2812 RGB)
-- DevKitC: uses left USB-C port (UART bridge on UART0) — no special console sdkconfig required.
+
+- Board-spec: `board-specs/espressif/esp32-c6-devkitc-1-n8.md` (WS2812 RGB on GPIO 8;
+  flash/monitor on the **left** USB-C UART-C port).
+- Board-spec: `board-specs/seeed/xiao-esp32c6.md` (user LED GPIO 15, active LOW;
+  USB Serial/JTAG console).
 - No external components required.
 
-## Multi-Manufacturer Same-Chip Handling
-
-When two boards from different manufacturers share the same ESP32 chip variant they also share
-the same IDF target name (e.g. `esp32c6`) and therefore the same `sdkconfig.defaults.esp32c6`
-file. Only one such file can exist per target. This example resolves the conflict as follows:
-
-**Primary board per target** (what `sdkconfig.defaults.<target>` is configured for):
-- `esp32c6` → Espressif ESP32-C6-DevKitC-1-N8 (GPIO 8, WS2812 RGB)
-
-**Secondary boards** (same chip, different hardware — require one additional step):
-- Seeed XIAO ESP32-C6 (GPIO 15, simple active-LOW LED):
-  after `idf.py set-target esp32c6`, run `idf.py menuconfig` →
-  Blinky Configuration → set `EXAMPLE_LED_WS2812=n`, `EXAMPLE_LED_GPIO=15`,
-  then build and flash as normal.
-
-**General rule for adding a new board of an existing target chip:**
-1. Identify what hardware differs (LED type, GPIO, console peripheral).
-2. Express each difference as a Kconfig symbol (bool for type, int for GPIO/polarity).
-3. Update `sdkconfig.defaults.<target>` to reflect the primary board.
-4. Document secondary boards and their menuconfig overrides here.
-5. Never create board-specific #ifdefs in C source — all board differences live in Kconfig.
-
-**Why this matters:** `idf.py set-target` re-reads `sdkconfig.defaults.*` from scratch.
-An old `sdkconfig` on disk will shadow the defaults. Always `rm -f sdkconfig sdkconfig.old`
-before switching boards or after updating `sdkconfig.defaults.*` files.
-
 ## Success Criteria
-- LED breathes smoothly on HUZZAH32 with `idf.py set-target esp32`.
-- LED breathes smoothly on XIAO ESP32S3 with `idf.py set-target esp32s3`.
-- LED breathes smoothly on XIAO ESP32-C5 with `idf.py set-target esp32c5`.
-- WS2812 RGB LED breathes white smoothly on ESP32-C6-DevKitC-1-N8 with `idf.py set-target esp32c6`.
-- Serial output confirms LED driver init (LEDC or RMT) and breathing loop start.
-- Zero compiler warnings.
+
+- `cargo build --release` completes with zero `rustc` warnings on `riscv32imac-unknown-none-elf` (default DevKitC-C6 features).
+- `cargo clippy -- -D warnings` is clean for the default features.
+- `cargo build --release --no-default-features --features board-xiao-c6` and the matching clippy invocation are clean.
+- **`cargo run --release`** flashes via `espflash` on DevKitC-C6 (left USB-C / UART-C). The WS2812 breathes through the colour sequence over ~4 seconds per cycle; serial log confirms RMT init on GPIO 8.
+- Optional XIAO: `cargo run --release --no-default-features --features board-xiao-c6`. The GPIO 15 LED starts dark, then breathes smoothly over ~4 seconds (active-LOW polarity).

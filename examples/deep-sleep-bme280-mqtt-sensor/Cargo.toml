@@ -1,0 +1,29 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Radio pin: git-pin esp-hal, esp-radio, esp-rtos, and esp-alloc from tag
+# esp-hal-v1.2.1. Never mix crates.io esp-rtos = "0.4.0" with git esp-hal.
+# Wi-Fi STA, sleep / RTC, and RMT require esp-hal feature `unstable`.
+
+[package]
+name = "deep_sleep_bme280_mqtt_sensor"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[dependencies]
+esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
+esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable", "wifi"] }
+esp-rtos = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-alloc = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1" }
+embassy-executor = "0.10"
+embassy-time = "0.5"
+embassy-net = { version = "0.9.0", features = ["dhcpv4", "medium-ethernet", "tcp", "proto-ipv4"] }
+esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }
+esp-println = { version = "0.18.0", features = ["esp32c6", "log-04"] }
+log = "0.4"
+static_cell = "2.1"
+
+[features]
+default = ["board-devkitc-c6"]
+board-devkitc-c6 = []
+board-xiao-c6 = []

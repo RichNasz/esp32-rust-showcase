@@ -1,54 +1,136 @@
-# Deep Sleep BME280 + MQTT — Real IoT Sensor Node
+# Deep Sleep BME280 + MQTT Sensor Node (ESP32-C6)
 
 ## Overview
 
-Production IoT pattern. Wakes from deep sleep, reads temperature, humidity, and pressure
-from a BME280 sensor over I2C, connects to Wi-Fi, publishes a JSON payload via MQTT,
-then returns to deep sleep — all within a 15-second active window. Demonstrates the
-minimal wake → sense → transmit → sleep loop used in battery-powered sensor networks.
-A button on GPIO 0 triggers an immediate wakeup for on-demand readings.
+Duty-cycled rust-on-metal IoT node for ESP32-C6 (`no_std` `esp-hal`). Each wake reads
+temperature, humidity, and pressure from a BME280 over I2C, joins Wi-Fi as a station via
+`esp-radio`, publishes one JSON MQTT message, tears the radio down, and returns to deep
+sleep. Demonstrates the wake → sense → transmit → sleep loop used in battery-powered
+sensor networks. Chip is ESP32-C6 only.
 
-## Supported Boards
+On DevKitC-C6, GPIO 0 (boot button, RTC-capable) can trigger an on-demand reading. On
+XIAO ESP32-C6 the onboard boot button is GPIO 9, which is **not** an RTC GPIO and cannot
+wake from deep sleep; use the RTC timer or an external button on LP GPIO 0–7 (this
+example arms GPIO 0 / D0 as that external wake pin).
 
-- Seeed XIAO ESP32S3 (default)
+## Target Hardware
 
-## Requirements
+v1 chip: **ESP32-C6** only (`esp32c6`). Other SoCs are not in v1.
 
-- Wake from deep sleep on a 15-second RTC timer wakeup (maximum active window: 15 s).
-- Read temperature (°C), relative humidity (%), and pressure (hPa) from BME280 over I2C.
-- Connect to Wi-Fi using credentials stored in `sdkconfig.defaults` (CONFIG_WIFI_SSID / CONFIG_WIFI_PASSWORD).
-- Publish a single MQTT message in JSON format:
-  `{"temp":22.5,"hum":48.2,"pres":1013.1,"boot":42}`
-  to topic `sdd/sensor/bme280` on a configurable broker (CONFIG_MQTT_BROKER_URI).
-- Disconnect from Wi-Fi and MQTT cleanly before sleeping to flush TCP state.
-- GPIO 0 (boot button, active LOW) configured as ext1 wakeup source for immediate on-demand readings.
-- Blink LED (GPIO 21, active LOW) once after successful MQTT publish as confirmation.
-- Increment `RTC_DATA_ATTR uint32_t boot_count` on every wake.
-- Return to deep sleep after publish (or after timeout if Wi-Fi / broker unreachable).
+### Board Compatibility Checklist
 
-## Hardware Dependencies
+- [x] **Espressif ESP32-C6-DevKitC-1-N8** *(default)* — `board-specs/espressif/esp32-c6-devkitc-1-n8.md` — Cargo feature `board-devkitc-c6`
+- [x] **Seeed XIAO ESP32-C6** — `board-specs/seeed/xiao-esp32c6.md` — Cargo feature `board-xiao-c6`
 
-- Board-spec: board-specs/seeed/xiao-esp32s3.md (ESP32-S3, I2C SDA=GPIO5, SCL=GPIO6, LED GPIO 21 active LOW)
-- External: BME280 breakout board connected to D4 (SDA, GPIO 5) and D5 (SCL, GPIO 6), 3.3 V power.
+Do not add non-C6 boards. Adafruit HUZZAH32, Seeed XIAO ESP32S3, Seeed XIAO ESP32-C5, and
+YEJMKJ ESP32-S3 boards are **not in v1**.
 
-## Power Budget
+RTC / LP GPIOs on C6 are **0–7 only**. GPIO 9 (XIAO boot button) is **not** RTC-capable
+and **cannot** wake the chip from deep sleep. Do not invent a GPIO-9 wakeup workaround.
 
-| State | Current | Duration |
-|---|---|---|
-| Deep sleep | ~14 µA | 15 s |
-| Active + Wi-Fi + MQTT | ~68 mA | ≤ 15 s |
-| Target average (15 s cycle) | < 5 mA | — |
+## Features
+
+- Wake from deep sleep on an RTC timer of about **15 seconds**, measured from sleep entry.
+- Optional RTC GPIO wakeup on **GPIO 0** (active LOW, internal pull-up): DevKitC boot
+  button; XIAO external button on D0. Same sense+publish pipeline as a timer wake.
+- On every wake: increment a boot counter stored with `#[esp_hal::ram(persistent)]` (or
+  the equivalent `#[ram(unstable(...))]` form). Guard with magic + checksum so random
+  bytes after a raced reset are first boot, not a huge count. Lost on power-cycle.
+- Read BME280 over I2C in **forced** mode (one-shot, then standby). Pins from generated
+  `src/board.rs` (DevKitC default SDA/SCL GPIO 6/7; XIAO D4/D5 GPIO 22/23). Probe 0x76
+  then 0x77. Temperature °C, humidity %, pressure hPa.
+- Connect Wi-Fi STA (WPA2-Personal) via `esp-radio` + `embassy-net` DHCPv4. Association
+  timeout about 10 s. Hard active-window deadline **15 s** for the whole pipeline — if
+  the cycle is not done, abandon and sleep. Never block indefinitely on network or I2C.
+- Publish a single MQTT 3.1.1 QoS 0 message (retain false, no TLS) to topic
+  `sdd/sensor/bme280` with JSON
+  `{"temp":22.5,"hum":48.2,"pres":1013.1,"boot":42}`.
+- Wi-Fi SSID/password, MQTT broker host/port, and MQTT client id come from **compile-time
+  environment variables** (documented in the README / `.cargo/config.toml` `[env]`).
+  **Never** string-literal secrets in `src/`. **Never** log the PSK or other credentials.
+- Tear down STA / drop `esp-radio` before deep sleep so sleep current stays in microamps.
+- LED confirmation after a successful publish (three visible blinks), then dark for sleep.
+  Failure uses a distinct colour / pattern (DevKitC red vs green; XIAO blink vs no
+  success blink) and still sleeps. No hang.
+  - **DevKitC-C6**: WS2812 on GPIO 8 via RMT, GRB, ≤64/255, 800 kHz NRZ.
+  - **XIAO ESP32-C6**: GPIO 15 active-LOW binary blinks. No RMT on this board.
+- Pin numbers live only in generated `src/board.rs`. Board selection is a Cargo feature
+  (`board-devkitc-c6` default; XIAO: `--no-default-features --features board-xiao-c6`).
+- USB console: DevKitC **left** USB-C UART-bridge stays connected through sleep. Native
+  USB Serial/JTAG (DevKitC right port; XIAO) drops `/dev/cu.usbmodem*` on sleep entry.
+
+## Wakeup Strategy
+
+**RTC timer** (~15 s from sleep entry) **plus RTC GPIO 0** (active LOW) on both boards.
+GPIO 9 is not used as a wakeup source.
+
+Deep sleep does not return; the chip resets on wake. Sleep / RTC / RMT / radio APIs
+require `esp-hal` feature `unstable`.
 
 ## Connectivity
 
-- Wi-Fi: station mode (STA), WPA2-Personal.
-- MQTT: broker URI configurable via CONFIG_MQTT_BROKER_URI (e.g. `mqtt://192.168.1.100`).
-- Protocol: MQTT 3.1.1, QoS 0, no TLS (TLS variant covered in secure-ota-https example).
+Wi-Fi STA + MQTT 3.1.1 over TCP, no TLS (TLS is the `secure-ota-https` example).
+
+This is a **radio** example: git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc`
+from tag `esp-hal-v1.2.1`. Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`.
+`esp-radio` is an unstable beta.
+
+## Security Requirements
+
+Not production-targeted. Minimum baseline:
+
+- No hardcoded Wi-Fi / MQTT secrets in committed `src/`.
+- Never log PSKs, broker passwords, or tokens.
+- MQTT is plaintext QoS 0 for a local lab broker. Do not treat this as a secure cloud path.
+
+## Hardware Dependencies
+
+- Board-spec: `board-specs/espressif/esp32-c6-devkitc-1-n8.md` (WS2812 GPIO 8; boot GPIO 0;
+  default I2C GPIO 6/7; flash/monitor on the **left** USB-C UART-C port).
+- Board-spec: `board-specs/seeed/xiao-esp32c6.md` (user LED GPIO 15 active LOW; boot GPIO 9
+  is not RTC; I2C D4/D5 = GPIO 22/23; USB Serial/JTAG).
+- External: BME280 (or BMP280 for T/P only) breakout at 3.3 V on the board I2C pins.
+- Wi-Fi AP (2.4 GHz, WPA2-Personal) and an MQTT 3.1.1 broker (e.g. mosquitto, no TLS).
+
+The generator auto-invokes:
+
+- `esp32-deep-sleep-engineer` — RTC timer + GPIO 0 wakeup, persistent RAM, radio teardown, sleep
+- `esp32-ws2812-led-engineer` — DevKitC WS2812 RMT path
+
+## Power Budget
+
+C6 with Wi-Fi. Sleep floor from board-specs (~7–15 µA DevKitC with RTC domain; ~15 µA XIAO).
+Typical STA + MQTT active current ~80 mA average (peaks higher during TX). Radio teardown
+(~5–10 ms) is part of the active window. Target assumes a **typical** ~1 s active window;
+the 15 s figure is a hard timeout, not the expected duration.
+
+| Mode | Typical current | Duration | Energy per cycle |
+|---|---|---|---|
+| Active (CPU + Wi-Fi STA + MQTT) | ~80 mA | ~1 s typical (≤ 15 s timeout) | ~22 µAh |
+| Radio teardown | included in active | ~5–10 ms | — |
+| Deep sleep (RTC timer + GPIO 0 + persistent RAM) | ~7–15 µA | 15 s | ~0.06 µAh |
+| **Total per duty cycle** | — | ~16 s | ~22 µAh |
+
+**Average current (typical 1 s active):** `(80 mA × 1 s + 0.015 mA × 15 s) / 16 s ≈ 5.0 mA` — target **< 5 mA** when association is fast. A full 15 s timeout on a missing AP raises the average substantially; that path is for failure recovery, not the happy-path budget.
+
+**Sleep wakeup source:** RTC timer + RTC GPIO 0  
+**Wakeup interval:** 15 seconds
 
 ## Success Criteria
 
-- BME280 readings are non-zero and within plausible ranges (10–40 °C, 10–90 %, 900–1100 hPa).
-- MQTT message arrives at broker within 15-second active window on every cycle.
-- Device returns to deep sleep successfully after publish.
-- Button press (GPIO 0) triggers immediate wakeup and reading.
-- No Wi-Fi association failures across 10+ consecutive cycles in stable RF conditions.
+- `cargo build --release` completes with zero `rustc` warnings on `riscv32imac-unknown-none-elf` (default DevKitC-C6 features) without requiring real Wi-Fi secrets in source.
+- `cargo clippy --release -- -D warnings` is clean for the default features.
+- `cargo build --release --no-default-features --features board-xiao-c6` and the matching clippy invocation are clean.
+- **`cargo run --release`** flashes via `espflash` on DevKitC-C6 (**left** USB-C / UART-C). With valid compile-time credentials, a live AP, broker, and BME280: serial shows wake + readings; broker receives well-formed JSON; `boot` increments; device sleeps. Monitor stays connected across sleep on UART-C.
+- Optional XIAO: `cargo run --release --no-default-features --features board-xiao-c6`. USB monitor dropping on first sleep is expected.
+- BME280 readings in plausible ranges when the sensor is present (about 10–40 °C, 10–90 %, 900–1100 hPa).
+- Unreachable AP / broker / missing sensor: log a recoverable error (no secrets) and sleep within the 15 s active window — no hang.
+- GPIO 0 (DevKitC BOOT, or XIAO external on D0) wakes the device. GPIO 9 is not used for wakeup.
+- No stack overflow or watchdog across 10+ consecutive cycles in stable RF conditions.
+
+## Limitations
+
+- MQTT is unencrypted QoS 0. Use `secure-ota-https` patterns for TLS.
+- Wi-Fi is 2.4 GHz only on these C6 boards.
+- XIAO onboard BOOT (GPIO 9) cannot wake from deep sleep.
+- Dummy compile-time `[env]` values let the crate **build**; they will not associate with a real AP until the operator overrides them (README).

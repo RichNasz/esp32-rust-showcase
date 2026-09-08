@@ -1,0 +1,24 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Values required by shared-specs/cargo-conventions.md.
+# Heap is justified (Wi-Fi blob + embassy-net), so build-std includes alloc.
+#
+# Credentials are compile-time env, never string literals in src/.
+# Placeholder values exist so `cargo build --release` succeeds without a lab AP.
+# Override in the environment or edit this [env] table, then clean-rebuild
+# (Cargo may cache env; see README). Never commit real PSKs.
+
+[build]
+target = "riscv32imac-unknown-none-elf"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "espflash flash --monitor"
+
+[unstable]
+build-std = ["core", "alloc"]
+
+[env]
+WIFI_SSID = "unset"
+WIFI_PASSWORD = "unset"
+MQTT_BROKER_HOST = "192.168.1.1"
+MQTT_BROKER_PORT = "1883"
+MQTT_CLIENT_ID = "c6-bme280"

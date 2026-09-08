@@ -51,7 +51,9 @@ Do not create files outside this layout. Do not place spec files at the example 
 
 **Forbidden** (FAIL the generation if you emit any of these): `main.c`, `CMakeLists.txt`, `sdkconfig`, `sdkconfig.defaults`, `Kconfig.projbuild`, `idf_component.yml`, `main/` as an ESP-IDF component, `rust-toolchain.toml` (channel lives in `shared-specs/rust-toolchain.md`, not per example).
 
-Seed from `templates/main.rs.template`, `templates/Cargo.toml.template`, and `templates/FunctionalSpec.template.md`. Copy crate pins from `shared-specs/rust-toolchain.md` — do not invent versions.
+Seed crate files from `templates/main.rs.template`, `templates/Cargo.toml.template`, `templates/build.rs.template`, `templates/.cargo/config.toml.template`, `templates/board.rs.template`, and `templates/gitignore.template`. Copy crate pins from `shared-specs/rust-toolchain.md` — do not invent versions.
+
+Do **not** seed, write, or overwrite `specs/FunctionalSpec.md` (or any file under `specs/`). Only `esp32-sdd-functional-spec-creator` writes `FunctionalSpec.md`. This generator **reads** existing specs as inputs. `templates/FunctionalSpec.template.md` is not a seed for this skill.
 
 ## Radio pin (do not contradict rust-toolchain.md)
 
@@ -69,9 +71,9 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
 3. Read any `shared-specs/` files referenced in either spec (`coding-conventions.md`, `cargo-conventions.md`, `rust-toolchain.md`, plus domain specs as needed).
 4. Generate the full crate using the mandatory layout above:
    - `Cargo.toml` — package `name` is the kebab folder with hyphens → underscores; `edition = "2024"`; `publish = false`; license MIT; feature `esp32c6`; mutually exclusive board features `board-devkitc-c6` (default) and `board-xiao-c6`. Copy dependency pins from `rust-toolchain.md` / `cargo-conventions.md`.
-   - `src/main.rs` — line 1 `// AGENT-GENERATED — DO NOT EDIT BY HAND`, then `#![no_std]` `#![no_main]`. Entry is Embassy via `esp-rtos` (`esp_rtos::start` on TIMG0 + `FROM_CPU_INTR0` on C6). Top-level wiring only.
+   - `src/main.rs` — line 1 `// AGENT-GENERATED — DO NOT EDIT BY HAND`, then `#![no_std]` `#![no_main]`. Embassy entry is `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`. Do **not** use `#[esp_hal::main]` for Embassy — `esp-hal` 1.2.1 `#[esp_hal::main]` is blocking `fn main() -> !`. After `esp_hal::init`, call `esp_rtos::start` on TIMG0 + `FROM_CPU_INTR0` on C6. Top-level wiring only.
    - `src/board.rs` — generated from board-specs. `compile_error!` if both board features are enabled or if neither is enabled. Application code must not hardcode pin numbers.
-   - `build.rs` — linker / `esp-hal` build-time config; embed the LP-core image when applicable. Do not shell out to CMake.
+   - `build.rs` — linker / `esp-hal` build-time config; embed the LP-core image when applicable. Do not shell out to CMake. Emit `println!("cargo:rustc-link-arg=-Tlinkall.x");` **last** so the crate links (`linkall.x` must be the last linker script).
    - `.cargo/config.toml` — `target = "riscv32imac-unknown-none-elf"`, `runner = "espflash flash --monitor"`, `build-std = ["core"]` (add `"alloc"` only when the CodingSpec justifies a heap).
    - `.gitignore` — must exclude `target/`, `*.bin`, `*.elf`, `*.map`.
 5. Invoke domain skills as sub-workflows when the FunctionalSpec requires them:

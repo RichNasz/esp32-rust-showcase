@@ -89,8 +89,10 @@ Every generated `.md` file at the example root (`README.md`) must begin with:
 ### CHECK-08 — Cargo.toml has feature `esp32c6`
 `Cargo.toml` must enable `esp-hal` feature `esp32c6` (for example `esp-hal = { version = "1.2.1", features = ["esp32c6"] }` or the git-pin equivalent). v1 has no other chip feature.
 
-**FAIL** if `esp32c6` is absent from `Cargo.toml`.
-**FAIL** if a chip feature other than `esp32c6` is declared (`esp32`, `esp32s3`, `esp32c3`, `esp32c5`, `esp32h2`, …).
+Match chip features as **whole Cargo feature identifiers**, not substrings. The allowed chip feature is exactly `esp32c6`. Do **not** FAIL `esp32c6` as if it were the unrelated feature `esp32` — `esp32c6` contains those letters but is not that feature.
+
+**FAIL** if the exact feature identifier `esp32c6` is absent from `Cargo.toml`.
+**FAIL** if a different chip feature is declared as a whole identifier (`esp32`, `esp32s2`, `esp32s3`, `esp32c2`, `esp32c3`, `esp32c5`, `esp32h2`, `esp32p4`). Substring matches do not count.
 
 ### CHECK-09 — .cargo/config.toml target and runner
 `.cargo/config.toml` must contain:
@@ -118,16 +120,16 @@ If any board is mentioned in `FunctionalSpec.md`, the corresponding `board-specs
 **FAIL** if a referenced board-spec file is not found on disk.
 
 ### CHECK-13 — Forbidden ESP-IDF artifacts (hard FAIL)
-**FAIL** if any of the following exist anywhere under the example folder:
+**FAIL** if any of the following exist anywhere under the example folder, including `lp-core/` and every nested crate:
 
 - `main.c` (including `main/main.c` and `src/main.c`)
-- `CMakeLists.txt` (root, `main/`, or any subdirectory except an unrelated nested crate that must still not use CMake)
+- `CMakeLists.txt` — **any** path (example root, `main/`, `lp-core/`, and every other subdirectory). No exceptions.
 - `sdkconfig.defaults` (including `sdkconfig.defaults.<target>`)
 - `sdkconfig`, `sdkconfig.old`
 - `Kconfig.projbuild`
 - `idf_component.yml`
 
-These files belong to ESP-IDF. This repository is rust-on-metal. Their presence is never a warning.
+These files belong to ESP-IDF. This repository is rust-on-metal. Their presence is never a warning. `lp-core/` is an allowed nested **Cargo** crate, not an exception for CMake.
 
 ### CHECK-14 — No extra top-level files
 Only these names are permitted at the example root:

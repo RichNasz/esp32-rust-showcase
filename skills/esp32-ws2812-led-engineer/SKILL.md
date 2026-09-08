@@ -69,16 +69,18 @@ Do not introduce `sdkconfig` or menuconfig — board differences live in generat
 7. **Apply mandatory brightness and visibility rules** (sourced from
    `shared-specs/AIGenLessonsLearned.md` — non-negotiable):
 
-   - **Minimum brightness: 64/255 per active channel.** Values of 8/255 (~3%) are
-     invisible under normal room lighting and indistinguishable from a hardware fault
-     (e.g. unsoldered LED jumper). Always validate that CodingSpec-specified colours
-     meet this floor before generating the source.
+   - **Brightness cap: 64/255 per channel.** 64 is a **maximum**, not a floor. Values
+     above 64/255 are painfully bright on a WS2812 at typical viewing distance. Clamp
+     CodingSpec colours to this cap before generating the source.
+   - Values of 8/255 (~3%) are invisible under normal room lighting and
+     indistinguishable from a hardware fault (e.g. unsoldered LED jumper). CodingSpec
+     colours must be visible in room light **and** stay at or below the 64/255 cap.
    - **Minimum blink count: 3 repetitions** for any pass/fail/status indicator. A
      single 500 ms flash is impossible to observe reliably in a real demo environment.
    - **Scope**: these rules govern the *application-layer* colours and timing that the
      caller specifies in CodingSpec.md. This skill does not hardcode colours — it
-     enforces the rules in review and flags any CodingSpec values that fall below the
-     minimums before generating code.
+     enforces the rules in review and flags any CodingSpec values that exceed the cap
+     (or are too dim to see) before generating code.
 
 8. **Dependencies** — no extra ESP-IDF components. RMT lives in `esp-hal`. Do not add
    CMake `REQUIRES`, Kconfig symbols, or `sdkconfig.defaults.<target>` fragments.

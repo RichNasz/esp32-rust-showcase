@@ -4,4 +4,6 @@
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
+    // Emit last so linkall.x is the last linker script and the crate links.
+    println!("cargo:rustc-link-arg=-Tlinkall.x");
 }

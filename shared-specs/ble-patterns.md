@@ -3,46 +3,55 @@
 **Classification:** Human-authored shared spec
 **Applies to:** All examples that include BLE advertising, beaconing, or manufacturer data payloads.
 
+v1 BLE is rust-on-metal: `esp-radio` (controller) + **TrouBLE** (`trouble-host`, host). There is no NimBLE C stack, no Bluedroid, no `sdkconfig`, and no `CONFIG_BT_*` Kconfig.
+
 ---
 
 ## Stack Selection
 
-Choose the BLE stack based on the FunctionalSpec requirements:
-
-| Criterion | NimBLE | Bluedroid |
+| Criterion | TrouBLE + `esp-radio` | Anything else |
 |---|---|---|
-| Beacon / deep-sleep use case | **Preferred** | Not recommended |
-| Stack init time | ~50 ms | ~200 ms |
-| RAM footprint | ~30 KB | ~60–80 KB |
-| `nimble_port_stop()` teardown | Clean, synchronous | Not available |
-| GATT server / client | Supported | Supported |
-| Classic BT (A2DP, SPP, HFP) | Not supported | **Required** |
-| BLE 5.0 extended advertising | Supported (ESP32-C3/S3/C6/H2) | Supported |
+| Beacon / deep-sleep use case | **Required** in v1 | Not in v1 |
+| Host | `trouble-host` (Embassy async) | Do not generate NimBLE C or Bluedroid |
+| Controller | `esp-radio` BLE (`BleConnector` + TrouBLE `ExternalController`) | Do not call ESP-IDF controller APIs |
+| GATT server / client | Supported (TrouBLE GATT) | — |
+| Classic BT (A2DP, SPP, HFP) | Not supported | Not in v1 |
 
-**Decision rule**: Use NimBLE for any beacon or beacon+sleep example. Use Bluedroid only when Classic BT or legacy GATT stacks are explicitly required by the FunctionalSpec.
+**Decision rule:** Use TrouBLE + `esp-radio` for every BLE example in v1, including beacons and beacon+sleep. Do not emit NimBLE C, Bluedroid, `sdkconfig`, or `CONFIG_BT_*`.
+
+Pins: `esp-radio` is the git pin at tag `esp-hal-v1.2.1` (see `rust-toolchain.md`). Upstream `esp-hal` 1.2.1 BLE examples use `trouble-host` **0.7**. Enable `esp-hal` `unstable`, `esp-radio` features `esp32c6` + `ble` + `unstable`, and `esp-rtos` features `esp32c6` + `embassy` + `esp-radio`.
+
+Start the `esp-rtos` scheduler **before** constructing `BleConnector`. Radio init is internal to `BleConnector::new` / the radio types; there is no public `esp_radio::init()` on this HAL line.
 
 ---
 
 ## Non-Connectable Advertising — Parameter Template
 
-```c
-static struct ble_gap_adv_params adv_params = {
-    .conn_mode = BLE_GAP_CONN_MODE_NON,   // non-connectable
-    .disc_mode = BLE_GAP_DISC_MODE_NON,   // non-discoverable (beacon pattern)
-    .itvl_min  = 160,  // 160 × 0.625 ms = 100 ms
-    .itvl_max  = 160,
-    .channel_map = 0,  // all three channels (37, 38, 39)
-    .filter_policy = BLE_HCI_ADV_FILT_NONE,
-    .high_duty_cycle = 0,
-};
+Beacon / manufacturer-data examples advertise as **non-connectable**. TrouBLE takes wall-clock intervals (`embassy_time::Duration`); the controller still encodes BLE advertising intervals in 0.625 ms units internally.
+
+```rust
+let mut params = AdvertisementParameters::default();
+params.interval_min = Duration::from_millis(100);
+params.interval_max = Duration::from_millis(100);
+
+let advertiser = peripheral
+    .advertise(
+        &params,
+        Advertisement::NonconnectableScannableUndirected {
+            adv_data: &adv_data[..len],
+            scan_data: &[],
+        },
+    )
+    .await?;
 ```
 
-Advertising interval encoding: `value = desired_ms / 0.625`. Common values:
-- 100 ms → 160
-- 500 ms → 800
-- 1000 ms → 1600
+Common intervals (BLE spec: `units = desired_ms / 0.625`):
 
-Source pattern: `bluedroid/ble/ble_ibeacon/main/ibeacon_demo.c`
+- 100 ms → 160 units → `Duration::from_millis(100)`
+- 500 ms → 800 units
+- 1000 ms → 1600 units
+
+Connectable GATT examples use `Advertisement::ConnectableScannableUndirected` instead. Beacons must not.
 
 ---
 
@@ -54,36 +63,47 @@ The total advertising PDU is capped at **31 bytes**. Typical beacon layout:
 |---|---|---|---|
 | 0 | 2 | Flags AD type + length | `0x02, 0x01` |
 | 2 | 1 | Flags value | `0x06` (LE General Discoverable \| BR/EDR Not Supported) |
-| 3 | 1 | Manufacturer data length | `N+2` (payload bytes + 2 for company ID) |
+| 3 | 1 | Manufacturer data length | `N+3` (1 type + 2 company ID + N payload) — encoded as `N+3` in the length byte; AD type `0xFF` follows |
 | 4 | 1 | Manufacturer data AD type | `0xFF` |
-| 5 | 2 | Company ID (little-endian) | e.g., `0xFF, 0xFF` (test/internal) |
+| 5 | 2 | Company ID (little-endian) | e.g. `0xFF, 0xFF` (test/internal) |
 | 7 | N | Application payload | sensor data, sequence number, etc. |
 
 Maximum application payload: `31 - 7 = 24 bytes` with the header above.
 
-For iBeacon layout (Apple proprietary), prepend the iBeacon subtype `0x02, 0x15` after the company ID and follow with 16-byte UUID + 2-byte major + 2-byte minor + 1-byte TX power.
+Encode with TrouBLE rather than hand-packing bytes:
+
+```rust
+let mut adv_data = [0u8; 31];
+let len = AdStructure::encode_slice(
+    &[
+        AdStructure::Flags(LE_GENERAL_DISCOVERABLE | BR_EDR_NOT_SUPPORTED),
+        AdStructure::ManufacturerSpecificData {
+            company_identifier: 0xFFFF,
+            payload: &app_payload,
+        },
+    ],
+    &mut adv_data[..],
+)?;
+```
+
+`AdStructure::encode_slice` writes Flags as `02 01 06` and manufacturer data as `[N+3, 0xFF, company_id_le, payload…]`. Count the resulting `len` and fail closed if it would exceed 31.
+
+For iBeacon layout (Apple proprietary), prepend the iBeacon subtype `0x02, 0x15` after the company ID and follow with 16-byte UUID + 2-byte major + 2-byte minor + 1-byte TX power (still inside the 31-byte PDU).
 
 ---
 
 ## BLE Stack Teardown Sequence
 
-This exact call order is required before `esp_deep_sleep_start()`. Deviation leaves the radio powered.
+This order is required before deep sleep. Deviation leaves the radio powered (sleep current in milliamps instead of microamps).
 
-```c
-/* 1. Stop advertising (idempotent — safe to call even if already stopped) */
-ble_gap_adv_stop();
+1. **Stop advertising.** Drop the TrouBLE `Advertiser` (or otherwise stop `peripheral.advertise`). Safe if already stopped.
+2. **Stop the TrouBLE host runner.** Return from / cancel the `runner.run()` task so the host is no longer servicing HCI.
+3. **Drop the controller / `BleConnector`.** `esp-radio` tears down on `Drop`. Do not leave the connector alive across sleep.
+4. **Then** enter deep sleep (`esp-hal` RTC sleep). Do not call ESP-IDF `esp_bt_controller_*` or C host-stack port APIs — those symbols do not exist here.
 
-/* 2. Signal the NimBLE host task to exit its event loop */
-int rc = nimble_port_stop();
-assert(rc == 0);
+`esp-radio` must be started only after `esp_rtos::start(...)`. After wakeup the chip resets; bring the scheduler and radio up again from `main`.
 
-/* 3. Free NimBLE host resources + controller disable/deinit */
-nimble_port_deinit();
-```
-
-**Important (ESP-IDF 5.5.x)**: Do NOT call `esp_bt_controller_disable()` or `esp_bt_controller_deinit()` explicitly. `nimble_port_deinit()` handles both internally. Calling them after `nimble_port_deinit()` causes a double-deinit crash. No `#include "esp_bt.h"` is needed for NimBLE projects.
-
-**Why this order matters**: `nimble_port_stop()` posts an event to the NimBLE host task and blocks until the task exits. `nimble_port_deinit()` then disables and deinits the controller internally.
+**Why this order matters:** advertising stop is host-side; dropping the connector is what powers down the controller. Sleeping while the connector is live leaves the radio on.
 
 ---
 
@@ -93,7 +113,7 @@ nimble_port_deinit();
 
 | Mode | Use when | BLE teardown needed? |
 |---|---|---|
-| Modem sleep (`esp_wifi_set_ps` / BLE connection intervals) | BLE connection stays alive between events | No — controller manages radio duty cycle |
+| Connection-interval / controller duty cycle | BLE connection stays alive between events | No — controller manages radio duty cycle |
 | Deep sleep | No BLE activity during sleep period | **Yes** — full teardown required |
 
 ### Typical Sleep Currents by Chip (deep sleep, RTC timer wakeup)
@@ -106,7 +126,7 @@ nimble_port_deinit();
 | ESP32-C6 | ~7 µA (with LP core off) |
 | ESP32-H2 | ~7 µA |
 
-Values are approximate; consult the chip datasheet for the specific power mode and RTC peripheral configuration.
+Values are approximate; consult the chip datasheet for the specific power mode and RTC peripheral configuration. v1 hardware bar is ESP32-C6.
 
 ### Power Budget Formula
 
@@ -119,77 +139,34 @@ Include BLE teardown time (~5–10 ms) in `active_window_ms`.
 
 ---
 
-## Advertising Window Timeout — Semaphore Pattern
+## Advertising Window Timeout — Embassy Timer
 
-NimBLE callbacks run on the NimBLE host task, not on `app_main`. Use a semaphore to synchronize:
+TrouBLE callbacks run on the Embassy executor, not on a FreeRTOS host task. Time the advertising window with `embassy_time` (`Timer` / `select`), not a FreeRTOS semaphore or `esp_timer`.
 
-```c
-static SemaphoreHandle_t s_adv_done;
-static esp_timer_handle_t s_adv_timer;
+Pattern:
 
-static void adv_timer_cb(void *arg)
-{
-    ble_gap_adv_stop();
-    xSemaphoreGive(s_adv_done);
-}
+1. Start `esp-rtos` (`esp_rtos::start` on TIMG0 + `FROM_CPU_INTR0` on C6).
+2. Construct `BleConnector` + `ExternalController` + TrouBLE `Host` / `Peripheral`.
+3. `join` the TrouBLE `runner.run()` task with an async block that calls `peripheral.advertise(...)`.
+4. Bound the window with `Timer::after(...)` or `select` against the advertiser. When the timer fires, drop the advertiser (stops advertising).
+5. Tear down (see above), then deep sleep.
 
-void app_main(void)
-{
-    s_adv_done = xSemaphoreCreateBinary();
+Heap (`esp-alloc`) is typical for TrouBLE + radio blobs; the example CodingSpec must justify it (radio / HCI / host buffers). Do not allocate after init unless that justification covers it.
 
-    /* NVS is required before any BLE API — PHY calibration is stored in NVS */
-    nvs_flash_init();
-
-    /* nimble_port_init() handles controller init internally — do NOT call
-       esp_bt_controller_init/enable explicitly */
-    nimble_port_init();
-    /* ... set ble_hs_cfg.sync_cb, nimble_port_freertos_init() ... */
-
-    esp_timer_create_args_t timer_args = {
-        .callback = adv_timer_cb,
-        .name = "adv_window",
-    };
-    esp_timer_create(&timer_args, &s_adv_timer);
-    esp_timer_start_once(s_adv_timer, ADV_WINDOW_US); /* µs */
-
-    /* Block until advertising window expires */
-    xSemaphoreTake(s_adv_done, portMAX_DELAY);
-
-    /* Now safe to tear down BLE stack */
-    /* ... teardown sequence ... */
-
-    esp_deep_sleep_start();
-}
-```
-
-Source pattern: `ble_get_started/nimble/NimBLE_Beacon/` in ESP-IDF examples.
+Do not generate NVS-as-Kconfig or `nvs_flash_init()` C calls. PHY / radio init is `esp-radio`'s job. Persist app data with `esp-storage` only when the CodingSpec says so.
 
 ---
 
-## sdkconfig Requirements — NimBLE Broadcaster-Only Role
+## Broadcaster-Only Role (no scanning, no connections)
 
-Minimum Kconfig symbols for a NimBLE beacon (no scanning, no connections):
+There is no `sdkconfig` and no Bluetooth Kconfig. Broadcaster-only is expressed in Rust:
 
-```
-CONFIG_BT_ENABLED=y
-CONFIG_BT_NIMBLE_ENABLED=y
-CONFIG_BT_CONTROLLER_ENABLED=y
-CONFIG_BT_NIMBLE_ROLE_BROADCASTER=y
-CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
-CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
-CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=n
-CONFIG_BT_NIMBLE_MAX_CONNECTIONS=0
-CONFIG_BT_NIMBLE_SECURITY_ENABLE=n
-```
+- Use `Advertisement::NonconnectableScannableUndirected` (or non-connectable equivalent).
+- Size TrouBLE `HostResources` for **zero connections** when the example never accepts a link (`CONNECTIONS_MAX = 0`, no GATT server).
+- Do not enable TrouBLE central/scan features unless the FunctionalSpec requires scanning.
+- Do not generate a security manager / bonding path for a non-connectable beacon.
 
-The `CONFIG_BT_NIMBLE_SECURITY_ENABLE=n` line is mandatory — without it, broadcaster-only builds fail with `undefined reference to 'ble_sm_deinit'` (ESP-IDF 5.5.x bug). A non-connectable broadcaster has no use for the security manager.
-
-Disabling observer/central/peripheral roles reduces NimBLE RAM footprint by ~4–8 KB.
-
-For BLE 5.0 extended advertising (ESP32-C3/S3/C6/H2 only), additionally set:
-```
-CONFIG_BT_NIMBLE_EXT_ADV=y
-```
+BLE 5 extended advertising is optional and only when the FunctionalSpec asks for it (ESP32-C6 supports it). Prefer legacy 31-byte PDUs for beacons unless extended adv is specified.
 
 ---
 
@@ -197,15 +174,12 @@ CONFIG_BT_NIMBLE_EXT_ADV=y
 
 | Issue | Root Cause | Fix |
 |---|---|---|
-| Double-init crash (`BLE_INIT: controller init failed`) | Explicit `esp_bt_controller_init/enable` before `nimble_port_init()` | Do NOT call them — `nimble_port_init()` handles controller init internally on ESP-IDF 5.5.x |
-| Double-deinit crash | Explicit `esp_bt_controller_disable/deinit` after `nimble_port_deinit()` | Do NOT call them — `nimble_port_deinit()` handles controller teardown internally on ESP-IDF 5.5.x |
-| `BLE_INIT: controller init failed` | Missing `nvs_flash_init()` before BLE init | Call `nvs_flash_init()` before `nimble_port_init()` — BLE stores PHY calibration in NVS |
-| Task WDT timeout during advertising window | `app_main` blocks on semaphore longer than 5 s WDT timeout | Call `esp_task_wdt_delete(NULL)` before `xSemaphoreTake`, `esp_task_wdt_add(NULL)` after |
-| Advertising never stops | Timer callback calls `ble_gap_adv_stop()` from wrong context | `esp_timer` callbacks are safe; FreeRTOS timer callbacks are also safe; ISR callbacks are not |
-| 31-byte PDU overflow | Payload + headers exceed limit | Count bytes: Flags (3) + Mfr header (4) + company ID (2) = 9 bytes consumed before payload |
-| GPIO state lost after wakeup | `gpio_hold_en()` not called before deep sleep | Call `gpio_hold_en(pin)` after BLE teardown, before `esp_deep_sleep_start()` |
-| High average current | BLE teardown skipped — radio stays powered during sleep | Always execute full teardown sequence before `esp_deep_sleep_start()` |
-| NimBLE host task stack overflow | Default stack size too small for complex callbacks | Set `CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE` to at least 4096 |
-| `undefined reference to 'ble_sm_deinit'` linker error on broadcaster-only builds | ESP-IDF 5.5.x bug: `ble_hs.c` calls `ble_sm_deinit()` when `NIMBLE_BLE_SM=1`, but `ble_sm.c` only defines it when `BLE_STATIC_TO_DYNAMIC=1` (default: 0) | Set `CONFIG_BT_NIMBLE_SECURITY_ENABLE=n` — a non-connectable broadcaster has no use for the SM, and disabling it makes `NIMBLE_BLE_SM=0` |
-| `sdkconfig.defaults` changes not applied after menuconfig | ESP-IDF applies `sdkconfig.defaults` only when `sdkconfig` does not exist; an existing `sdkconfig` always wins | Delete `sdkconfig` and `sdkconfig.old` at the project root before a clean rebuild |
-| Boot button not usable for deep-sleep wakeup on ESP32-C6/C5 | GPIO 9 (XIAO boot button on C6 and C5) is not an RTC GPIO; only GPIO 0–7 (C6) or 0–6 (C5) support `ext1` wakeup. `esp_sleep_enable_ext1_wakeup()` will return `ESP_ERR_INVALID_ARG` or silently fail to wake at runtime. | Use timer-only wakeup on these targets. If button wakeup is essential, connect an external button to an LP-capable GPIO (0–7 on C6, 0–6 on C5). Document the limitation in the Supported Boards table. |
+| Duplicate `esp-hal` / radio resolve failure | crates.io `esp-radio = "1.0.0-beta.0"` next to `esp-hal = "1.2.1"` | Git-pin `esp-radio` **and** `esp-hal` at tag `esp-hal-v1.2.1` (`rust-toolchain.md`) |
+| Panic: scheduler not initialized | `BleConnector::new` before `esp_rtos::start` | Start `esp-rtos` first (C6: timer + `FROM_CPU_INTR0`) |
+| Radio left powered in deep sleep | Advertiser / `BleConnector` still live | Stop advertising, stop runner, drop connector, then sleep |
+| 31-byte PDU overflow | Payload + headers exceed limit | Count bytes: Flags (3) + Mfr header (4) + company ID (2) = 9 bytes consumed before payload; use `AdStructure::encode_slice` and check `len` |
+| GPIO state lost after wakeup | Output not held across sleep | Use `esp-hal` GPIO hold / RTC hold after BLE teardown, before deep sleep |
+| High average current | BLE teardown skipped | Always execute the full teardown sequence before deep sleep |
+| Boot button not usable for deep-sleep wakeup on ESP32-C6 | GPIO 9 (XIAO boot button) is not an RTC GPIO; only GPIO 0–7 support ext1/LP wakeup | Timer-only wakeup on that board, or an external button on LP GPIO 0–7. Document in the Supported Boards table |
+| Mixing blocking and async radio handles | `into_async` on a different executor than the owner | `into_async` only on the Embassy executor / core that owns the driver |
+| Generated NimBLE C / `sdkconfig` | Reading stale IDF docs | This file is the BLE source of truth: TrouBLE + `esp-radio` only |

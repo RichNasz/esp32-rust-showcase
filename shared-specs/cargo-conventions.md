@@ -23,7 +23,9 @@ There is **no** `Cargo.toml` at the repository root and **no** `[workspace]` tab
 
 ## Cargo.toml — Dependencies and Features
 
-Every example depends on `esp-hal` with feature `esp32c6` (the only chip feature in v1). Add `unstable` when the example uses radio (Wi-Fi / BLE / ESP-NOW) or sleep / RTC APIs that require it.
+Every example depends on `esp-hal` with feature `esp32c6` (the only chip feature in v1) and on `esp-rtos` + Embassy (`embassy-executor`, `embassy-time`). Add `esp-hal` `unstable` when the example uses radio (Wi-Fi / BLE / ESP-NOW) or sleep / RTC APIs that require it.
+
+Non-radio sample (crates.io `esp-hal` 1.2.1):
 
 ```toml
 [package]
@@ -35,6 +37,9 @@ publish = false
 
 [dependencies]
 esp-hal = { version = "1.2.1", features = ["esp32c6"] }
+esp-rtos = { version = "0.4.0", features = ["esp32c6", "embassy"] }
+embassy-executor = "0.10"
+embassy-time = "0.5"
 esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }
 esp-println = { version = "0.18.0", features = ["esp32c6", "log-04"] }
 log = "0.4"
@@ -45,12 +50,23 @@ board-devkitc-c6 = []
 board-xiao-c6 = []
 ```
 
+Radio examples **must not** paste crates.io `esp-radio = "1.0.0-beta.0"` next to crates.io `esp-hal = "1.2.1"` (that crates.io radio crate depends on `esp-hal ~1.1.0` and will not resolve). Use the git pin from `rust-toolchain.md` and take `esp-hal` from the same tag so path deps unify:
+
+```toml
+esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
+esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
+esp-rtos = { version = "0.4.0", features = ["esp32c6", "embassy", "esp-radio"] }
+embassy-executor = "0.10"
+embassy-time = "0.5"
+# plus wifi and/or ble and/or esp-now on esp-radio, matching the example
+```
+
 Rules:
 
 - Pin versions from `rust-toolchain.md` (looked up 2026-09-08). Do not use `"*"`.
 - Enable `esp-hal` feature `"unstable"` **in addition to** `"esp32c6"` when radio or sleep needs it.
-- `esp-rtos` (with its `embassy` feature) is the Embassy integration path. Time is `embassy_time`.
-- `esp-radio` is **only** for radio examples. Pin `1.0.0-beta.0` and treat it as unstable (see `rust-toolchain.md`).
+- `esp-rtos` (features `esp32c6` + `embassy`) is the Embassy integration path. Time is `embassy_time`. Radio examples also enable `esp-rtos` feature `esp-radio`.
+- `esp-radio` is **only** for radio examples. Git pin at tag `esp-hal-v1.2.1` — see `rust-toolchain.md`. Treat it as an unstable beta. Enable `wifi` / `ble` / `esp-now` features as the example requires.
 - `esp-alloc` is **only** when the CodingSpec justifies a heap.
 - `esp-bootloader-esp-idf` and `esp-storage` are **only** when the example needs IDF-compatible image metadata or flash storage.
 - Board features `board-devkitc-c6` (default) and `board-xiao-c6` are **mutually exclusive**. Generated `src/board.rs` (or `main.rs`) must `compile_error!` if both are enabled or if neither is enabled.
@@ -74,6 +90,7 @@ build-std = ["core"]
 ```
 
 - If the CodingSpec justifies `alloc` / `esp-alloc`, use `build-std = ["core", "alloc"]`.
+- Custom partition tables (OTA, extra NVS): pass `--partition-table partitions.csv` on the runner. See `partition-table-profiles.md`. Do not use `sdkconfig` / `CONFIG_PARTITION_TABLE_*`.
 - Do not set a different `--target` or runner. Do not use `probe-rs` or `idf.py` as the runner.
 - Do not commit a `config.toml` that selects Xtensa targets.
 
@@ -117,3 +134,4 @@ cargo run --release --no-default-features --features board-xiao-c6
 | `channel = "esp"` or `espup` | v1 uses rustup stable |
 | Chip features other than `esp32c6` | Other SoCs are not in v1 |
 | Both board features enabled without `compile_error!` | Pins would be silently wrong |
+| crates.io `esp-radio = "1.0.0-beta.0"` with crates.io `esp-hal = "1.2.1"` | crates.io radio depends on `esp-hal ~1.1.0` and will not resolve |

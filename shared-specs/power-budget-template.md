@@ -3,6 +3,8 @@
 **Classification:** Human-authored shared spec
 **Applies to:** All low-power examples (deep sleep, light sleep, ULP co-processor)
 
+There is no `sdkconfig`. Generators must not emit `CONFIG_PM_*`, `CONFIG_ESP_SLEEP_*`, `CONFIG_FREERTOS_*`, `CONFIG_ULP_*`, or any other Kconfig.
+
 ---
 
 ## How to Use This Template
@@ -11,8 +13,7 @@ Copy the tables below into the example's `FunctionalSpec.md` under a `## Power B
 
 The generator reads these values to:
 
-- Select the appropriate `sdkconfig.defaults` power options.
-- Configure sleep wakeup sources and timing.
+- Configure sleep wakeup sources and timing in Rust (`esp-hal` / Embassy). Do not emit sdkconfig.
 - Validate that the estimated current draw meets the target.
 
 ---
@@ -80,7 +81,7 @@ These are datasheet-typical values for reference when filling in the template.
 
 ## sdkconfig.defaults Snippets for Common Power Modes
 
-The full-project-generator will emit these based on the FunctionalSpec power budget. Included here for reference.
+Do **not** emit these. There is no sdkconfig; they are IDF leftovers for human reference only. Configure sleep in Rust (`esp-hal` / `esp-rtos` / Embassy).
 
 ### Deep Sleep with Timer Wakeup
 

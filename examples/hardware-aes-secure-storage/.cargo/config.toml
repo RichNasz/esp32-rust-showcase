@@ -1,0 +1,11 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Dedicated `storage` partition is in partitions.csv (FunctionalSpec).
+
+[build]
+target = "riscv32imac-unknown-none-elf"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "espflash flash --monitor --partition-table partitions.csv"
+
+[unstable]
+build-std = ["core"]

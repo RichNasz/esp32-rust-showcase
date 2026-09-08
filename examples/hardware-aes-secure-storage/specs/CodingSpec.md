@@ -1,98 +1,152 @@
-# ==================== BOARD SELECTION ====================
-# Change only this section, then regenerate the project
-#
-# Board: seeed-xiao-esp32s3          ← ACTIVE / DEFAULT
-#
-# =======================================================
-# Institutional Memory: shared-specs/AIGenLessonsLearned.md — read before regenerating
+<!-- See shared-specs/AIGenLessonsLearned.md — read before generating. -->
 
-# Coding Specification — Hardware AES Secure Storage
+# Coding Specification — Hardware AES Secure Storage (ESP32-C6)
 
 ## Architecture
 
-Two-layer design. A reusable secure_storage module (separate .c/.h pair) encapsulates all
-AES crypto and NVS operations behind a clean read/write API. App_main uses this module to
-run a round-trip self-test and a throughput benchmark — it never calls mbedTLS or NVS
-directly. This separation keeps the demo concise and makes the storage API reusable.
+Single Embassy firmware. Entry is an async main provided by `esp-rtos`; after
+`esp_hal::init`, start the Embassy executor on TIMG0 + `FROM_CPU_INTR0` (C6). Main
+wires peripherals, starts the AES work-queue backend, loads or creates the key,
+runs the round-trip self-test, logs throughput, indicates pass/fail on the LED,
+then idles. There is no radio and no deep sleep.
+
+Top-level wiring lives in `src/main.rs`. Board GPIO / LED kind / polarity live only
+in generated `src/board.rs`. Domain modules:
+
+- **Crypto** — hardware AES-256-CBC encrypt/decrypt, PKCS#7 pad/unpad, 64 KiB
+  throughput measurement.
+- **Store** — `esp-storage` flash persistence for the key sector and the blob
+  sector. Not IDF NVS.
+- **LED** — pass/fail indication (WS2812 vs GPIO).
+
+Two compile-time LED paths, selected by mutually exclusive Cargo board features:
+
+- **WS2812 path** (default `board-devkitc-c6`): RMT generates 800 kHz NRZ.
+- **GPIO LED path** (`board-xiao-c6`): simple active-LOW LED. Do not run the RMT
+  encoder on this board.
+
+## Board Abstraction
+
+`src/board.rs` is generated from `board-specs/`. It exposes LED GPIO, LED kind
+(WS2812 vs simple GPIO), and polarity. `compile_error!` if both `board-devkitc-c6`
+and `board-xiao-c6` are enabled, or if neither is. Application code must not
+hardcode pin numbers. Chip feature is `esp32c6` only.
+
+## Crypto
+
+Enable `esp-hal` feature `unstable` — AES, FLASH, and RMT require it on this pin.
+
+Use the ESP32-C6 AES accelerator (`esp_hal::aes`). On the 1.2 line the work-queue
+backend plus a CBC context is the multi-block path; key length is taken from the
+32-byte key, not a mode enum. Hardware AES is required; do not substitute a
+pure-software crate.
+
+CBC with a unique IV per blob is mandatory. Generate a fresh IV from the hardware
+RNG for every write, including every self-test. Store the IV with the ciphertext
+(IV is not a secret in CBC, but do not treat it as a key). Never reuse an IV with
+the same key.
+
+Pad any plaintext to the 16-byte block boundary with PKCS#7 before encrypt. Reject
+invalid padding on decrypt. Self-test plaintext must not be a multiple of the block
+size so padding is actually exercised.
+
+The 64 KiB throughput buffer is static (the Embassy main stack cannot hold it).
+Time the encrypt with the HAL monotonic clock (busy-wait AES does not advance
+Embassy time). Log an integer MB/s figure; no heap, no `f32` formatting crate.
+Target ≥ 2 MB/s on C6.
+
+Start the AES backend once and keep it alive for every encrypt/decrypt. Dropping
+it leaves queued operations incomplete.
+
+Never log the AES key, key checksum material, or raw key bytes.
+
+## Storage
+
+Use `esp-storage` `FlashStorage` constructed from the FLASH singleton. Feature
+`esp32c6` on `esp-storage` (crates.io 0.10.0). This is raw flash, not IDF NVS.
+
+Persist at fixed offsets inside the dedicated `storage` partition from the
+partition table (base 0x110000): one 4 KiB sector for the key record, the next
+sector for the blob (IV + ciphertext length + ciphertext). Detect a valid key by
+magic plus a checksum so erased flash (0xFF) is first boot, not a loaded key.
+
+The Embassy main stack is small. Prefer NOR erase + aligned `write_nor` / `read_nor`
+so the driver does not place a 4 KiB sector bounce buffer on the stack. Align
+records to four bytes.
+
+First boot: fill a 32-byte key from the hardware RNG, write it, log that it was
+generated and saved. Later boots: load it and log that it was loaded. Do not
+regenerate a valid key.
+
+Self-test failure (crypto, padding, compare, or flash I/O) is a logged FAIL plus
+the fail LED pattern. Do not panic.
+
+## WS2812 path
+
+Use `esp_hal::rmt` (`PulseCode` newtype on the 1.2 line). Encode 800 kHz NRZ
+(T0H ~300 ns / T0L ~900 ns, T1H ~900 ns / T1L ~300 ns) and a reset/latch of at
+least 50 µs low, preferably in the RMT buffer. Hold the line LOW after a frame.
+Pack colours as GRB, not RGB.
+
+Write black once at init. Cap every channel at 64/255. Pass is green at that cap;
+fail is red at that cap. Three blinks: ~500 ms on/off for pass, ~100 ms on/off for
+fail. End dark. Time waits with Embassy, not busy-wait. Log GPIO, GRB order, and
+that RMT is driving NRZ at INFO.
+
+## GPIO LED path
+
+Drive the XIAO LED at the polarity documented in its board-spec (active LOW).
+Three blinks at the same pass/fail cadences as the WS2812 path. No PWM, no LEDC,
+no RMT.
 
 ## Key Constraints
 
-- Algorithm: AES-256-CBC via mbedTLS with hardware acceleration enabled
-  (CONFIG_MBEDTLS_HARDWARE_AES=y). The hardware accelerator is the primary point of this
-  example; the sdkconfig must not omit this setting.
-- IV: a fresh random IV must be generated for every write operation. The IV is stored
-  prepended to the ciphertext in NVS. IV reuse with the same key breaks CBC confidentiality.
-- Key: generated once on first boot from a CSPRNG, stored in NVS. The module must detect
-  whether a key already exists and load it rather than regenerate.
-- Padding: plaintext must be padded to the AES block boundary before encryption. The module
-  must handle inputs of any length correctly.
-- Benchmark: encrypt 64 KB of random data and log throughput in MB/s. Hardware AES on
-  ESP32-S3 should achieve at least 5× the throughput of a software-only build.
+- AES-256-CBC only; unique IV per write; PKCS#7 padding.
+- 64 KiB throughput encrypt; log MB/s; ≥ 2 MB/s is the FunctionalSpec bar.
+- No heap. No `std`. No FreeRTOS. No `sdkconfig`. No IDF NVS. No mbedTLS.
+- Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0, `esp-storage`
+  0.10.0. Do not git-pin the radio stack.
+- `build.rs` emits `-Tlinkall.x` last.
+- Embassy entry: `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`. Do not
+  use blocking `#[esp_hal::main]`.
+- Zero `unwrap()` / `expect()` on fallible HAL, AES, or flash in the demo path.
+  Init may halt if clocks or RMT cannot start.
+- `.cargo/config.toml` runner must pass `--partition-table partitions.csv`.
 
-## Preferred Libraries and APIs
+## Preferred Crates and APIs
 
-Use mbedTLS (ESP-IDF built-in) for all AES operations. No external crypto library is needed.
-Use NVS for key and blob storage. The secure_storage module should return esp_err_t codes
-so callers never need to understand mbedTLS return values.
+- `esp-hal` AES work-queue / CBC context (reason: hardware accelerator; key length
+  from the key; software AES would miss the point of the example).
+- `esp-storage` `FlashStorage` (reason: flash-backed blobs without IDF NVS).
+- `esp-hal` RNG (reason: IV and first-boot key material; no software seed).
+- `esp-hal` RMT for WS2812 (reason: hardware NRZ; a GPIO level produces no light).
+- `embassy-time` for LED cadence (reason: cooperative delay).
+- `log` + `esp-println` (`log-04`) for INFO operational events.
 
 ## Non-Functional Requirements
 
-- The API must return meaningful error codes (key not found, buffer too small) without
-  exposing crypto internals to the caller.
-- mbedTLS functions return integers, not esp_err_t. All mbedTLS errors must be caught,
-  logged, and mapped to appropriate esp_err_t values before propagating.
-- Self-test failure must be reported visually (LED pattern) and over serial, but must not
-  abort the device. An example should not crash on a test bench.
-- The README must explicitly note that this example demonstrates the hardware crypto API,
-  not production key lifecycle management. Production systems should use flash encryption,
-  not plaintext NVS key storage.
+- Logging: INFO for key generated/loaded, self-test result, throughput, LED init.
+  ERROR for flash/AES failures. Never log the key.
+- Concurrency: one Embassy task is enough; do not spawn extra tasks.
+- Error recovery: self-test failure is FAIL + LED + idle, not abort.
+- Memory: static 64 KiB bench buffer; stack-bounded self-test buffers.
 
 ## Gotchas
 
-- IV uniqueness is a hard security requirement for AES-CBC. Never reuse an IV with the
-  same key, even across reboots. Generating a fresh IV per write from a CSPRNG is correct.
-- mbedTLS error codes are negative integers and are not compatible with ESP-IDF error
-  logging macros. Use mbedtls_strerror() to produce human-readable error descriptions.
-- Hardware AES operates transparently through the mbedTLS API when
-  CONFIG_MBEDTLS_HARDWARE_AES=y. The API call sites do not change — only the sdkconfig
-  enables the accelerator.
-
-## LED Code Paths
-
-Two LED code paths are required to support all six boards:
-
-- **Simple GPIO path** (primary boards — XIAO S3, XIAO C6, XIAO C5, HUZZAH32): drive the
-  LED GPIO high or low. Use `CONFIG_EXAMPLE_LED_GPIO` and `CONFIG_EXAMPLE_LED_ACTIVE_LEVEL`
-  exactly as in the current implementation. No extra component dependency.
-
-- **WS2812 RMT path** (primary boards — YEJMKJ DevKitC S3 GPIO 48, ESP32-C6-DevKitC GPIO 8):
-  drive the LED via raw RMT (same approach as the blinky example). Use clearly visible
-  colours capped at 64/255 to protect eyes on bare LEDs: green (g=64) for pass, red (r=64)
-  for fail. Blink 3 times for both pass and fail so the indication is impossible to miss —
-  use 500 ms on/off for pass (slow, calm) and 100 ms on/off for fail (fast, urgent). Mirror
-  the blinky example's RMT timing constants (10 MHz resolution, GRB byte order).
-
-Select the path with `#if CONFIG_EXAMPLE_LED_WS2812` / `#else` / `#endif`. No
-`#ifdef CONFIG_IDF_TARGET_*` guards are needed — WS2812 compiles cleanly on all targets.
-
-## Kconfig Symbols
-
-Add to `main/Kconfig.projbuild` inside the existing `menu "Example Configuration"`:
-
-- `EXAMPLE_LED_GPIO` (int, 0–48) — GPIO for the status LED; default 21.
-- `EXAMPLE_LED_ACTIVE_LEVEL` (int, 0–1) — 0 = active LOW, 1 = active HIGH; default 0.
-  Not used when `EXAMPLE_LED_WS2812` is enabled.
-- `EXAMPLE_LED_WS2812` (bool) — default n. When y, the WS2812 RMT path is compiled in
-  instead of the plain GPIO path. Set via menuconfig for secondary DevKitC boards.
-
-## Component Dependencies
-
-`main/CMakeLists.txt` REQUIRES must include `led_strip` (for WS2812 RMT driver) in addition
-to `driver`, `esp_hw_support`, `esp_timer`, `mbedtls`, and `nvs_flash`. The `led_strip`
-component is always present in ESP-IDF 5.x and adds negligible overhead when the WS2812
-path is compiled out via `#if CONFIG_EXAMPLE_LED_WS2812`.
-
-## File Layout (non-standard files)
-
-- main/secure_storage.c — AES + NVS implementation
-- main/secure_storage.h — public API header
+- IV uniqueness is a hard CBC requirement. A fixed IV is a security defect
+  (`security-baseline.md`).
+- AES, FLASH, and RMT live behind `esp-hal` `unstable` on this pin — document
+  that in the README.
+- `FlashStorage::write` / `read` always allocate a 4 KiB stack bounce; the
+  Embassy main stack is 8 KiB. Use aligned NOR operations instead.
+- A GPIO level on the DevKitC WS2812 produces no light — indistinguishable from
+  an unsoldered LED jumper until NRZ + brightness ≥ room-light visibility are
+  confirmed.
+- Channel values above 64/255 are painfully bright; 8/255 is invisible in room
+  light. A single 500 ms blink is easy to miss — use three.
+- XIAO LED is active LOW: forgetting polarity looks like “stuck on” or “never on”.
+- Do not mix crates.io `esp-rtos` 0.4.0 with git `esp-hal`. This example is
+  non-radio.
+- Plaintext flash keys are a demo limitation, not a bug. Do not “fix” them by
+  hardcoding a key in `src/`.
+- The AES backend must remain started for the lifetime of encrypt/decrypt calls.

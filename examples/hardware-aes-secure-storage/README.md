@@ -1,20 +1,24 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
-     Generated from specs/ using esp32-sdd-documentation-generator skill
+     Generated from specs/ using esp32-sdd-full-project-generator skill
      Date: 2026-09-08 | Agent: Grok
      ================================================ -->
 
-# Hardware AES Secure Storage
+# Hardware AES Secure Storage — ESP32-C6
 
-> On-chip AES-256 via `esp-hal` plus flash-backed ciphertext in `esp-storage`.
+> On-chip AES-256-CBC via `esp-hal` plus flash-backed ciphertext in `esp-storage`.
 
-This example does **not** use ESP-IDF mbedTLS, Kconfig, or sdkconfig.
+This example enables `esp-hal` feature **`unstable`** because the AES accelerator, FLASH singleton, and RMT (WS2812) APIs are unstable on the 1.2.1 pin. Those APIs may change with `esp-hal` minor releases.
+
+This example does **not** use ESP-IDF mbedTLS, Kconfig, sdkconfig, or IDF NVS.
 
 ## Overview
 
-Security foundation example. Demonstrates the ESP32-C6 AES hardware engine through `esp-hal`. Encrypts a plaintext payload, stores the ciphertext in flash-backed storage, retrieves and decrypts it, then verifies the round-trip. Exposes a clean secure-write / secure-read API as a template for production secure storage. A throughput benchmark logs hardware AES speed.
+Security foundation example. Demonstrates the ESP32-C6 AES hardware engine through `esp-hal`. Encrypts a plaintext payload with AES-256-CBC, stores the unique IV plus ciphertext in a dedicated flash partition via `esp-storage`, retrieves and decrypts it, then verifies the round-trip. A 64 KiB throughput benchmark logs hardware AES speed in MB/s.
 
-LED: one blink on pass; a distinct failure pattern on self-test failure. AES key is generated once on first boot and stored via `esp-storage`. This example demonstrates the hardware crypto API, not full key lifecycle management — production systems should add stronger key protection as noted in `shared-specs/security-baseline.md`.
+LED: three slow green blinks on pass; three fast red blinks on self-test failure (WS2812). AES key is generated once on first boot from the hardware RNG and stored via `esp-storage`. This example demonstrates the hardware crypto API, **not** full key lifecycle management — the key is stored in plaintext flash. Production systems should add flash encryption / eFuse protection as noted in `shared-specs/security-baseline.md`.
+
+Pin numbers live in generated `src/board.rs`. Never hard-code GPIOs in `main.rs`.
 
 ## Prerequisites
 
@@ -24,7 +28,7 @@ LED: one blink on pass; a distinct failure pattern on self-test failure. AES key
 - `espflash` and/or `cargo-espflash`
 - Hardware: **ESP32-C6-DevKitC-1-N8** (required default) or XIAO ESP32-C6
 
-ESP-IDF is **not** required.
+ESP-IDF is **not** required. Do not install `espup` or the `esp` rustup channel.
 
 ## Supported Boards
 
@@ -64,6 +68,10 @@ Optional XIAO ESP32-C6:
 cargo run --release --no-default-features --features board-xiao-c6
 ```
 
+The runner passes `--partition-table partitions.csv` so the dedicated `storage` partition (offset 0x110000) is programmed.
+
+> **Never edit generated source files directly.** To change board configuration, update `specs/FunctionalSpec.md` or `specs/CodingSpec.md` and regenerate.
+
 ### Opening in VS Code / Cursor
 
 This folder is a complete standalone Cargo package. Open **only this folder**
@@ -77,26 +85,57 @@ folder as your active workspace while developing this example.
 
 ## Expected Serial Output
 
-```
-aes-storage: key generated, saved to storage
-aes-storage: Self-test: PASS
-aes-storage: hardware AES throughput … MB/s
-```
-
-After reset:
+### First boot
 
 ```
-aes-storage: key loaded from storage
-aes-storage: Self-test: PASS
+hardware_aes_secure_storage: AES storage — WS2812 RGB LED, GPIO 8
+hardware_aes_secure_storage: key generated, saved to storage
+hardware_aes_secure_storage: ciphertext differs from plaintext
+hardware_aes_secure_storage: Self-test: PASS
+hardware_aes_secure_storage: hardware AES throughput 6.553 MB/s
+hardware_aes_secure_storage: WS2812 RMT init on GPIO 8 (GRB order, max brightness 64/255)
+```
+
+(The throughput number is representative; C6 hardware AES should be ≥ 2 MB/s.)
+
+### After reset
+
+```
+hardware_aes_secure_storage: key loaded from storage
+hardware_aes_secure_storage: Self-test: PASS
+```
+
+The AES key is never printed.
+
+### Seeed XIAO ESP32-C6 (active LOW, GPIO 15)
+
+```
+hardware_aes_secure_storage: AES storage — GPIO LED (active-LOW), GPIO 15
+hardware_aes_secure_storage: key generated, saved to storage
+hardware_aes_secure_storage: Self-test: PASS
+hardware_aes_secure_storage: GPIO LED on GPIO 15 (GPIO LED (active-LOW))
 ```
 
 ## Key Concepts
 
-- **`esp-hal` AES** — hardware accelerator, not a software-only crate
-- **`esp-storage`** — flash-backed key and ciphertext; no NVS Kconfig
-- **Round-trip self-test** on boot; LED pass/fail
-- **Throughput log** — RISC-V C6 target; FunctionalSpec historically cited ≥ 2 MB/s on RISC-V
-- **Security model** — example key is stored as generated; not a full HSM
+- **Standalone Cargo crate** — `#![no_std]` `#![no_main]`; Embassy entry via `esp-rtos`; no workspace at the repo root
+- **`esp-hal` AES** — hardware accelerator (feature `unstable`); AES-256-CBC; key length from the 32-byte key
+- **`esp-storage`** — flash-backed key and ciphertext in a dedicated partition; no NVS Kconfig
+- **Unique IV per write** — hardware RNG; IV stored with the blob
+- **Round-trip self-test** on boot; LED pass/fail (three blinks, cap 64/255)
+- **Throughput log** — 64 KiB encrypt; RISC-V C6 target ≥ 2 MB/s
+- **Security model** — example key is stored as generated plaintext in flash; not a full HSM
+
+## Limitations
+
+| This example is NOT | Why |
+|---|---|
+| Production key management | Key is plaintext in flash; no eFuse wrapping |
+| Authenticated encryption | AES-CBC without HMAC / GCM; ciphertext is not integrity-protected |
+| IDF NVS or mbedTLS | rust-on-metal `esp-hal` + `esp-storage` only |
+| Flash encryption / Secure Boot enablement | Irreversible eFuse operations are out of scope |
+
+Extension path: wrap the stored key with flash encryption / eFuse; add an HMAC or switch to an AEAD; keep using hardware AES.
 
 ## Testing
 
@@ -104,42 +143,48 @@ Testing philosophy: automated first, manual only when hardware observation is un
 
 ### Automated Tests
 
-1. **T-A1 — Zero-warning build**
+1. **T-A1 — Zero-warning build (DevKitC-C6, default features)**
+
+   From `examples/hardware-aes-secure-storage/`:
 
    ```sh
    cargo build --release
-   cargo clippy -- -D warnings
+   cargo clippy --release -- -D warnings
    ```
 
-   Pass: exit 0, zero warnings.
+   Pass: both commands exit 0 with no warnings.
 
-2. **T-A2 — XIAO feature build**
+2. **T-A2 — Zero-warning build (Seeed XIAO ESP32-C6)**
 
    ```sh
    cargo build --release --no-default-features --features board-xiao-c6
+   cargo clippy --release --no-default-features --features board-xiao-c6 -- -D warnings
    ```
 
-   Pass: exit 0.
+   Pass: both commands exit 0 with no warnings.
 
-3. **T-A3 — Self-test via serial (Wokwi)** — additional tool, justified in TestSpec.md: AES-CBC round-trip is verifiable from serial output.
+3. **T-A3 — Flash via espflash runner**
 
    ```sh
-   wokwi-cli --timeout 15000 --expect "Self-test: PASS" .
+   cargo run --release
    ```
 
-   Pass: `Self-test: PASS` appears within 15 seconds when Wokwi files are generated.
+   Pass: image flashes; serial log shows `Self-test: PASS` and a throughput figure. Use the DevKitC **left** USB-C UART-C port.
 
 ### Manual Tests — hardware required
 
-**T-M1 — Self-test on real hardware**
+**T-M1 — Self-test and LED on real hardware (ESP32-C6-DevKitC-1-N8)**
 
 Why manual: confirms the hardware AES accelerator is invoked on C6 silicon; simulators may use a software path.
 
-1. `cargo run --release` on ESP32-C6-DevKitC-1-N8.
-2. Confirm serial shows `Self-test: PASS` and the LED indicates pass.
-3. Confirm a throughput figure is logged.
+Hardware required: Espressif ESP32-C6-DevKitC-1-N8, USB-C on the **left** UART-C port.
 
-Pass: PASS logged, pass LED, throughput line present.
+1. `cargo run --release`
+2. Confirm serial shows key generated or loaded, `Self-test: PASS`, ciphertext differs from plaintext.
+3. Confirm a hardware AES throughput line of ≥ 2 MB/s.
+4. Observe three slow green blinks on the WS2812, then dark.
+
+Pass: PASS logged, throughput ≥ 2 MB/s, green 3-blink visible.
 
 ---
 
@@ -153,13 +198,19 @@ Why manual: flash persistence requires physical write/read cycles.
 
 Pass: key loads after reset; self-test passes.
 
+---
+
+**T-M3 — GPIO LED pass pattern (Seeed XIAO ESP32-C6)**
+
+Why manual: active-LOW polarity and blink timing require human observation.
+
+1. `cargo run --release --no-default-features --features board-xiao-c6`
+2. Observe the blue user LED on GPIO 15: three slow blinks, then off.
+
+Pass: correct polarity, three blinks, PASS in the log.
+
 ## Spec Files
 
 - [specs/FunctionalSpec.md](specs/FunctionalSpec.md)
 - [specs/CodingSpec.md](specs/CodingSpec.md)
 - [specs/TestSpec.md](specs/TestSpec.md)
-
-## Board Specs
-
-- [board-specs/espressif/esp32-c6-devkitc-1-n8.md](../../board-specs/espressif/esp32-c6-devkitc-1-n8.md)
-- [board-specs/seeed/xiao-esp32c6.md](../../board-specs/seeed/xiao-esp32c6.md)

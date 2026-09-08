@@ -6,7 +6,7 @@ This file is the single source of truth for ALL Markdown documentation.
 
 - Human input strictly limited to `/specs/`, `/shared-specs/`, and `examples/*/specs/{Functional,Coding,Test}Spec.md`.
 - Generated files:
-  - Root: README.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
+  - Root: README.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, AGENTS.md
   - GitHub templates: `.github/ISSUE_TEMPLATE/spec-improvement.md`, `.github/ISSUE_TEMPLATE/bug-report.md`, `.github/PULL_REQUEST_TEMPLATE.md`
   - Extended docs: `/docs/`, example READMEs, `board-specs/README.md`, `skills/README.md`, etc.
 - Every generated `.md` file must carry the standard agent-generated header.
@@ -76,6 +76,35 @@ Must list:
 - Hardware: ESP32-C6-DevKitC-1-N8 (required default) or XIAO ESP32-C6
 
 Must **not** list ESP-IDF, `idf.py`, or `espup` as prerequisites.
+
+---
+
+## Root AGENTS.md (required)
+
+Grok (and compatible agents) auto-load root `AGENTS.md` at session start. It is the shareable
+new-session context. Keep it **short and actionable**. Do **not** duplicate the root README,
+skill catalog, or example table — link to those files instead.
+
+Must carry the standard agent-generated header, then these sections **in this order**:
+
+1. **What this repo is** — Spec-Driven Development for rust-on-metal ESP32-C6 (`no_std`
+   `esp-hal`). There is no ESP-IDF, no `idf.py`, no `sdkconfig`.
+2. **Before any generate / edit / debug** — read `shared-specs/AIGenLessonsLearned.md`;
+   then follow `skills/<name>/SKILL.md`.
+3. **Role split** — humans edit only `specs/`, `shared-specs/`, and
+   `examples/*/specs/{Functional,Coding,Test}Spec.md`. Never hand-edit generated files.
+   If output is wrong, fix the spec and regenerate.
+4. **Toolchain** — rustup **stable** (MSRV 1.95.0), target `riscv32imac-unknown-none-elf`,
+   `espflash`. Not the `esp` rustup channel, not `espup`. Every firmware crate depends on
+   `esp-bootloader-esp-idf` and invokes `esp_app_desc!()`. Build/flash from the example
+   directory: `cargo run --release`.
+5. **Boards** — GPIO from `board-specs/` via generated `src/board.rs`; never hardcode pins
+   in `main.rs`. Chip feature `esp32c6` only. Default board feature `board-devkitc-c6`;
+   optional `board-xiao-c6`.
+6. **Skills** — source of truth is `skills/` (not `.grok/skills/`). Invoke by name. Index:
+   `skills/README.md`.
+7. **Layout** — standalone Cargo crates under `examples/<name>/`. Locked structure:
+   `specs/example-project-structure-spec.md`.
 
 ---
 

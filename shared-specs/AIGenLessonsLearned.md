@@ -13,6 +13,7 @@
 - Always respect the permanent example structure in `specs/example-project-structure-spec.md`.
 - Always reference `board-specs/` files instead of hard-coding pins.
 - There is no `sdkconfig`. Do not generate one, do not document menuconfig, and do not "fix" missing Kconfig symbols.
+- New agent sessions load SDD rules from root `AGENTS.md` (Grok auto-loads it). Keep that file short; it points here and at `skills/`.
 
 ## Key Lessons Learned from Real AI Generation (Updated Sep 2026)
 

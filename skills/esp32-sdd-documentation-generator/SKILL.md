@@ -24,6 +24,7 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    - CONTRIBUTING.md
    - CODE_OF_CONDUCT.md (source content from contributing-spec.md)
    - SECURITY.md (source content from contributing-spec.md)
+   - AGENTS.md (short new-session context — see Root AGENTS.md in the spec; do not clone the README)
    - .github/ISSUE_TEMPLATE/spec-improvement.md
    - .github/ISSUE_TEMPLATE/bug-report.md
    - .github/PULL_REQUEST_TEMPLATE.md

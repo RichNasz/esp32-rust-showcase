@@ -105,7 +105,9 @@ no RMT.
 - 64 KiB throughput encrypt; log MB/s; ≥ 2 MB/s is the FunctionalSpec bar.
 - No heap. No `std`. No FreeRTOS. No `sdkconfig`. No IDF NVS. No mbedTLS.
 - Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0, `esp-storage`
-  0.10.0. Do not git-pin the radio stack.
+  0.10.0, `esp-bootloader-esp-idf` 0.6.0. Do not git-pin the radio stack.
+- The image must include an ESP-IDF-compatible application descriptor
+  (`esp-bootloader-esp-idf`). Current `espflash` will not flash without it.
 - `build.rs` emits `-Tlinkall.x` last.
 - Embassy entry: `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`. Do not
   use blocking `#[esp_hal::main]`.

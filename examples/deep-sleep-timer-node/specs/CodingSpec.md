@@ -81,8 +81,10 @@ needs none of it.
 - Sleep duration: 5 seconds from sleep entry.
 - Active window budget: about 200 ms (heartbeat plus log). Keep the path linear.
 - No heap. No `std`. No FreeRTOS. No `sdkconfig`. No NVS.
-- Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0. Do not git-pin the
-  radio stack.
+- Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0,
+  `esp-bootloader-esp-idf` 0.6.0. Do not git-pin the radio stack.
+- The image must include an ESP-IDF-compatible application descriptor
+  (`esp-bootloader-esp-idf`). Current `espflash` will not flash without it.
 - `build.rs` emits `-Tlinkall.x` last.
 - Embassy entry: `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`. Do not use
   blocking `#[esp_hal::main]`.

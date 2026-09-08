@@ -87,9 +87,10 @@ This is a **radio** example. Git-pin `esp-hal`, `esp-radio` (features `esp32c6`,
 
 Wi-Fi STA uses `esp-radio` + `embassy-net` DHCPv4, matching the `esp-hal` 1.2
 `embassy_dhcp` example (Interface + WifiController + net runner task). Heap is required
-for the Wi-Fi blob and `embassy-net` (about 72 KiB internal DRAM). Do not use
-`#[ram(reclaimed)]` unless the crate also emits an ESP-IDF-compatible app descriptor —
-that attribute is rejected without it. `build-std` must include `alloc`. Do not allocate
+for the Wi-Fi blob and `embassy-net` (about 72 KiB internal DRAM). The image must emit an ESP-IDF-compatible application descriptor
+(`esp-bootloader-esp-idf`, git-pinned with the radio stack). Current `espflash`
+will not flash without it. `#[ram(reclaimed)]` is allowed only because that
+descriptor is present — the attribute is rejected without it. `build-std` must include `alloc`. Do not allocate
 after init except as the radio / net stack does internally.
 
 **MQTT choice:** MQTT 3.1.1 QoS 0, single CONNECT → PUBLISH → DISCONNECT over an

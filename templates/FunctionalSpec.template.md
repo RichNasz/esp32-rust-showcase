@@ -6,11 +6,19 @@
 
 ## Target Hardware
 
-v1 chip: **ESP32-C6** only (`esp32c6`). Other SoCs are not in v1.
+Chip (SoC) and board are different axes. Name **one** SoC. Do not describe behaviour that needs another SoC’s peripherals (S3 touch, classic ESP32 ULP, Xtensa-only tooling). rust-on-metal is not `idf.py set-target`.
+
+| Item | v1 value |
+| --- | --- |
+| **SoC** | ESP32-C6 only |
+| **Chip Cargo feature** | `esp32c6` |
+| **rustc target** | `riscv32imac-unknown-none-elf` |
+
+Other SoCs are not in v1. Switching SoC later is a new spec + `rust-toolchain.md` row, not a feature flip.
 
 ### Board Compatibility Checklist
 
-Tick every board this example must support. Default is DevKitC-C6.
+Tick every **C6** board this example must support. Pins come from `board-specs/`, not from this file. Default is DevKitC-C6.
 
 - [x] **Espressif ESP32-C6-DevKitC-1-N8** *(default)* — `board-specs/espressif/esp32-c6-devkitc-1-n8.md` — Cargo feature `board-devkitc-c6`
 - [ ] **Seeed XIAO ESP32-C6** — `board-specs/seeed/xiao-esp32c6.md` — Cargo feature `board-xiao-c6`

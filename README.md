@@ -8,6 +8,7 @@
 ![Rust](https://img.shields.io/badge/Rust-stable-orange)
 ![esp-hal](https://img.shields.io/badge/esp--hal-1.2-blue)
 ![Chip](https://img.shields.io/badge/chip-ESP32--C6-orange)
+[![Made with Grok Build](https://img.shields.io/badge/Made%20with-Grok%20Build-black)](https://x.ai/cli)
 
 # ESP32 Rust SDD Showcase
 
@@ -15,13 +16,15 @@
 
 This repository is a production-grade demonstration of **Spec-Driven Development (SDD)** for **rust-on-metal ESP32** (`no_std` [`esp-hal`](https://github.com/esp-rs/esp-hal) on ESP32-C6). Humans author concise specifications; AI agents generate all firmware, documentation, and Cargo configuration from those specs. It exists to prove that strict human/AI role separation produces better embedded firmware faster, and to give the ESP32 community a reusable rust-on-metal SDD toolkit they can fork.
 
+**Chip ≠ board.** v1 firmware is **ESP32-C6 only** (Cargo feature `esp32c6`). rust-on-metal is not ESP-IDF `idf.py set-target`: an S3 or classic ESP32 project does not become C6 by flipping a flag. Boards on that chip (DevKitC-C6 default, optional XIAO C6) change pins and USB via `board-specs/` and generated `src/board.rs`. Other SoCs in the catalog are hardware reference until a chip feature exists.
+
 ## Features
 
 - **8 progressive examples** on ESP32-C6 — breathing LED through BLE beacons, HTTPS OTA, ESP-NOW mesh, and **lp-core-wakeup** — every line of Rust generated from spec
 - **11 published agent skills** (10 original SDD skills plus `esp32-lp-core-engineer`) covering spec creation, crate generation, WS2812, BLE, deep sleep, LP-core, ANSI dashboards, hardware AES, board specs, documentation, and validation
-- **AI-generated board specs** from vendor datasheets (Espressif, Seeed, Adafruit, LilyGo, and more); v1 firmware targets **ESP32-C6-DevKitC-1-N8** (required) and XIAO ESP32-C6
+- **AI-generated board specs** from vendor datasheets (Espressif, Seeed, Adafruit, LilyGo, and more); v1 **chip** is ESP32-C6 (`esp32c6`); **boards** are ESP32-C6-DevKitC-1-N8 (required) and XIAO ESP32-C6
 - **Strict human/AI separation** — generated files carry agent headers; only `specs/`, `shared-specs/`, and `examples/*/specs/` are human-authored
-- **No ESP-IDF install required** — rustup stable + `espflash`; firmware is `no_std` rust-on-metal via `esp-hal`, not ESP-IDF
+- **No ESP-IDF install required** — rustup stable + `espflash`; firmware is `no_std` rust-on-metal via `esp-hal`, not the C SDK. [Why](docs/guides/why-esp-idf-is-not-required.md)
 - **Full OSS governance** — Contributing guide, Code of Conduct, Security policy, and GitHub issue templates
 
 ## Table of Contents
@@ -62,6 +65,8 @@ cargo run --release --no-default-features --features board-xiao-c6
 
 ESP-IDF, `espup`, and the `esp` rustup channel are **not** required and are not used in v1.
 
+C developers usually expect Espressif’s **ESP-IDF** (CMake, `idf.py`, `sdkconfig`). This repository does not wrap that C SDK. Firmware talks to the chip through Espressif’s official `no_std` HAL, [`esp-hal`](https://github.com/esp-rs/esp-hal). ESP32-C6 is RISC-V, so rustup **stable** already has the compiler target; `espup` exists for Xtensa chips, which are not in v1. Build and flash with Cargo + `espflash`, not `idf.py`. Full explanation: [Why ESP-IDF is not required](docs/guides/why-esp-idf-is-not-required.md).
+
 ## Examples
 
 All eight examples are generated from their spec files. They are ordered by complexity — start with `blinky` and work forward. Required board: **ESP32-C6-DevKitC-1**.
@@ -100,7 +105,8 @@ Eleven agent skills implement the complete SDD pipeline. Invoke any skill by nam
 | Section | Link |
 |---|---|
 | Documentation hub | [docs/README.md](docs/README.md) |
-| SDD workflow guide | [docs/workflows/README.md](docs/workflows/README.md) |
+| Why ESP-IDF is not required | [docs/guides/why-esp-idf-is-not-required.md](docs/guides/why-esp-idf-is-not-required.md) |
+| SDD workflow guide | [docs/workflows/README.md](docs/workflows/README.md)
 | Using with AI agents | [docs/guides/using-with-ai-agents.md](docs/guides/using-with-ai-agents.md) |
 | Creating new board specs | [docs/guides/creating-new-board-specs.md](docs/guides/creating-new-board-specs.md) |
 | Examples catalog | [examples/README.md](examples/README.md) |

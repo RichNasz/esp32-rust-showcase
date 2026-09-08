@@ -17,7 +17,7 @@ Describes **what** and **why**. Typical sections:
 | Section | Purpose |
 |---|---|
 | Overview | 2–4 sentences: what the example demonstrates |
-| Target Hardware | v1 chip ESP32-C6 only; Board Compatibility Checklist |
+| Target Hardware | **SoC** (ESP32-C6 / `esp32c6`) separately from **boards**; Board Compatibility Checklist |
 | Features | Observable behaviour |
 | Wakeup Strategy | timer / RTC GPIO 0–7 / LP-core / none |
 | Connectivity | none / BLE / Wi-Fi / ESP-NOW / MQTT |
@@ -26,16 +26,24 @@ Describes **what** and **why**. Typical sections:
 
 If the spec includes a heading containing **Limitations**, the generated example README must reproduce it.
 
-Board Compatibility Checklist (v1):
+Chip (SoC) ≠ board. Name **one** SoC. Do not describe behaviour that needs another SoC’s peripherals. rust-on-metal is not `idf.py set-target`.
+
+| Item | v1 value |
+| --- | --- |
+| **SoC** | ESP32-C6 only |
+| **Chip Cargo feature** | `esp32c6` |
+| **rustc target** | `riscv32imac-unknown-none-elf` |
+
+Board Compatibility Checklist (v1) — C6 boards only; pins from `board-specs/`:
 
 - [x] Espressif ESP32-C6-DevKitC-1-N8 *(default)* — feature `board-devkitc-c6`
 - [ ] Seeed XIAO ESP32-C6 — feature `board-xiao-c6`
 
-Do not add non-C6 boards. RTC / LP GPIOs on C6 are **0–7 only**; GPIO 9 (XIAO boot button) is **not** RTC-capable.
+Do not add non-C6 boards. RTC / LP GPIOs on C6 are **0–7 only**; GPIO 9 (XIAO boot button) is **not** RTC-capable. Switching SoC is a new spec + `rust-toolchain.md` row, not a feature flip.
 
 ## CodingSpec.md
 
-High-level guidance — architecture, constraints, preferred crates, non-functional requirements, and gotchas.
+High-level guidance — architecture, constraints, preferred crates, non-functional requirements, and **chip-class** gotchas (C6 RTC 0–7, `unstable` sleep/radio, `board.rs` for pins). Do not put S3-only or ESP32-classic APIs in a C6 CodingSpec.
 
 **Never include:** code snippets, `const` item definitions, specific function signatures, API call sequences, exact log strings, or numbered step-by-step implementation instructions.
 
@@ -47,6 +55,6 @@ Tiers in priority order:
 
 1. **Automated — native Cargo / rustc**: `cargo build --release`, `cargo clippy -- -D warnings`, `cargo run --release` / Wokwi
 2. **Automated — additional tools**: only with explicit justification and documented setup
-3. **Manual — hardware-only**: visual or physical observation that cannot be simulated
+3. **Manual — hardware-only**: visual or physical observation that cannot be simulated. USB-during-sleep checks name the **board** (DevKitC left UART-C vs XIAO native USB), not the chip.
 
 Do not specify ESP-IDF test components or CMake-based harnesses.

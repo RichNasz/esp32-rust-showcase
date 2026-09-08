@@ -2,7 +2,7 @@
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from vendor documentation via esp32-board-spec-generator skill
      Source: https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/
-     Date: 2026-02-22 | Agent: Claude Code
+     Date: 2026-09-08 | Agent: Grok
      ================================================ -->
 
 # Board Spec — Seeed XIAO ESP32S3
@@ -56,13 +56,13 @@
 - **ADC1** (GPIO1–GPIO10): Available at all times, including during Wi-Fi operation.
 - **ADC2** (GPIO11–GPIO20): **Disabled when Wi-Fi is active.** All exposed user pads (D0–D10) use ADC1 channels, so they are unaffected by Wi-Fi. Avoid using GPIO11–GPIO20 for ADC when Wi-Fi is enabled.
 
-### USB-CDC Serial
+### USB Serial / Console
 
-The XIAO ESP32S3 uses native USB (not a USB-UART bridge). Serial monitor requires:
-```
-CONFIG_ESP_CONSOLE_USB_CDC=y
-```
-in `sdkconfig.defaults`. Without this, `idf.py monitor` will show no output.
+The XIAO ESP32S3 uses native USB (not a USB-UART bridge). Classify this board as **USB CDC**. There is no `sdkconfig`. Firmware logs via `esp-println`; flash/monitor via `espflash`.
+
+Do **not** emit `CONFIG_ESP_CONSOLE_*`. The native USB port drops when USB is powered down for deep sleep.
+
+This SoC is **not in v1**. v1 firmware compiles only for ESP32-C6.
 
 ### SPI Flash / PSRAM Pins (reserved — do not use)
 
@@ -100,16 +100,19 @@ GPIO 35–37 are used internally for the SPI flash interface and must not be dri
 
 - **Tiny footprint** (21 × 17.8 mm) suits space-constrained enclosures; breadboard-compatible.
 - **8 MB OPI PSRAM** provides high-bandwidth memory for ML inference buffers, JPEG frames, or audio DSP — reference this in FunctionalSpec memory requirements.
-- **Dual antenna** (ceramic built-in + U.FL external) allows antenna selection in sdkconfig for range-sensitive applications.
+- **Dual antenna** (ceramic built-in + U.FL external) allows antenna selection in firmware (GPIO / RF switch — not `sdkconfig`) for range-sensitive applications.
 - **Deep sleep ~14 µA** makes multi-month coin-cell or small LiPo operation feasible; combine with `esp32-deep-sleep-engineer` skill.
 - **ESP32-S3 vector extensions** (AIE) accelerate neural network operations — note in FunctionalSpec when using TensorFlow Lite for Microcontrollers.
 - **ADC1 on all exposed pads** means ADC measurements are Wi-Fi safe on all user pins.
 - **LiPo charger built-in** — no external charging circuit needed; reference the JST 1.25 mm connector in power budget specs.
 
-## idf.py Target
+## Cargo chip / board features
 
-```sh
-idf.py set-target esp32s3
-```
+v1 firmware generation consumes **ESP32-C6** only. This SoC is **not in v1**.
 
-> Remember to also set `CONFIG_ESP_CONSOLE_USB_CDC=y` in `sdkconfig.defaults` for serial output over USB-C.
+| Item | Value |
+| --- | --- |
+| SoC | ESP32-S3 |
+| Chip Cargo feature | not in v1 |
+| Board Cargo feature | none |
+| RTC / LP GPIOs | ESP32-S3 RTC GPIO set (not C6 0–7). Not a v1 firmware target. |

@@ -8,7 +8,7 @@
 
 Eight progressive rust-on-metal ESP32-C6 examples, each generated from its `FunctionalSpec.md` and `CodingSpec.md` by the **esp32-sdd-full-project-generator** skill. They are ordered by complexity — start with `blinky` and work forward.
 
-**Required board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported.
+**Chip ≠ board.** v1 chip is ESP32-C6 (`esp32c6`) only — not `idf.py set-target` portability. **Required board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported.
 
 ## Learning Progression
 

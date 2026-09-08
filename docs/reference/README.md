@@ -37,7 +37,7 @@ All reference material targets rustup **stable**, MSRV **1.95.0**, `esp-hal` **1
 
 ## Chip variant notes (v1)
 
-| Feature | ESP32-C6 (v1 required) | Other C-showcase chips |
+| Feature | ESP32-C6 (v1 required) | Other SoCs (catalog-only) |
 |---|---|---|
 | Status | **Required** | Not in v1 |
 | Hardware AES | Yes | — |

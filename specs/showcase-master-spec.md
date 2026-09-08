@@ -13,7 +13,7 @@
 
 ## Hardware bar
 
-ESP32-C6-DevKitC-1-N8 required; XIAO ESP32-C6 also supported. Other C-showcase chips are not in v1. Chip feature `esp32c6` only.
+ESP32-C6-DevKitC-1-N8 required; XIAO ESP32-C6 also supported. Other SoCs (ESP32, S3, C5, …) are catalog-only until a chip feature exists. Chip feature `esp32c6` only.
 
 ## Example Directory Structure
 

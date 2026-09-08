@@ -34,7 +34,7 @@
 
 | Item | GPIO | Polarity | Notes |
 | --- | --- | --- | --- |
-| <!-- FILL: e.g. User LED --> | <!-- FILL: GPIO N --> | <!-- FILL: Active HIGH / Active LOW --> | <!-- FILL: any sharing or usage notes --> |
+| <!-- FILL: e.g. User LED --> | <!-- FILL: GPIO N --> | <!-- FILL: Active HIGH / Active LOW --> | <!-- FILL: Simple GPIO vs WS2812. WS2812: GRB, 800 kHz NRZ, esp-hal RMT, brightness cap 64/255 — a GPIO level produces no visible output. Active-LOW: invert in generated src/board.rs --> |
 | <!-- FILL: e.g. Boot button --> | <!-- FILL: GPIO N --> | <!-- FILL: Active LOW --> | <!-- FILL: also a strapping pin — do not drive at boot --> |
 
 ## GPIO & Pin Rules / Warnings
@@ -113,3 +113,10 @@ v1 firmware generation consumes **ESP32-C6** only. Other SoCs may still be docum
 # cargo run --release
 # cargo run --release --no-default-features --features board-xiao-c6
 ```
+
+**Firmware notes (required on v1 C6 boards):**
+
+- Generated `src/board.rs` is the only place pin numbers belong.
+- Console: `esp-println` + `espflash`. UART-bridge ports survive deep sleep; USB Serial/JTAG and USB CDC drop.
+- Sleep / RTC / radio need `esp-hal` feature `unstable`.
+- `esp_bootloader_esp_idf::esp_app_desc!()` is image metadata, not an ESP-IDF install.

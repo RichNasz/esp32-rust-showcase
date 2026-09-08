@@ -2,7 +2,7 @@
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from vendor documentation via esp32-board-spec-generator skill
      Source: https://wiki.seeedstudio.com/xiao_esp32c6_getting_started/
-     Date: 2026-03-08 | Agent: Claude Code
+     Date: 2026-09-08 | Agent: Grok
      ================================================ -->
 
 # Board Spec — Seeed XIAO ESP32-C6
@@ -37,9 +37,9 @@
 
 | Item | GPIO | Polarity | Notes |
 | --- | --- | --- | --- |
-| User LED (blue) | GPIO 15 | **Active LOW** | LED ON when GPIO15 = LOW; OFF when HIGH. GPIO15 is also a strapping pin — high-impedance at boot is safe (internal pull-up holds HIGH = LED off = correct strapping default) |
+| User LED (blue) | GPIO 15 | **Active LOW** | Simple GPIO LED (not WS2812). LED ON when GPIO15 = LOW; OFF when HIGH. Invert in generated `src/board.rs`. GPIO15 is also a strapping pin — high-impedance at boot is safe (internal pull-up holds HIGH = LED off = correct strapping default) |
 | Charge indicator LED | — | — | Red LED; hardware-controlled by LiPo charger IC; not GPIO-accessible |
-| Boot button | GPIO 9 | Active LOW | Pulls GPIO9 LOW at reset → serial download mode. Do not drive LOW at reset for normal operation |
+| Boot button | GPIO 9 | Active LOW | Pulls GPIO9 LOW at reset → serial download mode. **Not an RTC GPIO** — cannot wake from deep sleep. Use timer-only wakeup or an external button on LP GPIO 0–7 |
 | Reset button | EN / CHIP_PU | — | Hardware reset only |
 | RF antenna switch (enable) | GPIO 3 (LP_GPIO3) | Active HIGH | Must be HIGH to activate the RF switch IC |
 | RF antenna switch (select) | GPIO 14 | — | LOW = ceramic antenna (default); HIGH = U.FL external antenna |
@@ -73,15 +73,11 @@ The ESP32-C6 has **ADC1 only** — there is no ADC2. This means:
 
 ### USB Serial / Console
 
-The ESP32-C6 uses a **built-in USB Serial/JTAG controller** — no external USB-UART bridge chip is present. Serial monitor output requires:
+The ESP32-C6 uses a **built-in USB Serial/JTAG controller** — no external USB-UART bridge chip is present. Classify this board as **USB Serial/JTAG**. There is no `sdkconfig`. Firmware logs via `esp-println`; flash/monitor via `espflash` (`cargo run --release --no-default-features --features board-xiao-c6`).
 
-```ini
-CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
-```
+The native USB port drops when USB is powered down for deep sleep; `espflash monitor` exits on first sleep entry. For multi-cycle serial logs use the DevKitC-C6 **left** UART-bridge port instead.
 
-in `sdkconfig.defaults`. Without this, `idf.py monitor` will show no output over USB-C.
-
-> **Note**: This is `USB_SERIAL_JTAG`, not `USB_CDC` — the C6 uses the same peripheral as the ESP32-C3, distinct from the ESP32-S3's full USB OTG.
+Do **not** emit `CONFIG_ESP_CONSOLE_*`. This is USB Serial/JTAG (same peripheral family as ESP32-C3), not USB CDC (ESP32-S3 USB OTG).
 
 ### Antenna Switch Pins (handle with care)
 
@@ -144,10 +140,25 @@ If your application does not use the U.FL connector, leave GPIO3 and GPIO14 undr
 - **Built-in LiPo charger**: No external charging circuit needed; status visible from charge indicator LED.
 - **No PSRAM**: Budget memory usage carefully in FunctionalSpec — 512 KB SRAM is the ceiling; avoid JPEG frame buffers or large ML models without external storage.
 
-## idf.py Target
+## Cargo chip / board features
 
-```sh
-idf.py set-target esp32c6
+v1 firmware generation consumes **ESP32-C6** only. This board is **also supported**.
+
+| Item | Value |
+| --- | --- |
+| SoC | ESP32-C6 |
+| Chip Cargo feature | `esp32c6` |
+| Board Cargo feature | `board-xiao-c6` |
+| RTC / LP GPIOs | GPIO 0–7 only; GPIO 9 (boot button) is **not** RTC and cannot wake from deep sleep |
+
+```toml
+# From examples/<name>/
+# cargo run --release --no-default-features --features board-xiao-c6
 ```
 
-> Remember to set `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y` in `sdkconfig.defaults` for serial output over USB-C. Without this line, `idf.py monitor` produces no output.
+**Firmware notes (rust-on-metal):**
+
+- Generated `src/board.rs` is the **only** place these pin numbers belong (including RF switch GPIO 3 / GPIO 14). `main.rs` uses board APIs, not raw GPIO literals.
+- Console is `esp-println` + `espflash`. Native USB Serial/JTAG **drops** in deep sleep — LED-only observation, or use DevKitC **left** UART-C for multi-cycle logs.
+- Sleep / RTC / radio APIs need `esp-hal` feature `unstable` in addition to `esp32c6`.
+- Every image still emits `esp_bootloader_esp_idf::esp_app_desc!()` (image metadata, not an ESP-IDF install).

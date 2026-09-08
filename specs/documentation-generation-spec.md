@@ -17,6 +17,19 @@ This file is the single source of truth for ALL Markdown documentation.
 - Primary build / flash / monitor tool is **Cargo + espflash** (`cargo run --release`). Do **not** present `idf.py` or ESP-IDF as the build system.
 - Purpose of this repository: Spec-Driven Development for **rust-on-metal ESP32** (`no_std` `esp-hal` on ESP32-C6).
 
+### Chip vs board (required distinction)
+
+**Chip (SoC)** and **board** are different axes. rust-on-metal does **not** port across ESP32 / S3 / C6 the way an ESP-IDF `idf.py set-target` project often does. `esp-hal` selects the SoC with a Cargo **chip feature**; peripherals, RTC GPIO maps, USB, LP-core vs ULP, and the rustc target are chip-gated.
+
+| Axis | What it selects | v1 |
+|---|---|---|
+| **Chip (SoC)** | `esp-hal` chip feature, rustc target, RTC/LP GPIO set, LP-core, radio/`unstable` | **`esp32c6` only** |
+| **Board** | Pins, LED type, USB-UART vs native USB, antenna, LiPo — via `board-specs/` → generated `src/board.rs` | `board-devkitc-c6` (default), optional `board-xiao-c6` |
+
+v1 firmware is **one chip per example**. Multi-board on that chip is allowed. Do not generate `if S3 { … } else if C6 { … }` specs or READMEs. Non-C6 board-specs are hardware reference only (not in v1). Switching SoC later means a new chip feature, a `rust-toolchain.md` row, and new example specs — not `set-target`.
+
+Root README (project description or Features) and `docs/README.md` must each include one short paragraph stating this. `docs/guides/why-esp-idf-is-not-required.md` must include a **Chip vs board** subsection: IDF `idf.py set-target` is **not** equivalent to swapping `esp-hal` chip features without a new spec. `docs/reference/spec-format.md` Target Hardware must name **SoC** separately from the board checklist. `docs/guides/04-new-example.md` (Hardware bar) and `examples/README.md` (intro) must each include a **Chip ≠ board** one-liner (`esp32c6` vs board features; not `set-target`).
+
 ---
 
 ## Root README.md Required Sections
@@ -47,9 +60,10 @@ The root `README.md` must contain the following 13 sections in this exact order:
 ![Rust](https://img.shields.io/badge/Rust-stable-orange)
 ![esp-hal](https://img.shields.io/badge/esp--hal-1.2-blue)
 ![Chip](https://img.shields.io/badge/chip-ESP32--C6-orange)
+[![Made with Grok Build](https://img.shields.io/badge/Made%20with-Grok%20Build-black)](https://x.ai/cli)
 ```
 
-Do not add an ESP-IDF badge. Do not add a CI/build-status badge — `.github/workflows/` is off-limits and a broken badge is worse than no badge.
+The Grok Build badge is a static shields.io attribution (not a CI status). Link it to `https://x.ai/cli`. Do not add an ESP-IDF badge. Do not add a CI/build-status badge — `.github/workflows/` is off-limits and a broken badge is worse than no badge.
 
 ### Quick Start (root README)
 
@@ -98,9 +112,10 @@ Must carry the standard agent-generated header, then these sections **in this or
    `espflash`. Not the `esp` rustup channel, not `espup`. Every firmware crate depends on
    `esp-bootloader-esp-idf` and invokes `esp_app_desc!()`. Build/flash from the example
    directory: `cargo run --release`.
-5. **Boards** — GPIO from `board-specs/` via generated `src/board.rs`; never hardcode pins
-   in `main.rs`. Chip feature `esp32c6` only. Default board feature `board-devkitc-c6`;
-   optional `board-xiao-c6`.
+5. **Chip vs boards** — chip feature `esp32c6` only (SoC ≠ board). GPIO from
+   `board-specs/` via generated `src/board.rs`; never hardcode pins in `main.rs`.
+   Default board feature `board-devkitc-c6`; optional `board-xiao-c6`. Other SoCs
+   are catalog-only until a chip feature exists.
 6. **Skills** — source of truth is `skills/` (not `.grok/skills/`). Invoke by name. Index:
    `skills/README.md`.
 7. **Layout** — standalone Cargo crates under `examples/<name>/`. Locked structure:
@@ -252,7 +267,7 @@ FunctionalSpec.md. The FunctionalSpec provides only the compatibility requiremen
 everything else from board-spec files.
 
 v1 catalog is ESP32-C6 only. Default board: **Espressif ESP32-C6-DevKitC-1-N8**.
-Also supported: **Seeed XIAO ESP32-C6**. Other C-showcase chips are not in v1.
+Also supported: **Seeed XIAO ESP32-C6**. Other SoCs (ESP32, S3, C5, …) are catalog-only until a chip feature exists.
 
 ### Discovery workflow
 
@@ -353,3 +368,101 @@ cargo run --release
 
 and the XIAO feature variant. Do **not** document `idf.py build`, `idf.py flash`, or
 `idf.py monitor` as the primary workflow.
+
+---
+
+## Guide: Why ESP-IDF is not required
+
+C/C++ ESP32 developers typically install **ESP-IDF** (Espressif IoT Development
+Framework): Python, CMake/Ninja, a GCC toolchain, `idf.py`, `sdkconfig` /
+`menuconfig`, and IDF components. This repository does **not** use that toolkit.
+Generated docs must explain **why**, not only state that it is absent.
+
+### Required generated file
+
+`docs/guides/why-esp-idf-is-not-required.md`
+
+Must appear in:
+
+- `docs/guides/README.md` (conceptual guide; list it with the other unnumbered
+  guides, description: “Why C developers do not need ESP-IDF / `idf.py` for this
+  rust-on-metal repo”)
+- `docs/README.md` documentation-sections table
+- Root README **Full Documentation** table
+- `docs/guides/01-toolchain-setup.md` — next to the existing “no ESP-IDF install”
+  statement, link to this guide
+- Root README **Prerequisites** — after listing what *is* required, add 2–4
+  sentences of *why* ESP-IDF / `espup` / the `esp` rustup channel are unused,
+  plus a link to this guide. Do not stop at “not required.”
+
+### Facts the guide must state (verified against Espressif / esp-rs, 2026-09)
+
+There are **two** Rust-on-ESP32 ecosystems. Do not conflate them.
+
+1. **`std` + ESP-IDF** (`esp-idf-sys`, `esp-idf-hal`, `esp-idf-svc`): Rust
+   bindings around the C ESP-IDF SDK. This path **does** require an ESP-IDF
+   install. Espressif marked these crates **community-supported** (Feb 2025
+   `esp-hal` 1.0 beta announcement). This repository does **not** use this path.
+2. **`no_std` + `esp-hal`** (this repository): Espressif’s official rust-on-metal
+   HAL. It is a bare-metal (`no_std`) HAL that **does not use ESP-IDF**. Firmware
+   talks to peripherals through Rust drivers (`esp-hal`, `esp-radio`,
+   `esp-lp-hal`), not through IDF C drivers.
+
+**Why ESP-IDF is not installed here:**
+
+- **HAL is bare-metal.** `esp-hal` is documented as a `no_std` HAL for Espressif
+  devices. GPIO, UART, SPI, I2C, RMT, AES, RTC sleep, and the LP core are driven
+  from Rust. There is no `idf.py`, no `sdkconfig`, no IDF component registry.
+- **ESP32-C6 is RISC-V.** The official *Rust on ESP Book* (Toolchain
+  Installation): for RISC-V chips, install rustup **stable** (or nightly) with
+  `rust-src` and `rustup target add riscv32imac-unknown-none-elf`. If you are
+  **not** targeting ESP32 / ESP32-S2 / ESP32-S3 (Xtensa), you skip `espup`.
+  `espup` and the `esp` rustup channel exist because Xtensa is not an upstream
+  LLVM/Rust target yet. v1 of this showcase is **C6 only**.
+- **Build is Cargo.** Chip (`esp32c6`) and board (`board-devkitc-c6` /
+  `board-xiao-c6`) are Cargo features. Pins live in generated `src/board.rs`.
+  There is no `menuconfig`.
+- **Flash / monitor is `espflash`.** `cargo run --release` uses
+  `runner = "espflash flash --monitor"`. That is the official `esp-rs` serial
+  flasher, not `idf.py flash` / `idf.py monitor`.
+- **Radio is `esp-radio`.** Wi-Fi / BLE / ESP-NOW use `esp-radio` on top of
+  `esp-hal` plus Espressif **binary blobs**. That is not the ESP-IDF Wi-Fi/BT
+  stacks. Radio APIs remain `unstable` / beta — document that honestly.
+
+**C-developer mapping table** (required in the guide):
+
+| ESP-IDF / C habit | This repository |
+|---|---|
+| `idf.py set-target esp32c6` | Cargo chip feature `esp32c6` — **v1 has no other chip**. A different SoC is a new spec, not a flag flip |
+| `idf.py set-target esp32s3` (or any non-C6) | **Not in v1.** Do not swap chip features on an existing C6 example |
+| `sdkconfig` / `menuconfig` | Cargo features + generated `src/board.rs` |
+| `idf.py build` / `flash` / `monitor` | `cargo run --release` (`espflash`) |
+| IDF components / `idf_component.yml` | crates (`esp-hal`, `esp-radio`, `esp-rtos`, …) |
+| `nvs_flash_init` / IDF Wi-Fi/BT APIs | `esp-radio` (unstable beta) |
+
+**Chip vs board** subsection (required in the same guide): rust-on-metal firmware is **not** portable across ESP32 / S3 / C6 via `set-target`. Chip = Cargo feature `esp32c6` (SoC). Board = pins/USB/LED via `board-specs/` and `board-devkitc-c6` / `board-xiao-c6`. Changing SoC is a new FunctionalSpec + toolchain row, not a feature flip on an existing example.
+
+**Honest caveats** (required; do not over-claim):
+
+- The crate `esp-bootloader-esp-idf` is **not** an ESP-IDF install. It only
+  emits the ESP-IDF-*compatible application descriptor* (`esp_app_desc!()`)
+  that current `espflash` and the chip’s second-stage bootloader expect.
+- Espressif chips still use an ESP-IDF-format **second-stage bootloader** in
+  ROM/flash (see *Rust on ESP Book* — Application Startup and Bootloader). You
+  do not install ESP-IDF to use the bootloader already on a typical DevKit
+  module.
+- If a reader wants **`std` Rust wrapping ESP-IDF**, they would install ESP-IDF.
+  That is a different ecosystem (`esp-idf-*` crates). Point them at
+  [The Rust on ESP Book](https://docs.espressif.com/projects/rust/book/) and
+  keep this repo on `esp-hal`.
+- Xtensa chips (ESP32, S2, S3) need `espup` even for `no_std`. They are **not
+  in v1**.
+
+Tone: precise, welcoming to C developers, not dismissive of ESP-IDF.
+
+Link official sources in the generated guide:
+
+- [esp-hal](https://github.com/esp-rs/esp-hal) (`no_std` HAL)
+- [Toolchain Installation](https://docs.espressif.com/projects/rust/book/getting-started/toolchain.html)
+- [esp-hal 1.0.0 beta announcement](https://developer.espressif.com/blog/2025/02/rust-esp-hal-beta)
+- [Application Startup and Bootloader](https://docs.espressif.com/projects/rust/book/application-development/bootloader.html)

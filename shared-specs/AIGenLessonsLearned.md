@@ -45,6 +45,8 @@
 
 - **Use `#[esp_hal::ram(persistent)]` (or the equivalent `#[ram(unstable(persistent))]` form on the pinned crate) for boot counters and other state that must survive deep sleep.** There is no sdkconfig RTC-memory option. Types must be safe to persist (bit-pattern / zeroable as required by the attribute). Consider a checksum; a reset that races initialization can leave random bytes in the static. (Sep 2026)
 
+- **Chip ≠ board.** The SoC is Cargo chip feature `esp32c6` (v1 only). The board is pins/USB/LED via `board-specs/` and `board-devkitc-c6` / `board-xiao-c6`. rust-on-metal is **not** ESP-IDF `idf.py set-target`: an S3 or classic ESP32 spec (touch, ULP, Xtensa, `espup`) must not be copied onto C6. Expanding the hardware bar means a new chip feature, a `rust-toolchain.md` row, and new example specs — not a flag flip. Multi-board on the **same** chip is allowed. (Sep 2026)
+
 - **Do not emit or "fix" sdkconfig.** This repository has no `sdkconfig`, `Kconfig.projbuild`, or `idf.py`. Chip, board, and optional behaviour are Cargo features plus generated `src/board.rs`. (Sep 2026)
 
 - **Every firmware image must emit an ESP-IDF-compatible application descriptor.** Current `espflash` refuses to flash without it (`ESP-IDF App Descriptor missing`). Depend on `esp-bootloader-esp-idf` (crates.io 0.6.0 for non-radio; git tag `esp-hal-v1.2.1` for radio so HAL unifies) with feature `esp32c6`, and invoke `esp_bootloader_esp_idf::esp_app_desc!()` in `src/main.rs`. This crate is **not** ESP-IDF: it only writes image metadata the 2nd-stage bootloader and `espflash` already expect. Omitting it looks like a flasher/port problem until the descriptor is present. (Sep 2026)

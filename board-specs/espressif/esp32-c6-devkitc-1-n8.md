@@ -2,7 +2,7 @@
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from vendor documentation via esp32-board-spec-generator skill
      Source: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c6/esp32c6-devkitc-1/index.html
-     Date: 2026-04-07 | Agent: Claude Code
+     Date: 2026-09-08 | Agent: Grok
      ================================================ -->
 
 # Board Spec — Espressif ESP32-C6-DevKitC-1-N8
@@ -35,9 +35,9 @@
 
 | Item | GPIO | Polarity | Notes |
 | --- | --- | --- | --- |
-| RGB LED (WS2812) | GPIO 8 | — | Addressable RGB; GPIO 8 is also a strapping pin — leave floating at reset for safe default |
+| RGB LED (WS2812) | GPIO 8 | — | Addressable RGB (**GRB**, 800 kHz NRZ). A GPIO level produces **no** visible output — use `esp-hal` RMT. Cap brightness at 64/255. GPIO 8 is also a strapping pin — leave floating at reset |
 | Power LED | — | — | 3.3 V rail indicator; hardware-controlled, not GPIO-accessible |
-| Boot button | GPIO 0 | Active LOW | Pulls GPIO 0 LOW at reset → serial download mode. Do not drive LOW at reset for normal boot |
+| Boot button | GPIO 0 | Active LOW | Pulls GPIO 0 LOW at reset → serial download mode. **RTC / LP GPIO 0** — valid deep-sleep wakeup pad. Do not drive LOW at reset for normal boot |
 | Reset button | RST / CHIP_PU | — | Hardware reset only |
 
 ## GPIO & Pin Rules / Warnings
@@ -73,18 +73,12 @@ The ESP32-C6 has **ADC1 only** — there is no ADC2. This means:
 
 ### USB Serial / Console
 
-The ESP32-C6-DevKitC-1 has **two independent USB-C ports**:
+The ESP32-C6-DevKitC-1 has **two independent USB-C ports**. Classify this board as **UART bridge (`espflash` on the UART-C port)** for the default workflow. There is no `sdkconfig`. Firmware logs via `esp-println`; flash/monitor via `espflash` (`cargo run --release`).
 
-- **Left port — USB-UART bridge**: Connected to UART0 (GPIO 16 TX, GPIO 17 RX) via a USB-UART bridge chip. Use this port for `idf.py flash monitor`. No special sdkconfig entry required.
-- **Right port — Native USB Serial/JTAG**: Connected directly to the ESP32-C6 built-in USB JTAG controller (GPIO 12 = D−, GPIO 13 = D+). Use this port for hardware JTAG debugging.
+- **Left port — USB-UART bridge**: Connected to UART0 (GPIO 16 TX, GPIO 17 RX) via a USB-UART bridge chip (CH343P). **Use this port** for `espflash` / `cargo run --release`. The serial monitor stays connected through deep sleep.
+- **Right port — Native USB Serial/JTAG**: Connected directly to the ESP32-C6 built-in USB Serial/JTAG controller (GPIO 12 = D−, GPIO 13 = D+). This port drops when USB is powered down for deep sleep; `espflash monitor` exits on first sleep entry.
 
-When flashing and monitoring via the **left (UART bridge) port**, the standard UART console is active by default — no sdkconfig change is needed. If you instead route the console through the **right (native USB) port**, add:
-
-```ini
-CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
-```
-
-> **Note**: This is `USB_SERIAL_JTAG`, not `USB_CDC` — the ESP32-C6 uses the same peripheral as the ESP32-C3, distinct from the ESP32-S3's full USB OTG controller.
+Do **not** emit `CONFIG_ESP_CONSOLE_*`. The right port is USB Serial/JTAG (same peripheral family as ESP32-C3), not USB CDC (ESP32-S3 USB OTG).
 
 ### Reserved / Internal Pins (do not use in user code)
 
@@ -145,10 +139,27 @@ CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
 - **Deep sleep ~7–15 µA**: Suitable for battery-powered applications via external power supply; note no onboard LiPo charger — external charging circuit required for LiPo.
 - **Breadboard-compatible DIP form factor**: 38 pins across two rows; works directly on standard 830-point breadboards.
 
-## idf.py Target
+## Cargo chip / board features
 
-```sh
-idf.py set-target esp32c6
+v1 firmware generation consumes **ESP32-C6** only. This board is the **required default**.
+
+| Item | Value |
+| --- | --- |
+| SoC | ESP32-C6 |
+| Chip Cargo feature | `esp32c6` |
+| Board Cargo feature | `board-devkitc-c6` (default) |
+| RTC / LP GPIOs | GPIO 0–7 only; GPIO 9 is **not** RTC |
+
+```toml
+# Default board — from examples/<name>/
+# cargo run --release
+# Optional XIAO:
+# cargo run --release --no-default-features --features board-xiao-c6
 ```
 
-> When using the **left USB-C port** (UART bridge), the default UART console is active — no extra sdkconfig entry is needed. When routing the console through the **right USB-C port** (native USB JTAG), add `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y` to `sdkconfig.defaults`.
+**Firmware notes (rust-on-metal):**
+
+- Generated `src/board.rs` is the **only** place these pin numbers belong. `main.rs` uses board APIs, not raw GPIO literals.
+- Console is `esp-println` + `espflash`, not `idf.py monitor`.
+- Sleep / RTC / radio APIs need `esp-hal` feature `unstable` in addition to `esp32c6`.
+- Every image still emits `esp_bootloader_esp_idf::esp_app_desc!()` (image metadata, not an ESP-IDF install).

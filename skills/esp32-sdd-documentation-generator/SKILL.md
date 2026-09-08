@@ -1,6 +1,6 @@
 ---
 name: esp32-sdd-documentation-generator
-description: Generates ALL Markdown files in the repo for rust-on-metal ESP32-C6 SDD. Root README badges are License / Rust / esp-hal / ESP32-C6. Prerequisites are rustup + espflash, not ESP-IDF. Keeps root minimal and places extended docs in /docs/. Enforces 100% AI-first rule. Never generates .github/workflows/.
+description: Generates ALL Markdown files in the repo for rust-on-metal ESP32-C6 SDD. Root README badges are License / Rust / esp-hal / ESP32-C6 / Made with Grok Build. Prerequisites are rustup + espflash, not ESP-IDF. Keeps root minimal and places extended docs in /docs/. Enforces 100% AI-first rule. Never generates .github/workflows/.
 version: "2.0.0"
 author: Richard Naszcyniec
 keywords: sdd, esp32, documentation, agent-generated, docs-folder, rust, esp-hal, esp32-c6
@@ -38,9 +38,10 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    ![Rust](https://img.shields.io/badge/Rust-stable-orange)
    ![esp-hal](https://img.shields.io/badge/esp--hal-1.2-blue)
    ![Chip](https://img.shields.io/badge/chip-ESP32--C6-orange)
+   [![Made with Grok Build](https://img.shields.io/badge/Made%20with-Grok%20Build-black)](https://x.ai/cli)
    ```
 
-   Do not add an ESP-IDF badge. Do not add a CI/build-status badge.
+   Do not add an ESP-IDF badge. Do not add a CI/build-status badge. The Grok Build badge is static attribution, not CI.
 
 5. Root README **Prerequisites** must list:
    - rustup **stable** (MSRV 1.95.0; see `shared-specs/rust-toolchain.md`)
@@ -50,6 +51,7 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    - Hardware: ESP32-C6-DevKitC-1-N8 (required default) or XIAO ESP32-C6
 
    Must **not** list ESP-IDF, `espup`, or the `esp` rustup channel as prerequisites.
+   After the required list, add 2–4 sentences of *why* (rust-on-metal `esp-hal`, RISC-V C6 uses rustup stable, Cargo + `espflash`) and link `docs/guides/why-esp-idf-is-not-required.md`. Do not stop at “not required.” Generate that guide from `documentation-generation-spec.md` section “Guide: Why ESP-IDF is not required.”
 
 6. Root README **Quick Start** from `examples/<name>`:
 

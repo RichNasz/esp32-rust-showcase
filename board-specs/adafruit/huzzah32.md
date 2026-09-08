@@ -42,7 +42,21 @@
 | VBAT | JST connector; MCP73831 charger from USB |
 | VUSB | USB 5 V input |
 
-## idf.py Target
-```
-idf.py set-target esp32
-```
+## USB Serial / Console
+
+USB-UART bridge (CP2104) on TX=GPIO1, RX=GPIO3. Classify as **UART bridge (`espflash` on the UART-C port)**. There is no `sdkconfig`. Firmware logs via `esp-println`; flash/monitor via `espflash`.
+
+Do **not** emit `CONFIG_ESP_CONSOLE_*`.
+
+This SoC is **not in v1**. v1 firmware compiles only for ESP32-C6.
+
+## Cargo chip / board features
+
+v1 firmware generation consumes **ESP32-C6** only. This SoC is **not in v1**.
+
+| Item | Value |
+| --- | --- |
+| SoC | ESP32 |
+| Chip Cargo feature | not in v1 |
+| Board Cargo feature | none |
+| RTC / LP GPIOs | Classic ESP32 RTC GPIO set. Not a v1 firmware target. |

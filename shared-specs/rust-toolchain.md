@@ -22,21 +22,33 @@ Looked up on crates.io and GitHub on **2026-09-08**. Generators must copy these 
 
 Firmware is `no_std` rust-on-metal via `esp-hal`. Do not install ESP-IDF, do not invoke `idf.py`, and do not generate `sdkconfig`.
 
+### Why ESP-IDF / `espup` are unused (v1)
+
+Verified against Espressif / esp-rs docs (2026-09):
+
+- **`esp-hal` does not use ESP-IDF.** It is a bare-metal (`no_std`) HAL. The other Rust path (`esp-idf-sys` / `esp-idf-hal` / `esp-idf-svc`) wraps the C SDK and *would* need ESP-IDF; this repository does not take that path. Espressif’s official, vendor-backed SDK for Rust is `esp-hal`.
+- **ESP32-C6 is RISC-V.** Upstream rustup **stable** already ships `riscv32imac-unknown-none-elf` (Tier 2). The *Rust on ESP Book* says: if you are not targeting ESP32 / ESP32-S2 / ESP32-S3 (Xtensa), skip `espup`. `espup` and the `esp` rustup channel exist for the Xtensa LLVM/Rust fork.
+- **`esp-bootloader-esp-idf` is image metadata only.** It emits `esp_app_desc!()` so `espflash` and the second-stage bootloader accept the ELF. It is not an ESP-IDF checkout.
+
+Generated reader-facing explanation: `docs/guides/why-esp-idf-is-not-required.md` (driven by `specs/documentation-generation-spec.md`).
+
 ---
 
 ## Supported Target SoCs
 
 | SoC | Status | Notes |
 |---|---|---|
-| ESP32-C6 | **Required** | RISC-V HP + LP cores; chip feature `esp32c6`; target `riscv32imac-unknown-none-elf` |
-| ESP32 | Not in v1 | — |
-| ESP32-S3 | Not in v1 | — |
-| ESP32-S2 | Not in v1 | — |
-| ESP32-C3 | Not in v1 | — |
-| ESP32-C5 | Not in v1 | — |
-| ESP32-H2 | Not in v1 | — |
+| ESP32-C6 | **Required** | RISC-V HP + LP cores; chip feature `esp32c6`; target `riscv32imac-unknown-none-elf`. RTC/LP GPIO **0–7 only**. LP-core (`esp-lp-hal`). No capacitive touch. |
+| ESP32 | Not in v1 | Xtensa — needs `espup` / `esp` channel. Different RTC map, no C6 LP-core. Do not port a C6 spec by renaming the chip feature. |
+| ESP32-S3 | Not in v1 | Xtensa — needs `espup`. USB OTG CDC, capacitive touch, ULP-RISC-V — **not** C6 APIs. |
+| ESP32-S2 | Not in v1 | Xtensa — needs `espup`. No BLE. Not a C6 drop-in. |
+| ESP32-C3 | Not in v1 | RISC-V (`riscv32imc-unknown-none-elf`, not `imac`). No LP-core. Single-core. |
+| ESP32-C5 | Not in v1 | RISC-V; dual-band Wi-Fi. No v1 chip feature. Keep board-spec as hardware reference only. |
+| ESP32-H2 | Not in v1 | RISC-V; 802.15.4 / BLE, **no Wi-Fi**. Cannot run Wi-Fi / ESP-NOW examples. |
 
-Hardware bar: **ESP32-C6-DevKitC-1-N8 required**; **XIAO ESP32-C6 also supported**. Other chips from the C-language showcase are not in v1.
+Hardware bar: **ESP32-C6-DevKitC-1-N8 required**; **XIAO ESP32-C6 also supported**. Other SoCs are catalog-only until a chip feature exists. Expanding the bar means a new chip feature + this table + new example specs — not `idf.py set-target`.
+
+Chip (SoC) ≠ board. `esp32c6` selects the HAL. `board-devkitc-c6` / `board-xiao-c6` select pins and USB. Each FunctionalSpec names **one** SoC.
 
 Each example's `FunctionalSpec.md` must declare C6 (and which boards). Generated crates compile only for `esp32c6`.
 

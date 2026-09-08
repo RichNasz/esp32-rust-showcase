@@ -47,6 +47,6 @@ Examples are standalone Cargo packages. There is no root workspace, no `sdkconfi
 
 ## Hardware bar
 
-v1 is ESP32-C6 only. Default board: ESP32-C6-DevKitC-1-N8 (`board-devkitc-c6`). Optional: XIAO ESP32-C6 (`board-xiao-c6`). RTC / LP GPIOs on C6 are **0–7 only**.
+v1 is ESP32-C6 only. **Chip ≠ board:** chip feature `esp32c6` (SoC); boards are `board-devkitc-c6` (default) and optional `board-xiao-c6`. rust-on-metal is not `idf.py set-target`. RTC / LP GPIOs on C6 are **0–7 only**.
 
 Next: [05 — Add a Board Spec](05-add-board-spec.md).

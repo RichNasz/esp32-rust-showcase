@@ -3,7 +3,7 @@
      Generated from vendor documentation via esp32-board-spec-generator skill
      Source: https://www.seeedstudio.com/Seeed-Studio-XIAO-ESP32C5-p-6609.html
              https://wiki.seeedstudio.com/xiao_esp32c5_getting_started/
-     Date: 2026-03-08 | Agent: Claude Code
+     Date: 2026-09-08 | Agent: Grok
      ================================================ -->
 
 # Board Spec — Seeed XIAO ESP32-C5
@@ -71,15 +71,11 @@ The ESP32-C5 exposes **5 ADC-capable GPIOs** on the XIAO pads, all on ADC1. ADC2
 
 ### USB Serial / Console
 
-The ESP32-C5 uses a **built-in USB Serial/JTAG controller** — no external USB-UART bridge chip is present. Serial monitor output requires:
+The ESP32-C5 uses a **built-in USB Serial/JTAG controller** — no external USB-UART bridge chip is present. Classify this board as **USB Serial/JTAG**. There is no `sdkconfig`. Firmware logs via `esp-println`; flash/monitor via `espflash`.
 
-```ini
-CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
-```
+Do **not** emit `CONFIG_ESP_CONSOLE_*`. This is USB Serial/JTAG (same peripheral family as ESP32-C3 / C6), not USB CDC (ESP32-S3 USB OTG).
 
-in `sdkconfig.defaults`. Without this, `idf.py monitor` will show no output over USB-C.
-
-> **Note**: This is `USB_SERIAL_JTAG`, not `USB_CDC` — the ESP32-C5 uses the same peripheral family as the ESP32-C3 and ESP32-C6, distinct from the ESP32-S3's full USB OTG (`USB_CDC`).
+This SoC is **not in v1**. v1 firmware compiles only for ESP32-C6.
 
 ### JTAG Pads (reverse side of PCB)
 
@@ -143,12 +139,15 @@ in `sdkconfig.defaults`. Without this, `idf.py monitor` will show no output over
 - **Tiny XIAO footprint** (21 × 17.8 mm): Drop-in replacement for other XIAO boards; share enclosure, PCB, and mounting designs across the XIAO family.
 - **Security hardware**: AES-128/256, SHA, HMAC, and Secure Boot V2 available — reference `esp32-hardware-crypto-configurer` skill when security is required.
 
-> **ESP-IDF compatibility note**: ESP32-C5 support was added in ESP-IDF v5.3. It is not listed in the project's `shared-specs/esp-idf-version.md` supported targets table — update that file before using this board in a project example. Pin in `sdkconfig.defaults` as `CONFIG_IDF_TARGET="esp32c5"`.
+> **v1 note**: ESP32-C5 is **not in v1**. Do not add it as a firmware target in `shared-specs/rust-toolchain.md`. Keep this file as hardware reference only.
 
-## idf.py Target
+## Cargo chip / board features
 
-```sh
-idf.py set-target esp32c5
-```
+v1 firmware generation consumes **ESP32-C6** only. This SoC is **not in v1**.
 
-> Remember to set `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y` in `sdkconfig.defaults` for serial output over USB-C. Without this line, `idf.py monitor` produces no output.
+| Item | Value |
+| --- | --- |
+| SoC | ESP32-C5 |
+| Chip Cargo feature | not in v1 |
+| Board Cargo feature | none |
+| RTC / LP GPIOs | See LP notes above (JTAG pads GPIO 2–5). Not a v1 firmware target. |

@@ -12,13 +12,13 @@
 
 The ESP32 Rust SDD Showcase is a reference implementation of **Spec-Driven Development (SDD)** for **rust-on-metal ESP32** (`no_std` `esp-hal` on ESP32-C6). It proves that a complete, production-quality embedded firmware project — with deep sleep, LP-core wakeup, hardware AES, BLE, HTTPS OTA, and ESP-NOW mesh — can be built without a human ever writing a line of Rust or Markdown outside of specification files.
 
-**Required board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported. No ESP-IDF install is required.
+**Chip ≠ board.** v1 firmware is **ESP32-C6 only** (`esp32c6`). rust-on-metal does not port across ESP32 / S3 / C6 the way ESP-IDF `idf.py set-target` often does. Required **board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported. Other SoCs in `board-specs/` are hardware reference until a chip feature exists. No ESP-IDF install is required — [why](guides/why-esp-idf-is-not-required.md).
 
 ## Documentation Sections
 
 | Section | Description |
 |---|---|
-| [Guides](guides/README.md) | Step-by-step tutorials: rustup + espflash, running your first example, adding a new board |
+| [Guides](guides/README.md) | Step-by-step tutorials: why no ESP-IDF, rustup + espflash, running your first example, adding a new board |
 | [Reference](reference/README.md) | Toolchain pins, Cargo conventions, pin mapping tables, spec format |
 | [Workflows](workflows/README.md) | The complete SDD workflow: from spec to flashed firmware |
 | [Board Specs](../board-specs/README.md) | AI-generated hardware specs for supported ESP32 boards; see also [Creating New Board Specs](guides/creating-new-board-specs.md) |

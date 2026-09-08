@@ -16,7 +16,7 @@ A board spec is an authoritative, structured Markdown file that describes the ha
 
 Location: `board-specs/<vendor-slug>/<board-slug>.md`
 
-v1 **firmware** compiles only for ESP32-C6 (`esp32c6`). Non-C6 board-specs may exist in the catalog for hardware reference; example READMEs exclude them until the hardware bar expands.
+v1 **firmware** compiles only for ESP32-C6 (`esp32c6`). Chip ≠ board: a board-spec does not add a chip feature. Non-C6 board-specs may exist in the catalog for hardware reference; example READMEs exclude them until a chip feature exists.
 
 ---
 

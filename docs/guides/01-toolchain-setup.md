@@ -6,7 +6,7 @@
 
 # 01 — Toolchain Setup
 
-Install the rust-on-metal toolchain used by every example in this repository. There is **no ESP-IDF install**. Pins live in [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md).
+Install the rust-on-metal toolchain used by every example in this repository. There is **no ESP-IDF install** — C developers: [Why ESP-IDF is not required](why-esp-idf-is-not-required.md). Pins live in [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md).
 
 ## 1. rustup stable
 
@@ -16,7 +16,7 @@ rustup default stable
 rustc --version   # MSRV 1.95.0 or newer
 ```
 
-Do **not** install the `esp` rustup channel or `espup`. RISC-V ESP32-C6 `no_std` uses rustup **stable**.
+Do **not** install the `esp` rustup channel or `espup`. RISC-V ESP32-C6 `no_std` uses rustup **stable** (Xtensa chips need `espup`; they are not in v1). See [Why ESP-IDF is not required](why-esp-idf-is-not-required.md).
 
 ## 2. Component and target
 

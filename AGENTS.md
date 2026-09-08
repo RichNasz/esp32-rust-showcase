@@ -27,10 +27,11 @@ Spec-Driven Development for **rust-on-metal ESP32-C6** (`no_std` [`esp-hal`](htt
 
 Pins: [`shared-specs/rust-toolchain.md`](shared-specs/rust-toolchain.md).
 
-## Boards
+## Chip vs boards
 
-- GPIO / LED / buttons come from [`board-specs/`](board-specs/) via generated `src/board.rs`. Never hardcode pins in `main.rs`.
-- Chip feature `esp32c6` only. Default board feature `board-devkitc-c6` (ESP32-C6-DevKitC-1-N8). Optional `board-xiao-c6`.
+- **Chip (SoC)** feature `esp32c6` only. rust-on-metal is not `idf.py set-target`; do not copy S3/ESP32 specs onto C6.
+- **Board** GPIO / LED / buttons come from [`board-specs/`](board-specs/) via generated `src/board.rs`. Never hardcode pins in `main.rs`.
+- Default board feature `board-devkitc-c6` (ESP32-C6-DevKitC-1-N8). Optional `board-xiao-c6`. Other SoCs are catalog-only until a chip feature exists.
 
 ## Skills
 

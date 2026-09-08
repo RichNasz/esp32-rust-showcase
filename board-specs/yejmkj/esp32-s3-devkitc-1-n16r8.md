@@ -2,7 +2,7 @@
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from vendor documentation using esp32-board-spec-generator skill
      Source: Espressif ESP32-S3-DevKitC-1 v1.1 User Guide
-     Date: 2026-03-10 | Agent: Claude Code
+     Date: 2026-09-08 | Agent: Grok
      ================================================ -->
 
 # Board Spec — YEJMKJ ESP32-S3-DevKitC-1-N16R8
@@ -60,18 +60,16 @@ Touch sensor channels (TOUCH1–TOUCH14) overlap with GPIO1–GPIO14 and share t
 
 ### USB Serial / Console
 
-The board has **one USB-C port** connected directly to the ESP32-S3 native USB OTG peripheral (GPIO19 USB\_D−, GPIO20 USB\_D+). There is **no CH343P** or any other USB-to-UART bridge chip on this board. Over the single USB-C connector the ESP32-S3 exposes two logical USB interfaces simultaneously:
+The board has **one USB-C port** connected directly to the ESP32-S3 native USB OTG peripheral (GPIO19 USB\_D−, GPIO20 USB\_D+). There is **no CH343P** or any other USB-to-UART bridge chip on this board. Classify this board as **USB Serial/JTAG**. There is no `sdkconfig`. Firmware logs via `esp-println`; flash/monitor via `espflash`. Over the single USB-C connector the ESP32-S3 exposes two logical USB interfaces simultaneously:
 
-- **USB JTAG/DFU interface** — used for flashing. Enumerates as `/dev/cu.usbmodem*2101` (macOS) or `/dev/ttyACM0` (Linux). Pass this port to `idf.py -p <port> flash`.
-- **USB Serial/JTAG CDC interface** — used for serial console output. Enumerates as a second `/dev/cu.usbmodem*` device (macOS) or `/dev/ttyACM1` (Linux). Pass this port to `idf.py -p <port> monitor`.
+- **USB JTAG/DFU interface** — flashing. Enumerates as `/dev/cu.usbmodem*2101` (macOS) or `/dev/ttyACM0` (Linux). Pass this port to `espflash`.
+- **USB Serial/JTAG CDC interface** — serial console. Enumerates as a second `/dev/cu.usbmodem*` device (macOS) or `/dev/ttyACM1` (Linux).
 
-Add the following to `sdkconfig.defaults` for all SDD projects targeting this board:
-
-```ini
-CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
-```
+Do **not** emit `CONFIG_ESP_CONSOLE_*`. Do **not** treat this as USB CDC.
 
 **Use a data-capable USB-C cable** — charge-only cables have no data lines and will prevent the board from being detected entirely.
+
+This SoC is **not in v1**. v1 firmware compiles only for ESP32-C6.
 
 ### Reserved / Internal Pins (do not use in user code)
 
@@ -152,7 +150,7 @@ CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
 - 16 MB flash provides ample space for OTA partitions, large file systems, and complex multi-component applications.
 - Single USB-C port uses the ESP32-S3 native USB OTG peripheral directly — no CH343P bridge. It simultaneously exposes a JTAG/DFU interface for flashing and a USB Serial/JTAG CDC interface for console, with no extra drivers required on modern macOS/Linux.
 - Onboard WS2812 RGB LED (GPIO48) is useful for status indication in any example without additional hardware. Note: solder jumper on the board may need bridging before the LED functions.
-- 4 dedicated JTAG pins (GPIO39–42) allow hardware-assisted debugging via `idf.py openocd` without occupying user-accessible GPIOs.
+- 4 dedicated JTAG pins (GPIO39–42) allow hardware-assisted debugging without occupying user-accessible GPIOs.
 - ADC1 (10 channels, GPIO1–10) is always available, even when Wi-Fi/BLE is active — safe for sensor applications that coexist with wireless.
 - ESP32-S3 AI vector extensions (PIE) accelerate TFLite Micro inference; combined with 8 MB PSRAM, the board is suitable for on-device ML demos.
 
@@ -163,18 +161,21 @@ Connect via the single **USB-C port**. The board presents two `usbmodem` interfa
 - Flash port: `/dev/cu.usbmodem*2101` (USB JTAG/DFU)
 - Monitor port: `/dev/cu.usbmodem*5A7B*` (USB Serial/JTAG CDC)
 
-Run flash and monitor together:
+This SoC is **not in v1**. If using the board as hardware reference with `espflash`:
 
 ```sh
-idf.py -p /dev/cu.usbmodem2101 flash -p /dev/cu.usbmodem5A7B1597911 monitor
+espflash flash --monitor --port /dev/cu.usbmodem2101
 ```
 
 If the board does not enumerate, enter bootloader mode manually: hold **BOOT** (GPIO0), press and release **RST**, then release **BOOT**. Native USB JTAG does not use DTR/RTS auto-reset — the manual sequence may be needed on first flash.
 
-## idf.py Target
+## Cargo chip / board features
 
-```sh
-idf.py set-target esp32s3
-```
+v1 firmware generation consumes **ESP32-C6** only. This SoC is **not in v1**.
 
-> This board has **one USB-C port** (native USB OTG, no CH343P). It enumerates as two `usbmodem` devices: a JTAG/DFU interface for flashing and a USB Serial/JTAG CDC interface for console. Always set `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y` in `sdkconfig.defaults`. Pass each port explicitly: `idf.py -p <jtag-port> flash -p <cdc-port> monitor`. Do NOT set `CONFIG_ESP_CONSOLE_USB_CDC=y`.
+| Item | Value |
+| --- | --- |
+| SoC | ESP32-S3 |
+| Chip Cargo feature | not in v1 |
+| Board Cargo feature | none |
+| RTC / LP GPIOs | ESP32-S3 RTC GPIO 0–21. Not a v1 firmware target. |

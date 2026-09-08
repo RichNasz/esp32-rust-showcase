@@ -12,6 +12,7 @@ Step-by-step guides for getting started with the ESP32 Rust SDD Showcase, from r
 
 | Guide | Description |
 |---|---|
+| [Why ESP-IDF is not required](why-esp-idf-is-not-required.md) | Why C developers do not need ESP-IDF / `idf.py` for this rust-on-metal repo |
 | [01 — Toolchain Setup](01-toolchain-setup.md) | Install rustup stable, `rust-src`, the RISC-V target, and espflash |
 | [02 — Install Skills](02-install-skills.md) | Use the project-local `skills/` tree with Claude Code, Grok, and other agents |
 | [03 — Run Your First Example](03-first-example.md) | Build and flash `blinky` with `cargo run --release` |
@@ -27,10 +28,11 @@ Step-by-step guides for getting started with the ESP32 Rust SDD Showcase, from r
 If you are new to the project, follow the guides in order:
 
 ```
-01 Toolchain Setup
-  └─► 02 Install Skills
-        └─► 03 Run Your First Example
-              └─► 04 Create a New Example
+Why ESP-IDF is not required   (C developers: read this first)
+  └─► 01 Toolchain Setup
+        └─► 02 Install Skills
+              └─► 03 Run Your First Example
+                    └─► 04 Create a New Example
 ```
 
 Then dive into topic guides (05–07) as needed for your project.
@@ -44,4 +46,4 @@ Then dive into topic guides (05–07) as needed for your project.
 - Hardware: **ESP32-C6-DevKitC-1-N8** (required default) or XIAO ESP32-C6
 - A USB-C cable (DevKitC: **left** UART-C port for `espflash` monitor through deep sleep)
 
-ESP-IDF is **not** required.
+ESP-IDF is **not** required — [why](why-esp-idf-is-not-required.md).

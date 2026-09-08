@@ -22,19 +22,19 @@ When starting a new example or feature. Always run this skill before `esp32-sdd-
 | **Default** | Espressif ESP32-C6-DevKitC-1-N8 | `board-specs/espressif/esp32-c6-devkitc-1-n8.md` | `board-devkitc-c6` |
 | Secondary | Seeed XIAO ESP32-C6 | `board-specs/seeed/xiao-esp32c6.md` | `board-xiao-c6` |
 
-Chip is ESP32-C6 only (`esp32c6`). Other chips from the C-language showcase are not in v1 — do not offer them.
+Chip (SoC) ≠ board. Chip is ESP32-C6 only (`esp32c6`). Other SoCs (ESP32, S3, C5, …) are not in v1 — do not offer them. Do not copy S3 touch / classic ULP / Xtensa behaviour onto a C6 spec. rust-on-metal is not `idf.py set-target`.
 
 RTC GPIOs on C6 are **0–7 only**. GPIO 9 (XIAO boot button) is **not** an RTC GPIO and cannot wake from deep sleep.
 
 ## Workflow (follow exactly)
 MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before doing anything else.
 
-1. Ask the user for: example name (kebab-case slug), target board (default DevKitC-C6; offer XIAO C6 as secondary), and high-level goal in one sentence.
+1. Ask the user for: example name (kebab-case slug), target **board** (default DevKitC-C6; offer XIAO C6 as secondary — chip is always C6), and high-level goal in one sentence. Name SoC `esp32c6` in Target Hardware separately from the board checklist.
 2. Derive hardware requirements from the goal (sensors, radios, power mode, security needs, connectivity, LP-core).
 3. Ask clarifying questions only if a requirement is genuinely ambiguous (wakeup source, MQTT topic, etc.).
 4. Draft all `FunctionalSpec.md` sections using `templates/FunctionalSpec.template.md`:
    - Overview
-   - Target Hardware / Board Compatibility Checklist (C6 DevKitC default, XIAO C6 secondary)
+   - Target Hardware: **SoC** table (`esp32c6`) then Board Compatibility Checklist (C6 DevKitC default, XIAO C6 secondary). Do not describe another SoC’s peripherals.
    - Features
    - Wakeup Strategy (if applicable)
    - Connectivity

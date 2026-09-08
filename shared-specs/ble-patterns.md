@@ -19,7 +19,7 @@ v1 BLE is rust-on-metal: `esp-radio` (controller) + **TrouBLE** (`trouble-host`,
 
 **Decision rule:** Use TrouBLE + `esp-radio` for every BLE example in v1, including beacons and beacon+sleep. Do not emit NimBLE C, Bluedroid, `sdkconfig`, or `CONFIG_BT_*`.
 
-Pins: `esp-radio` is the git pin at tag `esp-hal-v1.2.1` (see `rust-toolchain.md`). Upstream `esp-hal` 1.2.1 BLE examples use `trouble-host` **0.7**. Enable `esp-hal` `unstable`, `esp-radio` features `esp32c6` + `ble` + `unstable`, and `esp-rtos` features `esp32c6` + `embassy` + `esp-radio`.
+Pins: git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` (when heap is justified) from tag `esp-hal-v1.2.1` (see `rust-toolchain.md`). Do not mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`. Upstream `esp-hal` 1.2.1 BLE examples use `trouble-host` **0.7**. Enable `esp-hal` `unstable`, `esp-radio` features `esp32c6` + `ble` + `unstable`, and `esp-rtos` features `esp32c6` + `embassy` + `esp-radio`.
 
 Start the `esp-rtos` scheduler **before** constructing `BleConnector`. Radio init is internal to `BleConnector::new` / the radio types; there is no public `esp_radio::init()` on this HAL line.
 
@@ -174,10 +174,10 @@ BLE 5 extended advertising is optional and only when the FunctionalSpec asks for
 
 | Issue | Root Cause | Fix |
 |---|---|---|
-| Duplicate `esp-hal` / radio resolve failure | crates.io `esp-radio = "1.0.0-beta.0"` next to `esp-hal = "1.2.1"` | Git-pin `esp-radio` **and** `esp-hal` at tag `esp-hal-v1.2.1` (`rust-toolchain.md`) |
+| Duplicate `esp-hal` / radio resolve failure | crates.io `esp-radio` or crates.io `esp-rtos = "0.4.0"` next to git `esp-hal` | Git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` (when justified) at tag `esp-hal-v1.2.1` (`rust-toolchain.md`) |
 | Panic: scheduler not initialized | `BleConnector::new` before `esp_rtos::start` | Start `esp-rtos` first (C6: timer + `FROM_CPU_INTR0`) |
 | Radio left powered in deep sleep | Advertiser / `BleConnector` still live | Stop advertising, stop runner, drop connector, then sleep |
-| 31-byte PDU overflow | Payload + headers exceed limit | Count bytes: Flags (3) + Mfr header (4) + company ID (2) = 9 bytes consumed before payload; use `AdStructure::encode_slice` and check `len` |
+| 31-byte PDU overflow | Payload + headers exceed limit | Count bytes: Flags (3) + Mfr header (4) = 7 bytes consumed before payload (max 24); use `AdStructure::encode_slice` and check `len` |
 | GPIO state lost after wakeup | Output not held across sleep | Use `esp-hal` GPIO hold / RTC hold after BLE teardown, before deep sleep |
 | High average current | BLE teardown skipped | Always execute the full teardown sequence before deep sleep |
 | Boot button not usable for deep-sleep wakeup on ESP32-C6 | GPIO 9 (XIAO boot button) is not an RTC GPIO; only GPIO 0–7 support ext1/LP wakeup | Timer-only wakeup on that board, or an external button on LP GPIO 0–7. Document in the Supported Boards table |

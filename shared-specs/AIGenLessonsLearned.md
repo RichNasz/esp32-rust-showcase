@@ -36,7 +36,7 @@
 
 - **Embassy `into_async` belongs on the core that owns the driver.** Do not convert a peripheral to async on one executor and then use it from another task/core. Do not keep a blocking handle and an async handle to the same peripheral. (Sep 2026)
 
-- **Radio requires `esp-hal` feature `unstable`.** Wi-Fi, BLE, and ESP-NOW via `esp-radio` (pinned 1.0.0-beta.0 — a beta crate) need `unstable`. Document that honestly in every radio example README. Do not pretend those APIs are frozen. (Sep 2026)
+- **Radio requires `esp-hal` feature `unstable`.** Wi-Fi, BLE, and ESP-NOW via `esp-radio` (git pin at tag `esp-hal-v1.2.1`; the crate is an unstable beta) need `unstable`. Document that honestly in every radio example README. Do not pretend those APIs are frozen. (Sep 2026)
 
 - **Tear down `esp-radio` before deep sleep.** Stop advertising / STA / ESP-NOW and deinitialize the radio stack before entering deep sleep. Skipping teardown leaves the radio powered and the sleep current in milliamps instead of microamps. (Sep 2026)
 

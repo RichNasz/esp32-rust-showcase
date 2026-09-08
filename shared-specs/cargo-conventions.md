@@ -50,12 +50,14 @@ board-devkitc-c6 = []
 board-xiao-c6 = []
 ```
 
-Radio examples **must not** paste crates.io `esp-radio = "1.0.0-beta.0"` next to crates.io `esp-hal = "1.2.1"` (that crates.io radio crate depends on `esp-hal ~1.1.0` and will not resolve). Use the git pin from `rust-toolchain.md` and take `esp-hal` from the same tag so path deps unify:
+Radio examples **must not** mix crates.io crates from the `esp-hal` monorepo with git pins. Do **not** paste crates.io `esp-radio = "1.0.0-beta.0"` next to crates.io `esp-hal = "1.2.1"` (that crates.io radio crate depends on `esp-hal ~1.1.0` and will not resolve). Do **not** paste crates.io `esp-rtos = "0.4.0"` next to git `esp-hal`. Git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` (when heap is justified) from tag `esp-hal-v1.2.1` so path deps unify (`rust-toolchain.md`):
 
 ```toml
 esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
 esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
-esp-rtos = { version = "0.4.0", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-rtos = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "embassy", "esp-radio"] }
+# when the CodingSpec justifies a heap:
+esp-alloc = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1" }
 embassy-executor = "0.10"
 embassy-time = "0.5"
 # plus wifi and/or ble and/or esp-now on esp-radio, matching the example
@@ -65,9 +67,9 @@ Rules:
 
 - Pin versions from `rust-toolchain.md` (looked up 2026-09-08). Do not use `"*"`.
 - Enable `esp-hal` feature `"unstable"` **in addition to** `"esp32c6"` when radio or sleep needs it.
-- `esp-rtos` (features `esp32c6` + `embassy`) is the Embassy integration path. Time is `embassy_time`. Radio examples also enable `esp-rtos` feature `esp-radio`.
-- `esp-radio` is **only** for radio examples. Git pin at tag `esp-hal-v1.2.1` — see `rust-toolchain.md`. Treat it as an unstable beta. Enable `wifi` / `ble` / `esp-now` features as the example requires.
-- `esp-alloc` is **only** when the CodingSpec justifies a heap.
+- `esp-rtos` (features `esp32c6` + `embassy`) is the Embassy integration path. Time is `embassy_time`. Radio examples also enable `esp-rtos` feature `esp-radio` and git-pin `esp-rtos` at tag `esp-hal-v1.2.1`. Non-radio examples use crates.io `esp-rtos` 0.4.0.
+- `esp-radio` is **only** for radio examples. Git pin at tag `esp-hal-v1.2.1` with the rest of the monorepo stack — see `rust-toolchain.md`. Treat it as an unstable beta. Enable `wifi` / `ble` / `esp-now` features as the example requires.
+- `esp-alloc` is **only** when the CodingSpec justifies a heap. Radio examples that need it git-pin it from the same tag; non-radio examples use crates.io 0.11.0.
 - `esp-bootloader-esp-idf` and `esp-storage` are **only** when the example needs IDF-compatible image metadata or flash storage.
 - Board features `board-devkitc-c6` (default) and `board-xiao-c6` are **mutually exclusive**. Generated `src/board.rs` (or `main.rs`) must `compile_error!` if both are enabled or if neither is enabled.
 - Do not add a chip feature other than `esp32c6` in v1.
@@ -135,3 +137,4 @@ cargo run --release --no-default-features --features board-xiao-c6
 | Chip features other than `esp32c6` | Other SoCs are not in v1 |
 | Both board features enabled without `compile_error!` | Pins would be silently wrong |
 | crates.io `esp-radio = "1.0.0-beta.0"` with crates.io `esp-hal = "1.2.1"` | crates.io radio depends on `esp-hal ~1.1.0` and will not resolve |
+| crates.io `esp-rtos = "0.4.0"` with git `esp-hal` | crates.io `esp-rtos` pulls crates.io `esp-hal`; Cargo then builds two HAL packages |

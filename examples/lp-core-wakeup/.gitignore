@@ -1,0 +1,5 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+/target/
+*.bin
+*.elf
+*.map

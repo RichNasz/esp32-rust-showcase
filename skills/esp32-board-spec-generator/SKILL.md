@@ -13,7 +13,7 @@ keywords: sdd, esp32, board-spec, hardware, pinout, vendor, datasheet, rust, esp
 # ESP32 Board Spec Generator
 
 ## When to use
-When adding a new ESP32 board or module to the project, or when vendor documentation has changed and the board spec needs to be refreshed.
+When adding an ESP32-C6 board, or when vendor documentation has changed and the board spec needs to be refreshed.
 
 Write board-specs only for **ESP32-C6** (DevKitC-C6 required, XIAO C6 also supported). If the board is another SoC, stop. Do not add it as hardware reference.
 
@@ -25,7 +25,7 @@ Write board-specs only for **ESP32-C6** (DevKitC-C6 required, XIAO C6 also suppo
 MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before doing anything else.
 
 1. Parse the provided vendor documentation (datasheet, product page, or schematic).
-2. Extract and normalise: full GPIO pinout, peripheral assignments (I2C, SPI, UART, PWM, ADC, DAC, touch), power supply rails and limits, flash/PSRAM sizes and interface speeds, antenna type, and any reserved or strapping pins. For ESP32-C6, explicitly list which GPIOs are **RTC / LP capable (GPIO 0–7 only)** and note that GPIO 9 is **not** an RTC GPIO.
+2. Extract and normalise: full GPIO pinout, peripheral assignments (I2C, SPI, UART, PWM, ADC), power supply rails and limits, flash size, antenna type, and any reserved or strapping pins. The ESP32-C6 has **ADC1 only**. It has **no DAC** and **no capacitive touch**. Do not add those peripherals. PSRAM on the v1 boards is **None**. Explicitly list which GPIOs are **RTC / LP capable (GPIO 0–7 only)** and note that GPIO 9 is **not** an RTC GPIO. Call the low-power core the LP core. Do not write that it runs ULP programs. Active-current examples must not use the Xtensa ~68 mA figure. Fill-in parts must not be `ESP32-WROOM-32`, Feather, or the HUZZAH32 `AP2112`.
 3. Cross-reference against `shared-specs/rust-toolchain.md` for platform-level constraints (v1 chip = ESP32-C6; others not in v1). Do **not** add non-C6 SoCs as Supported in that file.
 4. Generate `board-specs/<vendor>/<board-name>.md` using the standard section layout from `templates/BoardSpec.template.md`.
 5. Add the standard agent-generated header to the output file.

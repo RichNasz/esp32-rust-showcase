@@ -52,7 +52,7 @@ Layout (4 MB flash, typical):
 | phy_init | data | phy | 0xF000 | 0x1000 |
 | factory | app | factory | 0x10000 | 1 MB |
 
-**When to use:** Prototypes, demos, and examples that do not require OTA or custom NVS sizing.
+**When to use:** Prototypes, demos, and examples that do not require OTA or an extra data partition. The `nvs` and `phy_init` rows are the bootloader's partitions. Application code does not open an NVS namespace.
 
 ---
 
@@ -67,13 +67,12 @@ otadata,  data, ota,      0xF000,   0x2000,
 phy_init, data, phy,      0x11000,  0x1000,
 ota_0,    app,  ota_0,    0x20000,  1536K,
 ota_1,    app,  ota_1,    0x1A0000, 1536K,
-storage,  data, nvs,      0x320000, 0x40000,
 ```
 
-- Requires 4 MB flash minimum.
+- Requires 4 MB flash minimum. The table ends at `0x320000`.
 - `otadata` tracks the active OTA slot (IDF-compatible bootloader via `esp-bootloader-esp-idf`).
 - Both `ota_0` and `ota_1` are 1.5 MB — size according to the application binary size.
-- `storage` (256 KB): application NVS.
+- `nvs` and `phy_init` stay because the bootloader expects them. This profile has no application data partition. Do not add an NVS `storage` row. The HTTPS OTA example writes the inactive app slot. It does not use NVS.
 
 **When to use:** `secure-ota-https`. The stock `espflash` bootloader does not auto-rollback.
 
@@ -85,7 +84,7 @@ If neither profile fits, define a custom `partitions.csv` in the FunctionalSpec 
 
 | Flash Size | What fits |
 |---|---|
-| 4 MB (XIAO ESP32-C6) | `default-single-app` and `dual-ota` (the `dual-ota` table ends at `0x360000`) |
+| 4 MB (XIAO ESP32-C6) | `default-single-app` and `dual-ota` (the `dual-ota` table ends at `0x320000`) |
 | 8 MB (DevKitC-C6-N8) | Both profiles |
 
 Set espflash flash size to the chip (`espflash flash --flash-size 8MB` or `espflash.toml` `[flash] size = "8MB"`) when auto-detect is wrong. DevKitC-C6-N8 is 8 MB. XIAO ESP32-C6 is 4 MB.

@@ -1,6 +1,6 @@
 ---
 name: esp32-sdd-documentation-generator
-description: Generates ALL Markdown files in the repo for rust-on-metal ESP32-C6 SDD. Root README badges are License / Rust / esp-hal / ESP32-C6 / Made with Grok Build. Prerequisites are rustup + espflash, not ESP-IDF. Keeps root minimal and places extended docs in /docs/. Enforces 100% AI-first rule. Never generates .github/workflows/.
+description: Generates ALL Markdown files in the repo for rust-on-metal ESP32-C6 SDD. Root README badges are License / Rust / esp-hal / ESP32-C6 / Made with Grok Build. Prerequisites are rustup + espflash, not ESP-IDF. Keeps root minimal and places extended docs in /docs/. Never generates .github/workflows/.
 version: "2.0.0"
 author: Richard Naszcyniec
 keywords: sdd, esp32, documentation, agent-generated, docs-folder, rust, esp-hal, esp32-c6
@@ -10,7 +10,7 @@ keywords: sdd, esp32, documentation, agent-generated, docs-folder, rust, esp-hal
      AGENT-GENERATED — DO NOT EDIT BY HAND
      ================================================ -->
 
-# ESP32 SDD Showcase Documentation Generator
+# ESP32 Rust SDD Showcase Documentation Generator
 
 ## When to use
 Any time specs/ changes or you add examples/boards.

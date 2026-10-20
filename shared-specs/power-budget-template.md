@@ -1,7 +1,7 @@
 # Power Budget Template
 
 **Classification:** Human-authored shared spec
-**Applies to:** All low-power examples (deep sleep, light sleep, LP-core / ULP)
+**Applies to:** All low-power examples (deep sleep, light sleep, LP-core)
 
 There is no `sdkconfig`. Generators must not emit `CONFIG_PM_*`, `CONFIG_ESP_SLEEP_*`, `CONFIG_FREERTOS_*`, `CONFIG_ULP_*`, or any other Kconfig.
 

@@ -31,7 +31,7 @@
 | Modem sleep current | ~30 mA |
 | Active / Wi-Fi TX current | ~80 mA average; ~250 mA peak during Wi-Fi 6 transmission (per ESP32-C6 datasheet) |
 
-> **Power note for SDD projects**: The ~15 µA deep sleep floor makes this board well-suited for battery-powered applications with infrequent wakeups. The LP core (20 MHz RISC-V) can run ULP programs in light sleep while keeping the HP core off. Use the `esp32-deep-sleep-engineer` skill when targeting battery operation. Note: the ESP32-C6 LP core is distinct from ESP32's ULP and uses dedicated LP peripherals (LP_UART, LP_I2C, LP_GPIO 0–7).
+> **Power note for SDD projects**: The ~15 µA deep sleep floor makes this board well-suited for battery-powered applications with infrequent wakeups. The LP core (20 MHz RISC-V) can run its own program from LP RAM in light sleep while the HP core is off. Use the `esp32-deep-sleep-engineer` skill when targeting battery operation. Note: the ESP32-C6 LP core is distinct from ESP32's ULP and uses dedicated LP peripherals (LP_UART, LP_I2C, LP_GPIO 0–7).
 
 ## Onboard Peripherals
 
@@ -131,7 +131,7 @@ If your application does not use the U.FL connector, leave GPIO3 and GPIO14 undr
 ## Board Advantages for SDD Projects
 
 - **ADC1-only architecture**: No ADC2 means all analog reads are safe during active Wi-Fi — no need to gate ADC around network activity (unlike ESP32 or ESP32-S3).
-- **Dual RISC-V cores**: The 20 MHz LP core can execute ULP-style tasks in light sleep while the 160 MHz HP core is gated off — useful for sensor polling without full wakeup.
+- **Dual RISC-V cores**: The 20 MHz LP core can run from LP RAM while the 160 MHz HP core is gated off — useful for sensor polling without full wakeup.
 - **Wi-Fi 6 (802.11ax)**: Target-ready latency and TWT (Target Wake Time) for IoT power budgeting; reference this in FunctionalSpec when designing battery-efficient connected devices.
 - **Zigbee + Thread (802.15.4)**: The C6 is the first XIAO with native Matter-over-Thread support — specify protocol in FunctionalSpec when building smart home mesh devices.
 - **Tiny footprint** (21 × 17.8 mm): Same XIAO form factor as ESP32S3; share enclosure and PCB designs across XIAO family.

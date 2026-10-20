@@ -37,7 +37,7 @@ Chip feature is `esp32c6` only.
 Use profile `dual-ota` (`shared-specs/partition-table-profiles.md`). Emit `partitions.csv`
 and an espflash flash-size setting: 8 MB on DevKitC-C6, 4 MB on XIAO C6. The first
 installed image must boot from `ota_0` at the profile offset. Do not invent a factory
-partition and do not emit `sdkconfig`.
+partition, do not add an NVS `storage` row, and do not emit `sdkconfig`.
 
 Slot updates go through `esp-bootloader-esp-idf`'s OTA updater plus `esp-storage` flash
 access. That is the same building block as the `esp-hal` 1.2.1 `examples/ota/update`

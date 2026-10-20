@@ -70,8 +70,10 @@ constrain the trigger button. The trigger is a press **after** boot.
   environment variables. Placeholder values must let `cargo build --release` succeed.
   Never put secrets in `src/`. Never log the PSK.
 - Partition table: profile `dual-ota` from `shared-specs/partition-table-profiles.md`.
-  The same CSV fits 4 MB (XIAO) and 8 MB (DevKitC-N8). Flash size follows the board.
-  The first `cargo run` image must boot from `ota_0`. There is no `sdkconfig`.
+  The table ends at `0x320000` and fits 4 MB (XIAO) and 8 MB (DevKitC-N8). It keeps
+  the bootloader `nvs` and `phy_init` rows and has no application data partition.
+  Flash size follows the board. The first `cargo run` image must boot from `ota_0`.
+  There is no `sdkconfig`.
 - Serial log at INFO: booted slot, Wi-Fi result (no password), download progress in
   coarse steps, CRC result, activate-or-reject, and reboot. Certificate failure names
   the reason class (untrusted, handshake, timeout) and does not print key material.

@@ -89,7 +89,7 @@ Optional XIAO ESP32-C6:
 cargo run --release --no-default-features --features board-xiao-c6
 ```
 
-The runner is `espflash flash --monitor --partition-table partitions.csv`. Flash size is detected from the chip. DevKitC-1-N8 is 8 MB. XIAO ESP32-C6 is 4 MB. When auto-detect is wrong, pass `--flash-size 8mb` on the DevKitC and `--flash-size 4mb` on the XIAO. There is no factory app partition. The first image must boot from `ota_0` at offset `0x20000`. `ota_1` is at `0x1A0000`. Each slot is 1536 KiB. The table, including the `storage` partition, ends at `0x360000`. Profile name: `dual-ota` (`shared-specs/partition-table-profiles.md`, `partitions.csv`, `espflash.toml`).
+The runner is `espflash flash --monitor --partition-table partitions.csv`. Flash size is detected from the chip. DevKitC-1-N8 is 8 MB. XIAO ESP32-C6 is 4 MB. When auto-detect is wrong, pass `--flash-size 8mb` on the DevKitC and `--flash-size 4mb` on the XIAO. There is no factory app partition. The first image must boot from `ota_0` at offset `0x20000`. `ota_1` is at `0x1A0000`. Each slot is 1536 KiB. The table ends at `0x320000`. It has no application NVS partition. Profile name: `dual-ota` (`shared-specs/partition-table-profiles.md`, `partitions.csv`, `espflash.toml`).
 
 | Name | Type | SubType | Offset | Size |
 | --- | --- | --- | --- | --- |
@@ -98,7 +98,6 @@ The runner is `espflash flash --monitor --partition-table partitions.csv`. Flash
 | phy_init | data | phy | 0x11000 | 0x1000 |
 | ota_0 | app | ota_0 | 0x20000 | 1536K |
 | ota_1 | app | ota_1 | 0x1A0000 | 1536K |
-| storage | data | nvs | 0x320000 | 0x40000 |
 
 A clean tree builds with placeholders: SSID `unset`, URL `https://192.0.2.1/firmware.bin`, and `certs/placeholder-ca.pem`. An empty or `unset` SSID skips association and stays in the wait. The shell environment overrides `[env]` in `.cargo/config.toml`. Do not commit a real password. Never put secrets in `src/`.
 

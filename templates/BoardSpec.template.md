@@ -1,7 +1,7 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-03-08 | Agent: Claude Code
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Board Spec — <!-- FILL: Vendor Board/Module Name -->
@@ -11,22 +11,22 @@
 | Item | Value |
 | --- | --- |
 | SoC | <!-- FILL: e.g. ESP32-C6 (RISC-V HP + LP cores, up to 160 MHz) --> |
-| Module | <!-- FILL: e.g. ESP32-WROOM-32 , or "Bare SoC (no module)" --> |
-| Flash | <!-- FILL: e.g. 8 MB SPI NOR (quad-SPI) --> |
-| PSRAM | <!-- FILL: e.g. 8 MB OPI PSRAM, or "None" --> |
+| Module | <!-- FILL: e.g. ESP32-C6-WROOM-1, or "Bare SoC (no module)" --> |
+| Flash | <!-- FILL: e.g. 8 MB SPI NOR (quad-SPI) on DevKitC-C6, 4 MB on XIAO C6 --> |
+| PSRAM | <!-- FILL: None. v1 C6 boards have no PSRAM. Do not write an S3 OPI size. --> |
 | Antenna | <!-- FILL: e.g. PCB trace / ceramic / U.FL connector --> |
-| Form factor | <!-- FILL: e.g. Feather, XIAO, DevKit, or module dimensions --> |
+| Form factor | <!-- FILL: e.g. DevKitC DIP or XIAO 21 × 17.8 mm. Not Feather. --> |
 | Certification | <!-- FILL: e.g. FCC / CE, or "—" if unknown --> |
 
 ## Power Management
 
 | Item | Detail |
 | --- | --- |
-| 3V3 rail | <!-- FILL: e.g. 500 mA max from AP2112 LDO --> |
+| 3V3 rail | <!-- FILL: e.g. ~500 mA from the onboard LDO. Name the part from the schematic. Not the HUZZAH32 AP2112. --> |
 | USB input | <!-- FILL: e.g. USB-C, 5 V --> |
 | Battery input | <!-- FILL: e.g. JST 1.25 mm LiPo connector with onboard charger, or "None" --> |
-| Deep sleep current | <!-- FILL: e.g. ~14 µA typical with all peripherals off --> |
-| Active current | <!-- FILL: e.g. ~68 mA during Wi-Fi transmission --> |
+| Deep sleep current | <!-- FILL: e.g. DevKitC ~7–15 µA, XIAO ~15 µA. Use the vendor figure. --> |
+| Active current | <!-- FILL: e.g. CPU-only ~25 mA, or the C6 datasheet Wi-Fi TX figure. Do not copy the Xtensa ~68 mA number. --> |
 
 > **Power note for SDD projects**: <!-- FILL: Note whether deep sleep is viable for battery operation, reference the esp32-deep-sleep-engineer skill if so. -->
 
@@ -47,8 +47,8 @@
 
 ### ADC Restrictions
 
-<!-- FILL: List which ADC banks are available and any restrictions during Wi-Fi operation.
-Example: ADC2 is disabled when Wi-Fi is active. ADC1 channels are always available. -->
+<!-- FILL: ESP32-C6 has ADC1 only. There is no ADC2, so Wi-Fi does not block ADC.
+Do not write an ESP32 or S3 "ADC2 is disabled during Wi-Fi" rule as this board's behavior. -->
 
 ### USB Serial / Console
 
@@ -87,7 +87,7 @@ NOTE: Always specify a language on fenced code blocks (e.g. ```toml, ```sh, ```r
 <!-- FILL: Bullet list of hardware features that are relevant when authoring a FunctionalSpec.md.
 Typical items to consider:
 - Deep sleep floor and battery life implications
-- PSRAM size and use cases (ML buffers, JPEG frames, audio DSP)
+- PSRAM: v1 C6 boards have none. Do not plan JPEG or ML frame buffers in on-chip PSRAM
 - Antenna options and range trade-offs
 - Built-in LiPo charger
 - ADC1-safe pads during Wi-Fi

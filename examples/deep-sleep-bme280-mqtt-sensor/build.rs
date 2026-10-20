@@ -1,6 +1,6 @@
 // AGENT-GENERATED — DO NOT EDIT BY HAND
-//! Linker / esp-hal build-time config. Embed an LP-core image here when the
-//! FunctionalSpec requires lp-core firmware. Do not shell out to CMake.
+//! Linker script for a crate that does not build LP-core firmware.
+//! Emit linkall.x last. Do not shell out to CMake.
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");

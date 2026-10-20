@@ -61,6 +61,8 @@
 
 - **The board catalog is ESP32-C6 only** (DevKitC-C6 and XIAO C6). Do not restore HUZZAH32, XIAO ESP32S3, XIAO ESP32-C5, the YEJMKJ S3 DevKit, or an empty LilyGo folder as hardware reference. Other SoCs stay as rows in `rust-toolchain.md` so generators refuse them. They do not get board-specs. (Oct 2026)
 
+- **Do not restore ESP-IDF showcase fill-ins.** `templates/BoardSpec.template.md` examples are C6 only: module `ESP32-C6-WROOM-1` or a bare SoC, form factor DevKitC or XIAO, the onboard LDO (not the HUZZAH32 `AP2112`), PSRAM `None`, and active current from the C6 board spec. The Xtensa ~68 mA Wi-Fi figure is forbidden. The board-spec skill extracts I2C, SPI, UART, PWM, and ADC1. The C6 has no DAC and no capacitive touch. Call the low-power core the LP core. Do not say it runs ULP programs. A crate whose FunctionalSpec does not require LP-core firmware gets a linker-only `build.rs`. `dual-ota` keeps the bootloader `nvs` and `phy_init` rows and has no extra application-NVS `storage` partition. The documentation-generator title is this repository, not "ESP32 SDD Showcase", and it does not say "100% AI-first". (Oct 2026)
+
 ## Required Workflow When Something Goes Wrong
 1. Read this file.
 2. Check `shared-specs/coding-conventions.md`, `shared-specs/cargo-conventions.md`, `shared-specs/rust-toolchain.md`, and the relevant board-spec.

@@ -133,6 +133,17 @@ When a FunctionalSpec implementation-status paragraph disagrees with the master-
 
 When any spec changes status, regenerate these files. Do not leave a README describing the previous design (S3 touch, IDF mesh, signed Secure Boot demo).
 
+### Retired ESP-IDF template content
+
+These strings belonged to `esp32-sdd-showcase`. Do not put them back into generated files.
+
+- `templates/BoardSpec.template.md` fill-ins are ESP32-C6 only. Module is `ESP32-C6-WROOM-1` or a bare SoC. Form factor is DevKitC or XIAO. The 3V3 example names the onboard LDO from the schematic, not the HUZZAH32 `AP2112`. PSRAM is `None`. Deep-sleep current comes from the C6 board specs. Active current is the C6 CPU or Wi-Fi figure, not the Xtensa ~68 mA number. ADC text says ADC1 only. The generator header names Grok and the regeneration date.
+- `skills/esp32-board-spec-generator` extracts I2C, SPI, UART, PWM, and ADC. It does not ask for DAC or capacitive touch.
+- `skills/esp32-sdd-documentation-generator` is titled for this repository (ESP32 Rust SDD Showcase). Its description does not say "100% AI-first".
+- C6 board specs call the low-power core the LP core. They do not say it runs ULP programs. A sentence that the LP core is not the ESP32 ULP coprocessor may stay.
+- `templates/build.rs.template`, and every crate whose FunctionalSpec does not require LP-core firmware, says the file emits the linker script and does not invoke CMake. It does not say the spec requires an LP-core image.
+- Partition profile `dual-ota` keeps bootloader `nvs` and `phy_init`. It has no extra `storage` partition and does not call any row application NVS. The table ends at `0x320000`. `examples/secure-ota-https/partitions.csv`, `espflash.toml`, and that example's README copy this profile.
+
 ---
 
 ## Root README.md Required Sections

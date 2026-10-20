@@ -29,7 +29,7 @@
 | Deep sleep current | ~7 µA typical (RTC domain off); ~15 µA with RTC domain active |
 | Active / Wi-Fi TX current | ~200–350 mA peak during Wi-Fi 6 transmission (per ESP32-C6 datasheet) |
 
-> **Power note for SDD projects**: The ~7–15 µA deep sleep floor makes the C6 suitable for battery-powered applications when powered from an external supply with an on/off switch — note that no onboard LiPo charger is present. The 20 MHz LP core can run ULP-style tasks in light sleep while the HP core is gated off. Use the `esp32-deep-sleep-engineer` skill when targeting battery operation. The ESP32-C6 LP core uses dedicated LP peripherals (LP_UART, LP_I2C, LP_GPIO 0–7) distinct from the ESP32 ULP coprocessor.
+> **Power note for SDD projects**: The ~7–15 µA deep sleep floor makes the C6 suitable for battery-powered applications when powered from an external supply with an on/off switch — note that no onboard LiPo charger is present. The 20 MHz LP core can run its own program from LP RAM while the HP core is gated off. Use the `esp32-deep-sleep-engineer` skill when targeting battery operation. The ESP32-C6 LP core uses dedicated LP peripherals (LP_UART, LP_I2C, LP_GPIO 0–7) distinct from the ESP32 ULP coprocessor.
 
 ## Onboard Peripherals
 
@@ -129,7 +129,7 @@ Do **not** emit `CONFIG_ESP_CONSOLE_*`. The right port is USB Serial/JTAG (same 
 ## Board Advantages for SDD Projects
 
 - **ADC1-only architecture**: No ADC2 means all analog reads are safe during active Wi-Fi — no need to gate ADC around network activity (unlike ESP32 or ESP32-S3).
-- **Dual RISC-V cores**: The 20 MHz LP core can run ULP-style tasks in light sleep while the 160 MHz HP core is gated off — useful for sensor polling without full wakeup cycles.
+- **Dual RISC-V cores**: The 20 MHz LP core can run from LP RAM while the 160 MHz HP core is gated off — useful for sensor polling without full wakeup cycles.
 - **Wi-Fi 6 (802.11ax)**: TWT (Target Wake Time) enables IoT power budgeting; reference this in FunctionalSpec when designing battery-efficient connected devices.
 - **Zigbee + Thread (802.15.4)**: Native Matter-over-Thread support built into the SoC — specify protocol in FunctionalSpec when building smart home mesh devices.
 - **Dual USB-C ports**: Independent UART bridge (left) and native JTAG (right) — no swapping cables between flash and debug workflows.

@@ -34,7 +34,7 @@ You add a catalog row in `specs/showcase-master-spec.md` and you write `CodingSp
 8. Say: Activate esp32-sdd-documentation-generator and rebuild all documentation.
 ```
 
-A domain skill runs only when the spec needs it. Detail: [04 — Create a New Example](../guides/04-new-example.md).
+A domain skill runs only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core). ESP-NOW unicast, raw IEEE 802.15.4, and an HTTPS CRC slot flip are steps of the full-project generator. Detail: [04 — Create a New Example](../guides/04-new-example.md).
 
 ## Workflow 2 — Board spec
 
@@ -103,6 +103,11 @@ esp32-sdd-functional-spec-creator
           │       Configures hardware AES and flash-backed key storage
           │     esp32-lp-core-engineer
           │       Writes the LP-core program and the HP-core handshake
+          │
+          ├─► steps of this skill, not separate skills:
+          │     ESP-NOW unicast
+          │     raw IEEE 802.15.4
+          │     HTTPS CRC slot-flip (not the AES skill)
           │
           └─► cargo run --release
 

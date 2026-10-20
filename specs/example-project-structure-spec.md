@@ -30,6 +30,18 @@ Board selection is via mutually exclusive Cargo features: default `board-devkitc
 
 `src/main.rs` is always present and is `#![no_std]` `#![no_main]`. Additional modules (`src/board.rs`, `src/<subsystem>.rs`) are generated as needed.
 
+## Allowed extras
+
+The tree above is the locked layout. These paths are allowed only when the FunctionalSpec requires them:
+
+- `src/board.rs` and other `src/<subsystem>.rs` modules
+- `partitions.csv` and `espflash.toml` for a custom or OTA partition table (`shared-specs/partition-table-profiles.md`)
+- `certs/` for an HTTPS OTA CA PEM. No private key in that directory
+- nested `lp-core/` when the spec requires LP-core firmware
+- `Cargo.lock`
+
+Generated pages that draw the locked tree copy it as written. Pages that teach the layout also list these extras and say they appear only when the spec requires them.
+
 ## CodingSpec.md — Abstraction Level
 
 CodingSpec.md is high-level technical guidance for the AI model generating the project. It must describe **what** the system should do and **why** — not **how** to implement it.

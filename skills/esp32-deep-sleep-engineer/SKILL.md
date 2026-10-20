@@ -33,7 +33,7 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
 
 3. Calculate power budget:
    `(active_mA × active_s + sleep_µA × sleep_s) / period_s = avg_µA`.
-   Include radio teardown time (~5–10 ms) in the active window when BLE / Wi-Fi / ESP-NOW is used.
+   Include radio teardown time (~5–10 ms) in the active window when BLE, Wi-Fi, ESP-NOW, or IEEE 802.15.4 is used.
 
 4. Enable `esp-hal` feature `unstable` (sleep / RTC APIs require it on this HAL line) in
    addition to `esp32c6`. Document that honesty in the example README.
@@ -51,10 +51,11 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    the attribute). Consider a checksum; a reset that races initialization can leave random
    bytes in the static.
 
-7. **Tear down radios before sleep.** If the example uses `esp-radio`, stop advertising / STA /
-   ESP-NOW and drop the connector so the radio is not left powered (`shared-specs/ble-patterns.md`
-   for BLE). Skipping teardown leaves sleep current in milliamps instead of microamps. Coordinate
-   with `esp32-ble-beacon-engineer` — that skill owns BLE teardown; this skill owns the sleep call.
+7. **Tear down radios before sleep.** If the example uses `esp-radio`, stop advertising, STA,
+   ESP-NOW, or the IEEE 802.15.4 driver and drop the connector so the radio is not left powered
+   (`shared-specs/ble-patterns.md` for BLE). Skipping teardown leaves sleep current in milliamps
+   instead of microamps. Coordinate with `esp32-ble-beacon-engineer` — that skill owns BLE
+   teardown; this skill owns the sleep call.
 
 8. **Load the LP-core image before the HP core sleeps** when the FunctionalSpec uses the LP core.
    The LP core cannot fetch its image from flash after the HP core has powered down the flash.

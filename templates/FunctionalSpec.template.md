@@ -35,11 +35,11 @@ Do not add non-C6 boards. RTC / LP GPIOs on C6 are **0–7 only**; GPIO 9 (XIAO 
 
 ## Connectivity
 
-<!-- FILL: none / BLE / Wi-Fi / ESP-NOW / MQTT. Radio examples git-pin the esp-hal monorepo stack (rust-toolchain.md). -->
+<!-- FILL: none / BLE / Wi-Fi / ESP-NOW / MQTT / raw IEEE 802.15.4. Radio examples copy the pin from rust-toolchain.md. Raw 802.15.4 does not also enable Wi-Fi. -->
 
 ## Security Requirements
 
-<!-- FILL: none, or AES / esp-storage / TLS / OTA. Follow shared-specs/security-baseline.md. -->
+<!-- FILL: none, or AES / esp-storage, or TLS / CRC OTA. CRC OTA is not the AES skill. Follow shared-specs/security-baseline.md. -->
 
 ## Success Criteria
 

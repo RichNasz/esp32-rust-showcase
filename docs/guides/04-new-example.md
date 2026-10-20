@@ -23,7 +23,7 @@ To modify an example, edit those files. Behavior goes in FunctionalSpec, archite
 7. From `examples/<name>/`: `cargo run --release` — this builds and flashes the crate the agent just wrote.
 8. Say: Activate esp32-sdd-documentation-generator and rebuild all documentation. — the agent rewrites Markdown so the docs match the spec.
 
-Use a domain skill only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core). Phrases are in [skill invocation](../reference/skill-invocation.md).
+Use a domain skill only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core). ESP-NOW unicast, raw IEEE 802.15.4, and an HTTPS CRC slot flip are steps inside `esp32-sdd-full-project-generator`, not separate skills. Do not send CRC HTTPS OTA to `esp32-hardware-crypto-configurer`. Phrases are in [skill invocation](../reference/skill-invocation.md).
 
 ## Locked layout
 
@@ -46,6 +46,14 @@ examples/<kebab-name>/
 ```
 
 Examples are standalone Cargo packages. There is no root workspace, no `sdkconfig`, and no ESP-IDF project files. `src/board.rs` is generated when the example needs board pins. Never hardcode pins in `main.rs`.
+
+These paths are allowed only when the FunctionalSpec requires them:
+
+- `src/board.rs` and other `src/<subsystem>.rs` modules
+- `partitions.csv` and `espflash.toml` for a custom or OTA partition table
+- `certs/` for an HTTPS OTA CA PEM. No private key in that directory
+- nested `lp-core/` when the spec requires LP-core firmware
+- `Cargo.lock`
 
 ## Hardware bar
 

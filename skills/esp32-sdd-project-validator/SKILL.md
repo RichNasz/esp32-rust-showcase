@@ -45,6 +45,7 @@ Verify that every required path exists (relative to the example root):
 | `.gitignore` | Required |
 | `src/board.rs` | Required when the example supports more than one board, or whenever FunctionalSpec references board-specs for GPIO / LED / button. Treat as required in v1 (C6 DevKitC + XIAO). |
 | `partitions.csv` / `espflash.toml` | Allowed (OTA / custom partition table) |
+| `certs/` | Allowed when the example embeds an HTTPS CA PEM. No private key in that directory |
 | `lp-core/` (nested crate) | Allowed when FunctionalSpec requires LP-core firmware |
 
 **FAIL** if any Required file is absent.
@@ -141,7 +142,7 @@ Only these names are permitted at the example root:
 
 `specs/`, `src/`, `Cargo.toml`, `build.rs`, `.cargo/`, `README.md`, `.gitignore`, `target/`
 
-**Allowed extra** (not a FAIL): `Cargo.lock`, `partitions.csv`, `espflash.toml`, `lp-core/` (nested LP-core crate when FunctionalSpec requires LP-core wakeup / firmware).
+**Allowed extra** (not a FAIL): `Cargo.lock`, `partitions.csv`, `espflash.toml`, `certs/` (CA PEM for HTTPS OTA; fail the check if a file in that directory contains `PRIVATE KEY`), `lp-core/` (nested LP-core crate when FunctionalSpec requires LP-core wakeup / firmware).
 
 **FAIL** for any forbidden IDF file listed in CHECK-13 even if it would otherwise be "extra".
 **WARNING** (not FAIL) for any other unexpected file at the root — report the unexpected filename so the user can decide.

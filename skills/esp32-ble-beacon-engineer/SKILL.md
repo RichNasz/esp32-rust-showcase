@@ -24,7 +24,7 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
 
 2. **Select the stack**: TrouBLE + `esp-radio` for every BLE example in v1, including beacons and beacon+sleep. Do not generate NimBLE C, Bluedroid, or sdkconfig.
 
-3. **Git-pin the radio stack** per `shared-specs/rust-toolchain.md`. Radio examples **must** git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` (when heap is justified) from tag `esp-hal-v1.2.1`. Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`. Enable:
+3. **Git-pin the radio stack** by copying the **Radio pin** in `shared-specs/rust-toolchain.md`. Include `esp-bootloader-esp-idf` with the other monorepo crates, and invoke `esp_app_desc!()` in `src/main.rs`. Do not write a shorter pin list. Enable:
    - `esp-hal` features `esp32c6` + `unstable`
    - `esp-radio` features `esp32c6` + `ble` + `unstable`
    - `esp-rtos` features `esp32c6` + `embassy` + `esp-radio`

@@ -28,8 +28,8 @@ Describes what a person can observe, and why the example exists.
 | Target Hardware | **SoC** named separately from the board checklist (below) |
 | Features | Observable behavior |
 | Wakeup Strategy | Timer, RTC GPIO 0–7, LP-core, or none |
-| Connectivity | None, BLE, Wi-Fi, ESP-NOW, or MQTT |
-| Security Requirements | None, or AES / `esp-storage` / TLS / OTA |
+| Connectivity | None, BLE, Wi-Fi, ESP-NOW, MQTT, or raw IEEE 802.15.4. Radio examples copy the pin from `shared-specs/rust-toolchain.md`. Raw 802.15.4 does not also enable Wi-Fi |
+| Security Requirements | None, AES / `esp-storage`, or TLS / CRC OTA. CRC OTA is not the AES skill |
 | Success Criteria | Includes `cargo build --release`, `cargo clippy -- -D warnings`, and `cargo run --release` |
 | Implementation status | The label, date, and note from `specs/showcase-master-spec.md` |
 

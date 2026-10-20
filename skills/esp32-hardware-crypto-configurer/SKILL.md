@@ -1,6 +1,6 @@
 ---
 name: esp32-hardware-crypto-configurer
-description: Configures ESP32-C6 hardware AES via esp-hal and key storage via esp-storage. Generates no_std encrypt/decrypt + flash-backed key workflows. Does not use ESP-IDF mbedTLS, Kconfig, or sdkconfig.
+description: Configures ESP32-C6 hardware AES via esp-hal and key storage via esp-storage. Generates no_std encrypt/decrypt + flash-backed key workflows. Does not use ESP-IDF mbedTLS, Kconfig, or sdkconfig. Does not handle CRC HTTPS OTA or Secure Boot.
 version: "2.0.0"
 author: Richard Naszcyniec
 keywords: sdd, esp32, security, aes, esp-hal, esp-storage, crypto, rust, no_std
@@ -13,7 +13,9 @@ keywords: sdd, esp32, security, aes, esp-hal, esp-storage, crypto, rust, no_std
 # ESP32 Hardware Crypto Configurer
 
 ## When to use
-When a FunctionalSpec requires encryption, authenticated storage, OTA signature verification, or hardware AES. Invoked automatically as a sub-workflow by `esp32-sdd-full-project-generator` when security requirements are present.
+When a FunctionalSpec requires hardware AES or flash-backed key storage. Invoked by `esp32-sdd-full-project-generator` for those requirements only.
+
+Do not run this skill for HTTPS OTA that checks a CRC and flips a slot. That design is `shared-specs/security-baseline.md` and the generator's HTTPS OTA steps. CRC is not a signature and not Secure Boot.
 
 Follow `shared-specs/security-baseline.md`. ESP-IDF Kconfig (`CONFIG_SECURE_*`, `MBEDTLS_*_ALT`) **does not apply**.
 
@@ -42,6 +44,6 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    - `espsecure.py` / `espefuse.py` C-IDF script stubs as the primary workflow
    - Hardcoded credentials in source
 
-6. Every example already depends on `esp-bootloader-esp-idf` for the application descriptor (`esp_app_desc!()`). If the FunctionalSpec also asks for IDF-compatible partition tables (OTA, secure boot cooperation with a standard bootloader), keep using that crate (pin from `rust-toolchain.md`) and document that it is **not** ESP-IDF. Flash encryption and Secure Boot v2 remain eFuse operations, not Kconfig.
+6. Depend on `esp-bootloader-esp-idf` for `esp_app_desc!()` only, pinned from `rust-toolchain.md`. This skill does not write OTA slots, burn eFuses, or enroll Secure Boot (`security-baseline.md`).
 
-7. Document all security decisions, trade-offs, and irreversible eFuse operations in the example README security section. Enable `esp-hal` `unstable` and say so.
+7. Document the AES mode, where the key lives, and that a plaintext-flash demo is not production key storage. Enable `esp-hal` `unstable` and say so. Do not add an eFuse enrollment procedure.

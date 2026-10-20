@@ -50,7 +50,7 @@ Chip (`esp32c6`) and board (`board-devkitc-c6` / `board-xiao-c6`) are Cargo feat
 
 ### Radio is `esp-radio`, plus binary blobs
 
-Wi-Fi, BLE, and ESP-NOW use `esp-radio` on top of `esp-hal`, plus Espressif **binary blobs**. That is not the ESP-IDF Wi-Fi or Bluetooth stack. Radio APIs remain an **unstable beta**. Radio example READMEs say so. Do not treat them as frozen.
+Wi-Fi, BLE, ESP-NOW, and raw IEEE 802.15.4 use `esp-radio` on top of `esp-hal`, plus Espressif **binary blobs**. Copy the radio pin from [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md), including `esp-bootloader-esp-idf`. Raw 802.15.4 does not also enable Wi-Fi: that driver does not coexist with it. That is not the ESP-IDF Wi-Fi or Bluetooth stack. Radio APIs remain an **unstable beta**. Radio example READMEs say so. Do not treat them as frozen.
 
 ## C-developer mapping
 

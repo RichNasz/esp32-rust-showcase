@@ -46,6 +46,7 @@ Do not create files outside this layout. Do not place spec files at the example 
 
 - `src/<subsystem>.rs` (or `src/<subsystem>/mod.rs`) for additional modules
 - `partitions.csv` and/or `espflash.toml` for custom / OTA partition tables (`shared-specs/partition-table-profiles.md`)
+- `certs/` for an HTTPS OTA trust anchor (a CA PEM). No private key in that directory
 - nested `lp-core/` crate directory when the FunctionalSpec requires LP-core firmware
 - `Cargo.lock` (binary crate lockfile)
 
@@ -55,12 +56,40 @@ Seed crate files from `templates/main.rs.template`, `templates/Cargo.toml.templa
 
 Do **not** seed, write, or overwrite `specs/FunctionalSpec.md` (or any file under `specs/`). Only `esp32-sdd-functional-spec-creator` writes `FunctionalSpec.md`. This generator **reads** existing specs as inputs. `templates/FunctionalSpec.template.md` is not a seed for this skill.
 
-## Radio pin (do not contradict rust-toolchain.md)
+## Radio pin
 
-- **Non-radio:** crates.io `esp-hal` 1.2.1 + `esp-rtos` 0.4.0 + crates.io `esp-bootloader-esp-idf` 0.6.0 (and crates.io `esp-alloc` 0.11.0 only if the CodingSpec justifies a heap).
-- **Radio:** git tag `esp-hal-v1.2.1` for `esp-hal`, `esp-radio`, `esp-rtos`, `esp-bootloader-esp-idf`, and `esp-alloc` when heap is justified. Never mix crates.io `esp-rtos = "0.4.0"` (or crates.io `esp-bootloader-esp-idf`) with git `esp-hal`.
+Copy the crate table and **Radio pin** section of `shared-specs/rust-toolchain.md`. Do not restate a shorter pin list here or in a domain skill.
 
-Enable `esp-hal` feature `unstable` in addition to `esp32c6` when the example uses radio (Wi-Fi / BLE / ESP-NOW) or sleep / RTC APIs that require it. Document that honesty in the README.
+That table is the only version list. It already requires `esp-bootloader-esp-idf` and `esp_app_desc!()` on every example, git-pins every monorepo crate a radio example uses (including `esp-bootloader-esp-idf`, `esp-alloc` when the CodingSpec justifies a heap, and `esp-storage` when the example writes flash), and forbids mixing a crates.io monorepo crate with git `esp-hal`.
+
+Enable `esp-hal` feature `unstable` in addition to `esp32c6` when the example uses radio or sleep / RTC APIs that require it. Document that in the README. Radio READMEs must say `esp-radio` is an unstable beta.
+
+## ESP-NOW unicast
+
+When the FunctionalSpec is ESP-NOW (the directory may still be named `esp-now-low-power-mesh`):
+
+- Generate one sensor-to-gateway unicast pair. The historical directory name is not a mesh. Do not add a routing table, a relay, or an AP scan.
+- Two compile-time roles when the spec says so. The gateway stays awake. The sensor sends one datagram, tears the radio down, then hands sleep to `esp32-deep-sleep-engineer`.
+- Copy the radio pin. Enable `esp-radio` features `esp-now` and the Wi-Fi driver feature that pin requires. Do not enable `embassy-net`. Do not associate to an AP.
+- Keep the payload in one ESP-NOW frame (250 bytes maximum) unless the spec sets a smaller limit.
+
+## Raw IEEE 802.15.4
+
+When the FunctionalSpec is raw IEEE 802.15.4:
+
+- Generate node/peer data frames. Do not add Thread, Zigbee, or a mesh.
+- Copy the radio pin. Enable `esp-radio` feature `ieee802154`. Do not enable `wifi`: this driver does not coexist with Wi-Fi (`shared-specs/cargo-conventions.md`).
+- MAC header types come from the crates.io `ieee802154` version named in the CodingSpec, with default features disabled.
+- The catalog example does not sleep. Do not add a sleep path unless the spec does.
+
+## HTTPS OTA (CRC slot flip)
+
+When the FunctionalSpec downloads an image over HTTPS and activates the inactive slot after a CRC check:
+
+- Do **not** invoke `esp32-hardware-crypto-configurer`. CRC is not AES, not a signature, and not Secure Boot. Follow `shared-specs/security-baseline.md` and `shared-specs/AIGenLessonsLearned.md`.
+- Use partition profile `dual-ota` (`shared-specs/partition-table-profiles.md`). Copy the radio pin and git-pin `esp-storage` with that set.
+- TLS is `embedded-tls` from the `rust-toolchain.md` table, with default `std` disabled. Verify the server certificate. Embed the CA PEM from `certs/`. Ship a placeholder CA that does not authenticate a public server. Refuse a PEM that contains a private key. Do not commit passwords or put them in `src/`.
+- Activate the inactive slot only after length and IEEE CRC32 match. A CRC failure leaves the current boot selection in place. Stock `espflash` does not auto-rollback. Do not emit `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, `esp_https_ota`, or `esp_ota_mark_app_valid_cancel_rollback`.
 
 ## Workflow (follow exactly)
 MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before doing anything else.
@@ -80,9 +109,10 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    - `esp32-deep-sleep-engineer` — deep sleep / RTC wakeup / persistent RAM
    - `esp32-ble-beacon-engineer` — BLE advertising, beaconing, or manufacturer data
    - `esp32-ws2812-led-engineer` — any referenced board-spec lists a WS2812 / SK6812 LED
-   - `esp32-hardware-crypto-configurer` — security / AES / secure storage requirements
+   - `esp32-hardware-crypto-configurer` — hardware AES or flash-backed keys. A Security section, a CRC, or HTTPS OTA does not qualify
    - `esp32-lp-core-engineer` — LP-core firmware or LP-core wakeup (`lp-core-wakeup` and any spec that names the LP core)
-6. Verify internal consistency: pin assignments match the board spec via `src/board.rs`, Cargo features match the chip/board, radio crates are git-pinned as a set when radio is used, all FunctionalSpec features are accounted for. Zero `unwrap()` / `expect()` on fallible HAL / radio in production paths (`coding-conventions.md`).
+   - ESP-NOW unicast, raw IEEE 802.15.4, and HTTPS CRC slot-flip — the sections above. They are steps of this skill, not separate skills
+6. Verify internal consistency: pin assignments match the board spec via `src/board.rs`, Cargo features match the chip/board, radio crates match the `rust-toolchain.md` radio pin (including `esp-bootloader-esp-idf`), all FunctionalSpec features are accounted for. Zero `unwrap()` / `expect()` on fallible HAL / radio in production paths (`coding-conventions.md`).
 7. Generate `examples/<name>/README.md` with agent-generated header and all of the following sections in order:
    - **Overview** — one-paragraph summary of what the example demonstrates
    - **Prerequisites** — rustup stable (MSRV 1.95.0), `rust-src`, target `riscv32imac-unknown-none-elf`, `espflash` / `cargo-espflash`, ESP32-C6-DevKitC-1-N8 or XIAO ESP32-C6. Do **not** list ESP-IDF, `espup`, or the `esp` rustup channel.

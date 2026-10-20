@@ -31,7 +31,7 @@ The middle column is the purpose text from `specs/showcase-master-spec.md`.
 
 1. `esp32-sdd-functional-spec-creator` — draft the FunctionalSpec with you.
 2. `esp32-sdd-full-project-generator` — write the crate. Leave `specs/` in place.
-3. A domain skill only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core). Skip this step otherwise.
+3. A domain skill only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core). Skip this step otherwise. ESP-NOW unicast, raw IEEE 802.15.4, and an HTTPS CRC slot flip are steps of `esp32-sdd-full-project-generator`, not separate skills. Hardware AES is not the skill for a CRC slot flip.
 4. From `examples/<name>/`: `cargo run --release`.
 5. `esp32-sdd-documentation-generator` — rewrite the Markdown.
 6. `esp32-sdd-project-validator` — check the locked layout. Fix a failure in the spec and regenerate. Do not hand-edit the crate.

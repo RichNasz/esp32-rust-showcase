@@ -20,10 +20,10 @@ A **skill** is a Markdown workflow in `skills/<name>/SKILL.md`.
 
 ## What this does not do
 
-Secure Boot, eFuse burn, and flash-encryption enrollment are out of scope. Do not spec `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, `esp_https_ota`, or an eFuse key ceremony. There is no `sdkconfig`.
+Secure Boot, eFuse burn, flash-encryption enrollment, and CRC HTTPS OTA are out of scope for this skill. CRC HTTPS OTA is a step of `esp32-sdd-full-project-generator`. Do not spec `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, `esp_https_ota`, or an eFuse key ceremony. There is no `sdkconfig`.
 
 ## OTA
 
-`secure-ota-https` is **Firmware generated** as of 2026-10-20. The crate is in the tree. It downloads one application image over HTTPS into the inactive OTA slot, checks a CRC32, and reboots onto that slot only when the check matches. TLS is 1.3 (`embedded-tls` 0.19.0, one embedded CA). Partition profile `dual-ota` is `partitions.csv` / `espflash.toml`, not sdkconfig. Stock `espflash` does not auto-rollback: the bootloader shipped with current `espflash` will not revert a bad image by itself. A CRC failure must not activate the new slot. This is not Secure Boot and not flash-encryption enrollment. CRC32 is a transfer check, not a signature.
+`secure-ota-https` is **Firmware generated** as of 2026-10-20. The crate is in the tree. `esp32-sdd-full-project-generator` writes it. Do not run `esp32-hardware-crypto-configurer` for this example. It downloads one application image over HTTPS into the inactive OTA slot, checks a CRC32, and reboots onto that slot only when the check matches. TLS is 1.3 (`embedded-tls` 0.19.0, one embedded CA). The CA PEM lives in `certs/`. That directory holds a certificate, not a private key. Partition profile `dual-ota` is `partitions.csv` / `espflash.toml`, not sdkconfig. Stock `espflash` does not auto-rollback: the bootloader shipped with current `espflash` will not revert a bad image by itself. A CRC failure must not activate the new slot. This is not Secure Boot and not flash-encryption enrollment. CRC32 is a transfer check, not a signature.
 
-`esp-radio` is an unstable beta. Radio crates, including the Wi-Fi path this example uses, git-pin the `esp-hal` monorepo at tag `esp-hal-v1.2.1` ([`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md)). A host build is not a hardware result.
+`esp-radio` is an unstable beta. Copy the radio pin from [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md), including `esp-bootloader-esp-idf` and `esp-storage`, for the Wi-Fi path this example uses. A host build is not a hardware result.

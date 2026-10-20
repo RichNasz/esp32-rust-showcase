@@ -124,7 +124,7 @@ A label is not a pass/fail from a board. Do not write "tested", "verified on har
 - **`docs/README.md` examples catalog:** add a Status column. The opening paragraph must match the catalog (ESP-NOW is a sensor-to-gateway pair; OTA is a slot flip; LP-core is GPIO 0–7). Do not claim a mesh.
 - **Each `examples/<name>/README.md`:** an **Implementation status** section immediately after the title and tagline, before Overview. Quote the label, the date, and the note from the master-spec row. **Specs only** READMEs put `cargo build` / `cargo run` under a heading **After the crate is generated**, and say in that section that those commands fail today because there is no `Cargo.toml`.
 - **`specs/README.md`:** the `showcase-master-spec.md` row mentions the implementation-status table.
-- **`docs/guides/07-secure-your-project.md`:** the OTA paragraph must match `examples/secure-ota-https/specs/FunctionalSpec.md` (TLS 1.3, CRC32, no stock-`espflash` auto-rollback) and the implementation-status row in `showcase-master-spec.md`. Do not write **Specs only** when that row says **Firmware generated**.
+- **`docs/guides/07-secure-your-project.md`:** the OTA paragraph must match `examples/secure-ota-https/specs/FunctionalSpec.md` (TLS 1.3, CRC32, no stock-`espflash` auto-rollback) and the implementation-status row in `showcase-master-spec.md`. Do not write **Specs only** when that row says **Firmware generated**. Also say the CA PEM lives in `certs/` (no private key), the radio pin is copied from `shared-specs/rust-toolchain.md` (including `esp-bootloader-esp-idf` and `esp-storage`), and this example is a step of `esp32-sdd-full-project-generator`, not `esp32-hardware-crypto-configurer`.
 - **`docs/reference/README.md` chip-variant table:** ESP32-C6 capacitive touch is **No**. C6 has no touch peripheral. Do not point that row at `lp-core-wakeup`. That example is LP-core GPIO wakeup on RTC GPIO 0–7. Its status is the master-spec row, not a hardcoded **Specs only**.
 
 When a FunctionalSpec implementation-status paragraph disagrees with the master-spec table, the table wins. Update the FunctionalSpec to match before generating docs. Do not publish both claims.
@@ -413,7 +413,7 @@ rather than discovering the gap at deployment time.
 
 Every example that enables `esp-hal` feature `unstable` (radio, some sleep / RTC APIs) **must**
 state in its README that those APIs are unstable and may change with `esp-hal` minor releases.
-`esp-radio` 1.0.0-beta.0 is a beta crate — radio example READMEs must say so.
+`esp-radio` 1.0.0-beta.0 is a beta crate — radio example READMEs must say so. Radio crate pins are copied from `shared-specs/rust-toolchain.md` **Radio pin**, including `esp-bootloader-esp-idf`. Do not publish a shorter pin list.
 
 ---
 
@@ -435,7 +435,7 @@ Also supported: **Seeed XIAO ESP32-C6**. The board catalog is those two boards. 
    Required checks (any failure = exclude the board):
    - SoC is ESP32-C6 — check board-spec Module/SoC table. Non-C6 boards fail this check in v1.
    - Chip listed as **Required** (or supported) in `shared-specs/rust-toolchain.md` (ESP32-C6 required; others not in v1).
-   - Example-specific radios (Wi-Fi, BLE, ESP-NOW) present when the FunctionalSpec requires them.
+   - Example-specific radios (Wi-Fi, BLE, ESP-NOW, raw IEEE 802.15.4) present when the FunctionalSpec requires them. Raw 802.15.4 does not also require Wi-Fi.
    - Deep sleep with RTC timer wakeup supported when the FunctionalSpec requires it — check board-spec Power Management.
    - At least one user-controllable LED documented in board-spec Onboard Peripherals.
 3. **Derive Supported Boards table columns** from board-spec data:
@@ -586,9 +586,12 @@ There are **two** Rust-on-ESP32 ecosystems. Do not conflate them.
 - **Flash / monitor is `espflash`.** `cargo run --release` uses
   `runner = "espflash flash --monitor"`. That is the official `esp-rs` serial
   flasher, not `idf.py flash` / `idf.py monitor`.
-- **Radio is `esp-radio`.** Wi-Fi / BLE / ESP-NOW use `esp-radio` on top of
-  `esp-hal` plus Espressif **binary blobs**. That is not the ESP-IDF Wi-Fi/BT
-  stacks. Radio APIs remain `unstable` / beta — document that honestly.
+- **Radio is `esp-radio`.** Wi-Fi, BLE, ESP-NOW, and raw IEEE 802.15.4 use
+  `esp-radio` on top of `esp-hal` plus Espressif **binary blobs**. Copy the
+  radio pin from `shared-specs/rust-toolchain.md`, including
+  `esp-bootloader-esp-idf`. Raw 802.15.4 does not also enable Wi-Fi: that
+  driver does not coexist with it. That is not the ESP-IDF Wi-Fi/BT stacks.
+  Radio APIs remain `unstable` / beta — document that honestly.
 
 **C-developer mapping table** (required in the guide):
 
@@ -646,22 +649,22 @@ Every path below is required. Do not add another guide for the AI-agent reader. 
 | `docs/guides/01-toolchain-setup.md` | Install rustup stable, `rust-src`, clippy, rustfmt, target `riscv32imac-unknown-none-elf`, and `espflash`. MSRV comes from `shared-specs/rust-toolchain.md`. Link the why-ESP-IDF guide next to the "no ESP-IDF" statement. Name the DevKitC left UART-C port and the XIAO USB port. Close with one sentence: this page installs the compiler and flasher; the agent path is guide 02 and `using-with-ai-agents.md`. |
 | `docs/guides/02-install-skills.md` | Audience rules in **Readers**. After the definition, cover Claude Code, Grok, and any agent that can read Markdown. Optional `npx @agentskills/cli install RichNasz/esp32-rust-showcase#skills` stays optional. |
 | `docs/guides/03-first-example.md` | Task A. Open only `examples/blinky/`. DevKitC left USB-C. `cargo build --release`, `cargo clippy -- -D warnings`, `cargo run --release`. XIAO feature line. Closing note per **Readers**. |
-| `docs/guides/04-new-example.md` | Audience paragraphs from **Readers**, then the numbered workflow, then the locked layout from `specs/example-project-structure-spec.md` with each path labeled human-written or agent-written. **Chip ≠ board** one-liner in Hardware bar. |
+| `docs/guides/04-new-example.md` | Audience paragraphs from **Readers**, then the numbered workflow, then the locked layout from `specs/example-project-structure-spec.md` with each path labeled human-written or agent-written, then the **Allowed extras** list from that spec. **Chip ≠ board** one-liner in Hardware bar. A domain skill runs only for WS2812, BLE, deep sleep, hardware AES, or LP-core. ESP-NOW unicast, raw IEEE 802.15.4, and HTTPS CRC slot-flip are steps inside `esp32-sdd-full-project-generator`, not separate skills. Do not send CRC HTTPS OTA to `esp32-hardware-crypto-configurer`. |
 | `docs/guides/05-add-board-spec.md` | One sentence: a board spec is the Markdown description of one board's pins, LED, USB, and power; the agent turns those facts into `src/board.rs`. v1 accepts ESP32-C6 boards only. Steps: give a vendor URL or datasheet, say "Activate esp32-board-spec-generator", add the board to the example FunctionalSpec checklist, regenerate docs so Supported Boards tables pick the file up. Link `creating-new-board-specs.md`. A board spec does not add a chip feature. |
 | `docs/guides/creating-new-board-specs.md` | Long form of guide 05, using the ESP32-C6-DevKitC-1-N8 board spec as the walkthrough. Section list matches `templates/BoardSpec.template.md`. Do not publish a second template. |
-| `docs/guides/06-deep-sleep-design.md` | Open with the task, not the skill name: edit the example FunctionalSpec, ask the agent to follow `esp32-deep-sleep-engineer`, then regenerate the crate with `esp32-sdd-full-project-generator`. Link `using-with-ai-agents.md` once. Then the C6 rules: RTC GPIO 0–7 only, tear down `esp-radio` before sleep, load the LP-core image before the HP core sleeps, persist state with the persistent-RAM attribute, UART-bridge vs native USB monitor behavior. Call `unstable` out. Point at `shared-specs/AIGenLessonsLearned.md` and `shared-specs/power-budget-template.md`. |
-| `docs/guides/07-secure-your-project.md` | Same opening pattern for `esp32-hardware-crypto-configurer`. Does: hardware AES via `esp-hal`, keys via `esp-storage`, aligned with `shared-specs/security-baseline.md`. Does not: Secure Boot, eFuse burn, flash-encryption enrollment. OTA paragraph per the implementation-status rules above. |
-| `docs/guides/using-with-ai-agents.md` | **Readers** items 1–4, then setup, the skills table from the master spec, the incremental workflow, the "open only the example folder" note, and troubleshooting: wrong output means edit the spec and regenerate. |
+| `docs/guides/06-deep-sleep-design.md` | Open with the task, not the skill name: edit the example FunctionalSpec, ask the agent to follow `esp32-deep-sleep-engineer`, then regenerate the crate with `esp32-sdd-full-project-generator`. Link `using-with-ai-agents.md` once. Then the C6 rules: RTC GPIO 0–7 only, tear down `esp-radio` before sleep (advertising, STA, ESP-NOW, or the IEEE 802.15.4 driver), load the LP-core image before the HP core sleeps, persist state with the persistent-RAM attribute, UART-bridge vs native USB monitor behavior. Call `unstable` out. Point at `shared-specs/AIGenLessonsLearned.md` and `shared-specs/power-budget-template.md`. |
+| `docs/guides/07-secure-your-project.md` | Same opening pattern for `esp32-hardware-crypto-configurer`. Does: hardware AES via `esp-hal`, keys via `esp-storage`, aligned with `shared-specs/security-baseline.md`. Does not: Secure Boot, eFuse burn, flash-encryption enrollment, or CRC HTTPS OTA. Say CRC HTTPS OTA is a step of `esp32-sdd-full-project-generator`, not this skill. The guides index row says the same. OTA paragraph per the implementation-status rules above, plus: CA PEM in `certs/` (no private key), radio pin copied from `shared-specs/rust-toolchain.md` including `esp-bootloader-esp-idf` and `esp-storage`. |
+| `docs/guides/using-with-ai-agents.md` | **Readers** items 1–4, then setup, the skills table from the master spec, the incremental workflow, the "open only the example folder" note, and troubleshooting: wrong output means edit the spec and regenerate. The domain-skill sentence names WS2812, BLE, deep sleep, hardware AES, and LP-core, and says ESP-NOW unicast, raw IEEE 802.15.4, and HTTPS CRC slot-flip are steps inside `esp32-sdd-full-project-generator`. |
 | `docs/guides/why-esp-idf-is-not-required.md` | **Guide: Why ESP-IDF is not required**, including the `no_std` sentence. |
 
 ### Workflows and reference
 
 | File | Required content |
 |---|---|
-| `docs/workflows/README.md` | **Readers** rules for this file. Workflow 2 defines board spec in one sentence, then the steps from guide 05. Workflow 5: say "Activate esp32-sdd-project-validator"; fix a failure in the spec and regenerate; do not hand-edit the crate. Skill map uses the master-spec one-liners. The commit section matches `specs/contributing-spec.md`, including `spec+gen` and the `Generated-by` trailer. A short "why this method" restates glossary item **spec** before any benefit list. |
+| `docs/workflows/README.md` | **Readers** rules for this file. Workflow 2 defines board spec in one sentence, then the steps from guide 05. Workflow 5: say "Activate esp32-sdd-project-validator"; fix a failure in the spec and regenerate; do not hand-edit the crate. Skill map uses the master-spec one-liners. Under `esp32-sdd-full-project-generator`, name ESP-NOW unicast, raw IEEE 802.15.4, and HTTPS CRC slot-flip as steps of that skill, not separate skills. The new-example note points at guide 04 for which domain skills exist. The commit section matches `specs/contributing-spec.md`, including `spec+gen` and the `Generated-by` trailer. A short "why this method" restates glossary item **spec** before any benefit list. |
 | `docs/reference/README.md` | Index of the three reference pages below, plus links to the human `shared-specs/` files. Chip-variant table per the implementation-status rules. No sdkconfig. |
-| `docs/reference/spec-format.md` | **Readers** opening, then the FunctionalSpec / CodingSpec / TestSpec section tables. Target Hardware names SoC separately from the board checklist. Link `templates/FunctionalSpec.template.md`. |
-| `docs/reference/skill-invocation.md` | **Readers** opening. Columns: skill, what the agent writes (master-spec purpose), phrase to type. New-example order: functional-spec-creator, full-project-generator, a domain skill only when the spec needs it, `cargo run --release`, documentation-generator, project-validator. |
+| `docs/reference/spec-format.md` | **Readers** opening, then the FunctionalSpec / CodingSpec / TestSpec section tables. Target Hardware names SoC separately from the board checklist. Link `templates/FunctionalSpec.template.md`. Connectivity values are none, BLE, Wi-Fi, ESP-NOW, MQTT, or raw IEEE 802.15.4. Radio examples copy the pin from `shared-specs/rust-toolchain.md`. Security values may include AES / `esp-storage`, or TLS / CRC OTA. CRC OTA is not the AES skill. |
+| `docs/reference/skill-invocation.md` | **Readers** opening. Columns: skill, what the agent writes (master-spec purpose), phrase to type. New-example order: functional-spec-creator, full-project-generator, a domain skill only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core), `cargo run --release`, documentation-generator, project-validator. State that ESP-NOW unicast, raw IEEE 802.15.4, and HTTPS CRC slot-flip are steps of the full-project-generator. Hardware AES is not the skill for a CRC slot flip. |
 | `docs/reference/pin-mapping-tables.md` | The two v1 C6 boards only. Facts come from `board-specs/`, not from a hand-typed second source. Include the WS2812 footnote when a board-spec says WS2812 or SK6812. Link each board-spec file. |
 
 ### Other generated indexes
@@ -671,5 +674,5 @@ Every path below is required. Do not add another guide for the AI-agent reader. 
 | `docs/README.md` | Plain-language purpose (Readers), chip ≠ board paragraph, links to guides / reference / workflows, examples catalog with status, skills table from the master spec, repository layout with each top-level directory labeled human-written or agent-written, then **What a spec is** and the three-step workflow. |
 | `examples/README.md` | Status rules in **Example implementation status**. Chip ≠ board one-liner. Build snippet on `blinky`. |
 | `board-specs/README.md` | The two C6 boards, links to their spec files, and a link to `docs/guides/creating-new-board-specs.md`. One sentence on what a board spec is, for a reader who has not seen guide 05. |
-| `skills/README.md` | The master-spec skills table and a pointer to `docs/reference/skill-invocation.md`. One glossary sentence for skill, plus a link to `docs/guides/using-with-ai-agents.md`. |
+| `skills/README.md` | The master-spec skills table and a pointer to `docs/reference/skill-invocation.md`. One glossary sentence for skill, plus a link to `docs/guides/using-with-ai-agents.md`. After the table, an order block: the five domain skills when the spec needs them, then ESP-NOW unicast, raw IEEE 802.15.4, and HTTPS CRC slot-flip labeled as steps of `esp32-sdd-full-project-generator`, not extra skills. AES is not used for CRC OTA. |
 | Each `examples/<name>/README.md` | **Example README required order**. |

@@ -25,7 +25,7 @@ You do not need those words to flash an example. You do need them before you cha
 | [05 — Add a Board Spec](05-add-board-spec.md) | Describe one ESP32-C6 board's pins so the agent can write `src/board.rs` |
 | [Creating New Board Specs](creating-new-board-specs.md) | Walk the DevKitC-1-N8 board spec section by section |
 | [06 — Deep Sleep Design](06-deep-sleep-design.md) | Edit the FunctionalSpec, then ask the agent to design sleep and regenerate the crate |
-| [07 — Secure Your Project](07-secure-your-project.md) | Ask the agent for hardware AES and flash-backed keys, not Secure Boot |
+| [07 — Secure Your Project](07-secure-your-project.md) | Ask the agent for hardware AES and flash-backed keys, not Secure Boot. CRC HTTPS OTA is the full-project generator |
 
 ## Recommended reading order
 

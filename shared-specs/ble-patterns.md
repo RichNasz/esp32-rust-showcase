@@ -19,7 +19,7 @@ v1 BLE is rust-on-metal: `esp-radio` (controller) + **TrouBLE** (`trouble-host`,
 
 **Decision rule:** Use TrouBLE + `esp-radio` for every BLE example in v1, including beacons and beacon+sleep. Do not emit NimBLE C, Bluedroid, `sdkconfig`, or `CONFIG_BT_*`.
 
-Pins: git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` (when heap is justified) from tag `esp-hal-v1.2.1` (see `rust-toolchain.md`). Do not mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`. Upstream `esp-hal` 1.2.1 BLE examples use `trouble-host` **0.7**. Enable `esp-hal` `unstable`, `esp-radio` features `esp32c6` + `ble` + `unstable`, and `esp-rtos` features `esp32c6` + `embassy` + `esp-radio`.
+Pins: copy the **Radio pin** in `rust-toolchain.md` for every monorepo crate this example uses, including `esp-bootloader-esp-idf` and `esp_app_desc!()`. Do not write a shorter list. Upstream `esp-hal` 1.2.1 BLE examples use `trouble-host` **0.7**. Enable `esp-hal` `unstable`, `esp-radio` features `esp32c6` + `ble` + `unstable`, and `esp-rtos` features `esp32c6` + `embassy` + `esp-radio`.
 
 Start the `esp-rtos` scheduler **before** constructing `BleConnector`. Radio init is internal to `BleConnector::new` / the radio types; there is no public `esp_radio::init()` on this HAL line.
 

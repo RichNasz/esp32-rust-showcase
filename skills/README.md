@@ -47,8 +47,11 @@ esp32-sdd-functional-spec-creator
         ├─► esp32-deep-sleep-engineer        (if the spec sleeps)
         ├─► esp32-ble-beacon-engineer        (if the spec advertises BLE)
         ├─► esp32-ws2812-led-engineer        (if the spec uses a WS2812)
-        ├─► esp32-hardware-crypto-configurer (if the spec needs AES or stored keys)
-        └─► esp32-lp-core-engineer           (if the spec uses the LP core)
+        ├─► esp32-hardware-crypto-configurer (if the spec needs AES or stored keys; not CRC OTA)
+        ├─► esp32-lp-core-engineer           (if the spec uses the LP core)
+        ├─► ESP-NOW unicast                  (step of this skill, not a separate skill)
+        ├─► raw IEEE 802.15.4                (step of this skill, not a separate skill)
+        └─► HTTPS CRC slot-flip              (step of this skill, not the AES skill)
               └─► cargo run --release
 esp32-sdd-documentation-generator
 esp32-sdd-project-validator

@@ -16,7 +16,7 @@ There is **no sdkconfig**. Chip, board, and optional behaviour are Cargo feature
 |---|---|
 | [pin-mapping-tables.md](pin-mapping-tables.md) | GPIO → peripheral tables for v1 C6 boards (auto-derived from `board-specs/`) |
 | [spec-format.md](spec-format.md) | Required sections for `FunctionalSpec.md`, `CodingSpec.md`, and `TestSpec.md` |
-| [skill-invocation.md](skill-invocation.md) | Canonical invocation phrases for all eleven skills |
+| [skill-invocation.md](skill-invocation.md) | Canonical invocation phrases for all ten skills |
 
 ## Human-authored shared specs (source of truth)
 
@@ -37,14 +37,14 @@ All reference material targets rustup **stable**, MSRV **1.95.0**, `esp-hal` **1
 
 ## Chip variant notes (v1)
 
-| Feature | ESP32-C6 (v1 required) | Other SoCs (catalog-only) |
-|---|---|---|
-| Status | **Required** | Not in v1 |
-| Hardware AES | Yes | — |
-| BLE | BLE 5.3 | — |
-| Wi-Fi | 2.4 GHz Wi-Fi 6 (ax) | — |
-| RTC / LP GPIO | **0–7 only** | — |
-| LP core | RISC-V 20 MHz (`esp-lp-hal`) | — |
-| Capacitive touch | No. C6 has no touch peripheral. `lp-core-wakeup` is GPIO 0–7, not touch | — |
+| Feature | ESP32-C6 (v1) |
+|---|---|
+| Status | **Required** |
+| Hardware AES | Yes |
+| BLE | BLE 5.3 |
+| Wi-Fi | 2.4 GHz Wi-Fi 6 (ax) |
+| RTC / LP GPIO | **0–7 only** |
+| LP core | RISC-V 20 MHz (`esp-lp-hal`) |
+| Capacitive touch | No. C6 has no touch peripheral. `lp-core-wakeup` is GPIO 0–7, not touch |
 
 Consult the relevant board spec in `board-specs/` for your exact module.

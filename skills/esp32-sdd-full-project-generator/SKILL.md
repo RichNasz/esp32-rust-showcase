@@ -80,7 +80,6 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    - `esp32-deep-sleep-engineer` — deep sleep / RTC wakeup / persistent RAM
    - `esp32-ble-beacon-engineer` — BLE advertising, beaconing, or manufacturer data
    - `esp32-ws2812-led-engineer` — any referenced board-spec lists a WS2812 / SK6812 LED
-   - `esp32-ansi-monitor-engineer` — CodingSpec or FunctionalSpec asks for an ANSI serial dashboard
    - `esp32-hardware-crypto-configurer` — security / AES / secure storage requirements
    - `esp32-lp-core-engineer` — LP-core firmware or LP-core wakeup (`lp-core-wakeup` and any spec that names the LP core)
 6. Verify internal consistency: pin assignments match the board spec via `src/board.rs`, Cargo features match the chip/board, radio crates are git-pinned as a set when radio is used, all FunctionalSpec features are accounted for. Zero `unwrap()` / `expect()` on fallible HAL / radio in production paths (`coding-conventions.md`).

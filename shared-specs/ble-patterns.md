@@ -120,13 +120,9 @@ This order is required before deep sleep. Deviation leaves the radio powered (sl
 
 | Chip | Deep Sleep Current |
 |---|---|
-| ESP32 | ~10 µA |
-| ESP32-S3 | ~8 µA |
-| ESP32-C3 | ~5 µA |
 | ESP32-C6 | ~7 µA (with LP core off) |
-| ESP32-H2 | ~7 µA |
 
-Values are approximate; consult the chip datasheet for the specific power mode and RTC peripheral configuration. v1 hardware bar is ESP32-C6.
+The figure is approximate. Use the C6 board-spec power row for the board you ship. Do not copy another SoC's sleep current.
 
 ### Power Budget Formula
 

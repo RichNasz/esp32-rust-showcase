@@ -45,7 +45,7 @@ The generator reads these values to:
 
 ## Reference Current Draw
 
-Use the **ESP32-C6** table for v1 FunctionalSpecs. Other SoCs are hardware-reference only (not in v1 firmware). Prefer the matching `board-specs/` Power Management row when it disagrees with these typicals.
+Use the **ESP32-C6** table for v1 FunctionalSpecs. Prefer the matching `board-specs/` Power Management row when it disagrees with these typicals. Do not copy current figures from another SoC.
 
 ### ESP32-C6 (v1 required — RISC-V HP 160 MHz + LP 20 MHz)
 
@@ -60,38 +60,6 @@ Typical figures from the C6 datasheet / v1 board-specs (DevKitC-C6, XIAO C6). Fi
 | Deep sleep + LP-core running | higher than RTC-only; measure; do not assume classic ESP32 ULP numbers |
 
 Radio left powered (forgot `esp-radio` teardown) reads **milliamps**, not microamps — treat that as a spec bug, not a datasheet row.
-
-### ESP32 (Xtensa LX6) — not in v1
-
-| Mode | Typical |
-|---|---|
-| Active, CPU @ 240 MHz, Wi-Fi Tx | 240 mA peak |
-| Active, CPU @ 240 MHz, no RF | 68 mA |
-| Active, CPU @ 80 MHz, no RF | 31 mA |
-| Modem sleep (associated, 100 ms beacon interval) | 20 mA avg |
-| Light sleep | 0.8 mA |
-| Deep sleep, RTC timer + RTC memory | 10 µA |
-| Deep sleep, ULP running | 150 µA |
-
-### ESP32-S3 (Xtensa LX7) — not in v1
-
-| Mode | Typical |
-|---|---|
-| Active, CPU @ 240 MHz, Wi-Fi Tx | 310 mA peak |
-| Active, CPU @ 240 MHz, no RF | 95 mA |
-| Active, CPU @ 80 MHz, no RF | 43 mA |
-| Light sleep | 1.3 mA |
-| Deep sleep, RTC | 7 µA |
-| Deep sleep, ULP-RISC-V | 100 µA |
-
-### ESP32-C3 (RISC-V) — not in v1
-
-| Mode | Typical |
-|---|---|
-| Active, 160 MHz, Wi-Fi Tx | 270 mA peak |
-| Active, 160 MHz, no RF | 33 mA |
-| Light sleep | 0.13 mA |
-| Deep sleep, RTC | 5 µA |
 
 ---
 

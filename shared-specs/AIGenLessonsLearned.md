@@ -55,6 +55,8 @@
 
 - **Do not regenerate the retired S3 / ESP-IDF example specs.** `secure-ota-https` is an HTTPS slot flip on C6, not Secure Boot enrollment and not a three-LED S3 demo. `esp-now-low-power-mesh` is a two-role unicast pair (the directory name is historical), not a Kconfig mesh. `lp-core-wakeup` is C6 LP-core GPIO 0–7, not capacitive touch. Raw IEEE 802.15.4 is example `ieee802154-raw-frames` (node/peer data frames). It is not Thread, not Zigbee, and not a mesh. (Oct 2026)
 
+- **The board catalog is ESP32-C6 only** (DevKitC-C6 and XIAO C6). Do not restore HUZZAH32, XIAO ESP32S3, XIAO ESP32-C5, the YEJMKJ S3 DevKit, or an empty LilyGo folder as hardware reference. Other SoCs stay as rows in `rust-toolchain.md` so generators refuse them. They do not get board-specs. (Oct 2026)
+
 ## Required Workflow When Something Goes Wrong
 1. Read this file.
 2. Check `shared-specs/coding-conventions.md`, `shared-specs/cargo-conventions.md`, `shared-specs/rust-toolchain.md`, and the relevant board-spec.

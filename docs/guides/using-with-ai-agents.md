@@ -48,7 +48,7 @@ The agent loads the skill's `SKILL.md` and follows it step by step.
 
 ## Available Skills
 
-Eleven skills (10 original + `esp32-lp-core-engineer`):
+Ten skills:
 
 | Skill | Purpose |
 |---|---|
@@ -59,7 +59,6 @@ Eleven skills (10 original + `esp32-lp-core-engineer`):
 | `esp32-ble-beacon-engineer` | Designs `esp-radio` + TrouBLE advertising and teardown before deep sleep |
 | `esp32-deep-sleep-engineer` | Designs sleep configurations and power budgets |
 | `esp32-hardware-crypto-configurer` | Configures hardware AES and `esp-storage` |
-| `esp32-ansi-monitor-engineer` | Generates ANSI TUI serial dashboards via `esp-println` |
 | `esp32-sdd-documentation-generator` | Regenerates all documentation from specs |
 | `esp32-sdd-project-validator` | Validates any example against the locked crate structure |
 | `esp32-lp-core-engineer` | LP-core firmware (`esp-lp-hal`) and HP load/handshake |

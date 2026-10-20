@@ -16,7 +16,7 @@ A board spec is an authoritative, structured Markdown file that describes the ha
 
 Location: `board-specs/<vendor-slug>/<board-slug>.md`
 
-v1 **firmware** compiles only for ESP32-C6 (`esp32c6`). Chip ≠ board: a board-spec does not add a chip feature. Non-C6 board-specs may exist in the catalog for hardware reference; example READMEs exclude them until a chip feature exists.
+v1 **firmware** compiles only for ESP32-C6 (`esp32c6`). Chip ≠ board: a board-spec does not add a chip feature. Add only ESP32-C6 boards. Do not add other SoCs.
 
 ---
 
@@ -41,7 +41,6 @@ Prefer the **vendor's official wiki** over GitHub READMEs or third-party guides:
 
 - Espressif: `docs.espressif.com` + devkit product pages
 - Seeed Studio: `wiki.seeedstudio.com`
-- Adafruit: `learn.adafruit.com`
 
 ### 2. Key facts to verify before running
 

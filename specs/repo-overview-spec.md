@@ -5,7 +5,7 @@ Comprehensive showcase of Spec-Driven Development (SDD) for rust-on-metal ESP32 
 Every line of firmware and every piece of documentation is generated exclusively by AI agents from human-written specifications.
 
 ## Key Features
-- AI-generated board specs from vendor docs (Espressif, Seeed, Adafruit, LilyGo, etc.)
+- AI-generated board specs from vendor docs (Espressif and Seeed)
 - 9 progressive examples on ESP32-C6 leveraging hardware superpowers (deep sleep, LP core, radio, AES, OTA, raw IEEE 802.15.4)
 - Full suite of published Agent Skills (`skills/<name>/SKILL.md`; mirrored for Claude; Grok via `AGENTS.md`)
 - Strict 100 % AI-first workflow: humans edit specs only; agents generate Rust and Markdown
@@ -18,7 +18,7 @@ C developers arriving from ESP-IDF should be told *why* they skip that toolkit, 
 This repository uses Espressif’s official `no_std` `esp-hal` path. It does **not** use the community `esp-idf-*` crates that wrap the C SDK. ESP32-C6 is RISC-V, so rustup **stable** plus target `riscv32imac-unknown-none-elf` is sufficient; `espup` is for Xtensa. Build/flash is Cargo + `espflash`.
 
 ## Hardware bar
-ESP32-C6-DevKitC-1-N8 required; XIAO ESP32-C6 also supported. Other SoCs (ESP32, S3, C5, …) are catalog-only until a chip feature exists. Chip feature `esp32c6` only.
+ESP32-C6-DevKitC-1-N8 required; XIAO ESP32-C6 also supported. The board catalog is those two ESP32-C6 boards. Do not add other SoCs. Chip feature `esp32c6` only.
 
 ## Quick Start
 1. git clone this repo

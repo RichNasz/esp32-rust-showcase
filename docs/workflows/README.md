@@ -107,7 +107,6 @@ esp32-sdd-functional-spec-creator
         ├─► esp32-deep-sleep-engineer        (auto-invoked if deep sleep required)
         ├─► esp32-ble-beacon-engineer        (auto-invoked if BLE advertising required)
         ├─► esp32-ws2812-led-engineer        (auto-invoked if WS2812 RGB LED required)
-        ├─► esp32-ansi-monitor-engineer      (auto-invoked if structured dashboard required)
         ├─► esp32-hardware-crypto-configurer (auto-invoked if security required)
         └─► esp32-lp-core-engineer           (auto-invoked if LP-core firmware / wakeup required)
 

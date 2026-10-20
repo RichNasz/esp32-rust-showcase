@@ -8,7 +8,7 @@
 
 Agent skills published for this repository. Each skill is a self-contained AI workflow definition. Together they implement the complete 100% AI-first SDD pipeline for rust-on-metal ESP32-C6.
 
-Eleven skills: 10 original SDD skills plus `esp32-lp-core-engineer`.
+Ten skills, including `esp32-lp-core-engineer`.
 
 ## Available Skills
 
@@ -22,7 +22,6 @@ Eleven skills: 10 original SDD skills plus `esp32-lp-core-engineer`.
 | [esp32-ble-beacon-engineer](esp32-ble-beacon-engineer/SKILL.md) | BLE advertising via `esp-radio` + TrouBLE, manufacturer data PDUs, bounded windows, teardown before deep sleep. |
 | [esp32-deep-sleep-engineer](esp32-deep-sleep-engineer/SKILL.md) | `esp-hal` RTC sleep, `#[esp_hal::ram(persistent)]` state, wakeup sources, power budgets, radio teardown. |
 | [esp32-hardware-crypto-configurer](esp32-hardware-crypto-configurer/SKILL.md) | Hardware AES via `esp-hal` and key storage via `esp-storage`. No ESP-IDF mbedTLS. |
-| [esp32-ansi-monitor-engineer](esp32-ansi-monitor-engineer/SKILL.md) | ANSI TUI serial dashboards via `esp-println`. Pattern A (continuous), Pattern B (per-cycle snapshot), Pattern B-Lifecycle. |
 | [esp32-sdd-project-validator](esp32-sdd-project-validator/SKILL.md) | Validates any example against the locked no_std crate structure. Hard FAIL on `main.c` / `CMakeLists.txt` / `sdkconfig.defaults`. |
 | [esp32-lp-core-engineer](esp32-lp-core-engineer/SKILL.md) | LP-core firmware (`esp-lp-hal`) plus HP `load_lp_code` handshake. GPIO 0–7 only (GPIO 9 is not RTC). |
 
@@ -46,7 +45,6 @@ esp32-sdd-functional-spec-creator
         ├─► esp32-deep-sleep-engineer        (if deep sleep required)
         ├─► esp32-ble-beacon-engineer        (if BLE advertising required)
         ├─► esp32-ws2812-led-engineer        (if WS2812 RGB LED required)
-        ├─► esp32-ansi-monitor-engineer      (if structured serial dashboard required)
         ├─► esp32-hardware-crypto-configurer (if security required)
         └─► esp32-lp-core-engineer           (if LP-core firmware / wakeup required)
 ```

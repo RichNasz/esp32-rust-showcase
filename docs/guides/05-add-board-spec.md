@@ -19,6 +19,6 @@ Board specs are the source of truth for GPIO, power, and USB console. Never hard
 5. Regenerate documentation so Supported Boards tables auto-discover the new file
 ```
 
-v1 **firmware** still filters to ESP32-C6. You may add non-C6 board-specs to the catalog for hardware reference; example READMEs will list them under an exclusion callout until the hardware bar expands.
+Add only ESP32-C6 boards. A board-spec does not add a chip feature. Do not add other SoCs to the catalog.
 
 Full walkthrough: [Creating New Board Specs](creating-new-board-specs.md).

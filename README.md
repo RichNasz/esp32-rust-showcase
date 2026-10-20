@@ -16,13 +16,13 @@
 
 This repository is a production-grade demonstration of **Spec-Driven Development (SDD)** for **rust-on-metal ESP32** (`no_std` [`esp-hal`](https://github.com/esp-rs/esp-hal) on ESP32-C6). Humans author concise specifications; AI agents generate all firmware, documentation, and Cargo configuration from those specs. It exists to prove that strict human/AI role separation produces better embedded firmware faster, and to give the ESP32 community a reusable rust-on-metal SDD toolkit they can fork.
 
-**Chip ≠ board.** v1 firmware is **ESP32-C6 only** (Cargo feature `esp32c6`). rust-on-metal is not ESP-IDF `idf.py set-target`: an S3 or classic ESP32 project does not become C6 by flipping a flag. Boards on that chip (DevKitC-C6 default, optional XIAO C6) change pins and USB via `board-specs/` and generated `src/board.rs`. Other SoCs in the catalog are hardware reference until a chip feature exists.
+**Chip ≠ board.** v1 firmware is **ESP32-C6 only** (Cargo feature `esp32c6`). rust-on-metal is not ESP-IDF `idf.py set-target`: an S3 or classic ESP32 project does not become C6 by flipping a flag. Boards on that chip (DevKitC-C6 default, optional XIAO C6) change pins and USB via `board-specs/` and generated `src/board.rs`. The board catalog is those two boards.
 
 ## Features
 
 - **9 progressive examples** on ESP32-C6 — breathing LED, deep sleep, MQTT, hardware AES, a duty-cycled BLE beacon, an HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, LP-core GPIO wakeup, and raw IEEE 802.15.4 frames. **Nine crates are generated** as of 2026-10-20 (blinky through ieee802154-raw-frames). `specs/showcase-master-spec.md` still lists examples 6, 7, and 8 as Specs only; humans own that catalog. Example 9 is Firmware generated there
-- **11 published agent skills** (10 original SDD skills plus `esp32-lp-core-engineer`) covering spec creation, crate generation, WS2812, BLE, deep sleep, LP-core, ANSI dashboards, hardware AES, board specs, documentation, and validation
-- **AI-generated board specs** from vendor datasheets (Espressif, Seeed, Adafruit, LilyGo, and more); v1 **chip** is ESP32-C6 (`esp32c6`); **boards** are ESP32-C6-DevKitC-1-N8 (required) and XIAO ESP32-C6
+- **10 published agent skills** covering spec creation, crate generation, WS2812, BLE, deep sleep, LP-core, hardware AES, board specs, documentation, and validation
+- **AI-generated board specs** from vendor datasheets (Espressif and Seeed); v1 **chip** is ESP32-C6 (`esp32c6`); **boards** are ESP32-C6-DevKitC-1-N8 (required) and XIAO ESP32-C6
 - **Strict human/AI separation** — generated files carry agent headers; only `specs/`, `shared-specs/`, and `examples/*/specs/` are human-authored
 - **No ESP-IDF install required** — rustup stable + `espflash`; firmware is `no_std` rust-on-metal via `esp-hal`, not the C SDK. [Why](docs/guides/why-esp-idf-is-not-required.md)
 - **Full OSS governance** — Contributing guide, Code of Conduct, Security policy, and GitHub issue templates
@@ -85,7 +85,7 @@ Nine examples, ordered by complexity. Start with `blinky`. Required board: **ESP
 
 ## Skills
 
-Eleven agent skills implement the complete SDD pipeline. Invoke any skill by name in your agent.
+Ten agent skills implement the complete SDD pipeline. Invoke any skill by name in your agent.
 
 | Skill | Purpose |
 |---|---|
@@ -97,7 +97,6 @@ Eleven agent skills implement the complete SDD pipeline. Invoke any skill by nam
 | [esp32-ble-beacon-engineer](skills/esp32-ble-beacon-engineer/SKILL.md) | BLE advertising via `esp-radio` + TrouBLE, manufacturer data, teardown before deep sleep |
 | [esp32-deep-sleep-engineer](skills/esp32-deep-sleep-engineer/SKILL.md) | `esp-hal` RTC sleep, `#[esp_hal::ram(persistent)]` state, power budgets, radio teardown |
 | [esp32-hardware-crypto-configurer](skills/esp32-hardware-crypto-configurer/SKILL.md) | Hardware AES via `esp-hal` and key storage via `esp-storage` |
-| [esp32-ansi-monitor-engineer](skills/esp32-ansi-monitor-engineer/SKILL.md) | ANSI TUI serial dashboards over UART via `esp-println` (Patterns A / B / B-Lifecycle) |
 | [esp32-sdd-project-validator](skills/esp32-sdd-project-validator/SKILL.md) | Validates any example against the locked no_std crate structure; reports PASS/FAIL |
 | [esp32-lp-core-engineer](skills/esp32-lp-core-engineer/SKILL.md) | LP-core firmware (`esp-lp-hal`), HP `load_lp_code` handshake, GPIO 0–7 only on C6 |
 

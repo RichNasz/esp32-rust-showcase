@@ -34,8 +34,7 @@ v1 chip: **ESP32-C6** only (`esp32c6`). Other SoCs are not in v1.
 - [x] **Espressif ESP32-C6-DevKitC-1-N8** *(default)* — `board-specs/espressif/esp32-c6-devkitc-1-n8.md` — Cargo feature `board-devkitc-c6`
 - [x] **Seeed XIAO ESP32-C6** — `board-specs/seeed/xiao-esp32c6.md` — Cargo feature `board-xiao-c6`
 
-Do not add non-C6 boards. Adafruit HUZZAH32, Seeed XIAO ESP32S3, Seeed XIAO ESP32-C5, and
-YEJMKJ ESP32-S3 boards are **not in v1**.
+Do not add boards for any SoC other than ESP32-C6.
 
 ## Features
 

@@ -34,8 +34,8 @@ npx @agentskills/cli install RichNasz/esp32-rust-showcase#skills
 
 This is optional. Opening the repo and pointing the agent at `skills/` is enough.
 
-## Eleven skills
+## Ten skills
 
-See [skills/README.md](../../skills/README.md) for the full table (10 original SDD skills plus `esp32-lp-core-engineer`).
+See [skills/README.md](../../skills/README.md) for the full table.
 
 Next: [03 — Run Your First Example](03-first-example.md).

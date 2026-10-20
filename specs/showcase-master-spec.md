@@ -36,7 +36,7 @@ Thread, Zigbee, a multi-hop ESP-NOW mesh, ESP32-S3 capacitive touch, and Secure 
 
 ## Hardware bar
 
-ESP32-C6-DevKitC-1-N8 required; XIAO ESP32-C6 also supported. Other SoCs (ESP32, S3, C5, …) are catalog-only until a chip feature exists. Chip feature `esp32c6` only.
+ESP32-C6-DevKitC-1-N8 required; XIAO ESP32-C6 also supported. The board catalog is those two ESP32-C6 boards. Do not add other SoCs. Chip feature `esp32c6` only.
 
 ## Example Directory Structure
 
@@ -44,4 +44,4 @@ See `specs/example-project-structure-spec.md` for the permanent, immutable layou
 
 ## Skills
 
-esp32-ansi-monitor-engineer, esp32-board-spec-generator, esp32-ble-beacon-engineer, esp32-deep-sleep-engineer, esp32-hardware-crypto-configurer, esp32-sdd-full-project-generator, esp32-sdd-documentation-generator, esp32-sdd-functional-spec-creator, esp32-sdd-project-validator, esp32-ws2812-led-engineer, esp32-lp-core-engineer
+esp32-board-spec-generator, esp32-ble-beacon-engineer, esp32-deep-sleep-engineer, esp32-hardware-crypto-configurer, esp32-sdd-full-project-generator, esp32-sdd-documentation-generator, esp32-sdd-functional-spec-creator, esp32-sdd-project-validator, esp32-ws2812-led-engineer, esp32-lp-core-engineer

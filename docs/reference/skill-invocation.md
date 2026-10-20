@@ -18,7 +18,6 @@ Canonical phrases. Every skill's first step is to read `shared-specs/AIGenLesson
 | `esp32-ble-beacon-engineer` | Activate esp32-ble-beacon-engineer skill |
 | `esp32-deep-sleep-engineer` | Activate esp32-deep-sleep-engineer skill |
 | `esp32-hardware-crypto-configurer` | Activate esp32-hardware-crypto-configurer skill |
-| `esp32-ansi-monitor-engineer` | Activate esp32-ansi-monitor-engineer skill |
 | `esp32-sdd-project-validator` | Activate esp32-sdd-project-validator skill |
 | `esp32-lp-core-engineer` | Activate esp32-lp-core-engineer skill |
 
@@ -27,7 +26,7 @@ Canonical phrases. Every skill's first step is to read `shared-specs/AIGenLesson
 ```
 esp32-sdd-functional-spec-creator
   └─► esp32-sdd-full-project-generator
-        ├─► domain skills (deep-sleep, ble-beacon, ws2812, ansi-monitor, hardware-crypto, lp-core)
+        ├─► domain skills (deep-sleep, ble-beacon, ws2812, hardware-crypto, lp-core)
         └─► cargo run --release
 esp32-sdd-documentation-generator
 esp32-sdd-project-validator

@@ -45,12 +45,3 @@ USB console: USB Serial/JTAG. Deep sleep floor: ~15 µA. Native USB drops during
 ## WS2812 footnote
 
 A GPIO level alone produces no visible output — use an RMT (or equivalent `esp-hal`) driver to generate the 800 kHz NRZ waveform.
-
-## Excluded from v1 firmware (C6 only)
-
-| Board | SoC | Reason |
-| --- | --- | --- |
-| Adafruit HUZZAH32 | ESP32 | Not in v1 — C6 only |
-| Seeed XIAO ESP32S3 | ESP32-S3 | Not in v1 — C6 only |
-| Seeed XIAO ESP32-C5 | ESP32-C5 | Not in v1 — C6 only |
-| YEJMKJ ESP32-S3-DevKitC-1-N16R8 | ESP32-S3 | Not in v1 — C6 only |

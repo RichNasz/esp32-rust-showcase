@@ -1,6 +1,6 @@
 ---
 name: esp32-board-spec-generator
-description: Generates structured board-spec Markdown files from vendor documentation. Produces pinout tables, peripheral maps, power budgets, flash/PSRAM inventory, and antenna notes for any ESP32-family module or devkit. Hardware Markdown format is unchanged; USB console is documented without sdkconfig.
+description: Generates structured board-spec Markdown files from vendor documentation for ESP32-C6 boards only. Produces pinout tables, peripheral maps, power budgets, flash/PSRAM inventory, and antenna notes. Refuses other SoCs. USB console is documented without sdkconfig.
 version: "2.0.0"
 author: Richard Naszcyniec
 keywords: sdd, esp32, board-spec, hardware, pinout, vendor, datasheet, rust, esp-hal
@@ -15,7 +15,7 @@ keywords: sdd, esp32, board-spec, hardware, pinout, vendor, datasheet, rust, esp
 ## When to use
 When adding a new ESP32 board or module to the project, or when vendor documentation has changed and the board spec needs to be refreshed.
 
-v1 firmware generation only consumes **ESP32-C6** boards (DevKitC-C6 required, XIAO C6 also supported). You may still author a board-spec for another SoC as hardware reference, but mark it **not in v1** — do not treat it as a supported firmware target.
+Write board-specs only for **ESP32-C6** (DevKitC-C6 required, XIAO C6 also supported). If the board is another SoC, stop. Do not add it as hardware reference.
 
 ## Inputs
 - Vendor product page URL or datasheet PDF (provide in the prompt)
@@ -31,8 +31,8 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
 5. Add the standard agent-generated header to the output file.
 6. USB Serial / Console: document UART-bridge chip vs native USB Serial/JTAG vs USB CDC, with TX/RX GPIOs. Do **not** emit `CONFIG_ESP_CONSOLE_*` sdkconfig lines — there is no sdkconfig. Firmware uses `esp-println` + `espflash`.
 7. Cargo / chip notes (chip and board are Cargo features, not a set-target command):
-   - Chip feature: `esp32c6` when the SoC is ESP32-C6; otherwise state "not in v1".
-   - Board Cargo feature when the board is in the v1 catalog: DevKitC-C6 → `board-devkitc-c6`; XIAO C6 → `board-xiao-c6`.
+   - Chip feature: `esp32c6`. Refuse any other SoC.
+   - Board Cargo feature: DevKitC-C6 → `board-devkitc-c6`; XIAO C6 → `board-xiao-c6`. A new C6 board needs a new feature name in the FunctionalSpec before firmware uses it.
 8. Output: file path written and a one-line summary of key specs (chip variant, flash, PSRAM, antenna, v1 status).
 
 ## Markdown Formatting Requirements

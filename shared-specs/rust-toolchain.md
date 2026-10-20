@@ -43,10 +43,10 @@ Generated reader-facing explanation: `docs/guides/why-esp-idf-is-not-required.md
 | ESP32-S3 | Not in v1 | Xtensa — needs `espup`. USB OTG CDC, capacitive touch, ULP-RISC-V — **not** C6 APIs. |
 | ESP32-S2 | Not in v1 | Xtensa — needs `espup`. No BLE. Not a C6 drop-in. |
 | ESP32-C3 | Not in v1 | RISC-V (`riscv32imc-unknown-none-elf`, not `imac`). No LP-core. Single-core. |
-| ESP32-C5 | Not in v1 | RISC-V; dual-band Wi-Fi. No v1 chip feature. Keep board-spec as hardware reference only. |
+| ESP32-C5 | Not in v1 | RISC-V; dual-band Wi-Fi. No v1 chip feature. Do not add a board-spec. |
 | ESP32-H2 | Not in v1 | RISC-V; 802.15.4 / BLE, **no Wi-Fi**. Cannot run Wi-Fi / ESP-NOW examples. |
 
-Hardware bar: **ESP32-C6-DevKitC-1-N8 required**; **XIAO ESP32-C6 also supported**. Other SoCs are catalog-only until a chip feature exists. Expanding the bar means a new chip feature + this table + new example specs — not `idf.py set-target`.
+Hardware bar: **ESP32-C6-DevKitC-1-N8 required**; **XIAO ESP32-C6 also supported**. Other SoCs are not firmware targets and have no board-specs. Expanding the bar means a new chip feature, a row in this table, new board-specs, and new example specs — not `idf.py set-target`.
 
 Chip (SoC) ≠ board. `esp32c6` selects the HAL. `board-devkitc-c6` / `board-xiao-c6` select pins and USB. Each FunctionalSpec names **one** SoC.
 

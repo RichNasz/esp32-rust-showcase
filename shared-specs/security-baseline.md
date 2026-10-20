@@ -1,7 +1,7 @@
 # Security Baseline
 
 **Classification:** Human-authored shared spec
-**Applies to:** All examples; mandatory for any example marked `production-targeted` in its FunctionalSpec.md
+**Applies to:** All examples. v1 examples are not production-targeted.
 
 ---
 
@@ -20,7 +20,7 @@ Out of scope for this baseline: physical decapping attacks, RF-layer attacks, de
 
 ## Minimum Requirements (All Examples)
 
-These apply regardless of whether an example is production-targeted.
+These apply to every example.
 
 | Requirement | Implementation |
 |---|---|
@@ -33,37 +33,19 @@ ESP-IDF Kconfig symbols (`CONFIG_FREERTOS_CHECK_STACKOVERFLOW_*`, `CONFIG_ESP_TA
 
 ---
 
-## Production-Targeted Requirements
+## Out of scope for v1
 
-Examples with `Production Target: yes` in their FunctionalSpec.md must also satisfy:
+No example sets `Production Target: yes`. Secure Boot eFuse enrollment and flash-encryption enablement are not part of this repository. Do not add them as examples, and do not emit `CONFIG_SECURE_*` or any sdkconfig.
 
-### Flash encryption and Secure Boot (eFuse, not Kconfig)
+`esp-bootloader-esp-idf` writes the application descriptor `espflash` requires. It does not enroll Secure Boot.
 
-IDF `CONFIG_SECURE_FLASH_ENC_ENABLED` / `CONFIG_SECURE_BOOT*` Kconfig **does not apply**.
+`secure-ota-https` downloads over HTTPS, checks a CRC, and activates the inactive OTA slot. It does not verify a signature. Stock `espflash` does not auto-rollback.
 
-- Use Espressif eFuse-based flash encryption and Secure Boot v2 as documented for ESP32-C6.
-- Use `esp-bootloader-esp-idf` for IDF-compatible application descriptors and partition metadata so a standard ESP-IDF bootloader can verify and select the image. This crate is **not** ESP-IDF itself.
-- Encryption and signing keys are generated or burned on-device / offline. Never commit private keys or eFuse key material.
-- Once Secure Boot is enabled in production, it cannot be disabled without reflashing eFuses (irreversible).
+### TLS when an example speaks HTTPS
 
-### Storage encryption
-
-- Production-targeted examples that persist credentials must encrypt that storage (flash encryption + encrypted NVS-like partition, or equivalent `esp-storage` usage).
-- Encryption keys live in eFuse or a dedicated key partition — never in source.
-
-### TLS/HTTPS Requirements
-
-- All outbound HTTP connections must use HTTPS with server certificate verification enabled.
-- Do not disable certificate verification to "make it work".
-- Minimum TLS version: TLS 1.2.
-- Certificate expiry must be handled gracefully — log and alert rather than silently failing.
+- Verify the server certificate. Do not disable verification to make a demo connect.
+- `secure-ota-https` uses TLS 1.3 via `embedded-tls` (one embedded CA).
 - Heap (`esp-alloc`) for TLS buffers is allowed only when the CodingSpec justifies it.
-
-### OTA Update Security
-
-- OTA updates must be fetched over HTTPS with certificate verification.
-- Verify the incoming firmware signature before committing the new image (Secure Boot app signing / `esp-bootloader-esp-idf` image metadata).
-- Keep a rollback slot. Mark the new image valid only after confirming the device can still connect.
 
 ---
 
@@ -74,7 +56,7 @@ IDF `CONFIG_SECURE_FLASH_ENC_ENABLED` / `CONFIG_SECURE_BOOT*` Kconfig **does not
 | Wi-Fi PSK | Encrypted flash / gitignored provision file | Never in committed `src/` or Cargo features |
 | API keys / tokens | Encrypted flash namespace | Injected at provisioning |
 | TLS private key | Dedicated storage or hardware-backed key when available | Private key never logged |
-| OTA signing public key | Embedded in the signed image metadata | Part of the signed binary |
+| OTA image check | CRC before the inactive slot is activated (`secure-ota-https`) | Signature checks and eFuse enrollment are out of scope |
 
 ---
 
@@ -95,13 +77,11 @@ The full-project-generator must not emit code that exhibits these patterns:
 
 ## Security Review Checklist
 
-Before marking an example as production-ready, verify:
+Before generating an example, verify:
 
-- [ ] Flash encryption / Secure Boot plan uses eFuse + `esp-bootloader-esp-idf`, not IDF Kconfig.
-- [ ] Signing keys stored offline; never committed.
 - [ ] Credentials stored outside committed source.
-- [ ] TLS certificate verification enabled for all outbound connections.
-- [ ] OTA update path uses HTTPS and signature verification.
+- [ ] TLS certificate verification enabled for outbound HTTPS.
+- [ ] OTA, when present, uses HTTPS and a CRC check before slot activation.
 - [ ] No debug logs expose credentials.
 - [ ] BLE / network input is length-checked.
-- [ ] No `unwrap()` on fallible HAL/radio in production paths.
+- [ ] No `unwrap()` on fallible HAL/radio on paths that must keep running.

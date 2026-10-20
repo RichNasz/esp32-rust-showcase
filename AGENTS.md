@@ -31,7 +31,7 @@ Pins: [`shared-specs/rust-toolchain.md`](shared-specs/rust-toolchain.md).
 
 - **Chip (SoC)** feature `esp32c6` only. rust-on-metal is not `idf.py set-target`; do not copy S3/ESP32 specs onto C6.
 - **Board** GPIO / LED / buttons come from [`board-specs/`](board-specs/) via generated `src/board.rs`. Never hardcode pins in `main.rs`.
-- Default board feature `board-devkitc-c6` (ESP32-C6-DevKitC-1-N8). Optional `board-xiao-c6`. Other SoCs are catalog-only until a chip feature exists.
+- Default board feature `board-devkitc-c6` (ESP32-C6-DevKitC-1-N8). Optional `board-xiao-c6`. The board catalog is those two boards. Do not add other SoCs.
 
 ## Skills
 

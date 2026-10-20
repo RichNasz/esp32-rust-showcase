@@ -26,7 +26,7 @@ This file is the single source of truth for ALL Markdown documentation.
 | **Chip (SoC)** | `esp-hal` chip feature, rustc target, RTC/LP GPIO set, LP-core, radio/`unstable` | **`esp32c6` only** |
 | **Board** | Pins, LED type, USB-UART vs native USB, antenna, LiPo — via `board-specs/` → generated `src/board.rs` | `board-devkitc-c6` (default), optional `board-xiao-c6` |
 
-v1 firmware is **one chip per example**. Multi-board on that chip is allowed. Do not generate `if S3 { … } else if C6 { … }` specs or READMEs. Non-C6 board-specs are hardware reference only (not in v1). Switching SoC later means a new chip feature, a `rust-toolchain.md` row, and new example specs — not `set-target`.
+v1 firmware is **one chip per example**. Multi-board on that chip is allowed. Do not generate `if S3 { … } else if C6 { … }` specs or READMEs. The board catalog is ESP32-C6 only. Do not add non-C6 board-specs. Switching SoC later means a new chip feature, a `rust-toolchain.md` row, new board-specs, and new example specs — not `set-target`.
 
 Root README (project description or Features) and `docs/README.md` must each include one short paragraph stating this. `docs/guides/why-esp-idf-is-not-required.md` must include a **Chip vs board** subsection: IDF `idf.py set-target` is **not** equivalent to swapping `esp-hal` chip features without a new spec. `docs/reference/spec-format.md` Target Hardware must name **SoC** separately from the board checklist. `docs/guides/04-new-example.md` (Hardware bar) and `examples/README.md` (intro) must each include a **Chip ≠ board** one-liner (`esp32c6` vs board features; not `set-target`).
 
@@ -141,8 +141,8 @@ Must carry the standard agent-generated header, then these sections **in this or
    directory: `cargo run --release`.
 5. **Chip vs boards** — chip feature `esp32c6` only (SoC ≠ board). GPIO from
    `board-specs/` via generated `src/board.rs`; never hardcode pins in `main.rs`.
-   Default board feature `board-devkitc-c6`; optional `board-xiao-c6`. Other SoCs
-   are catalog-only until a chip feature exists.
+   Default board feature `board-devkitc-c6`; optional `board-xiao-c6`. The board
+   catalog is those two ESP32-C6 boards. Do not add other SoCs.
 6. **Skills** — source of truth is `skills/` (not `.grok/skills/`). Invoke by name. Index:
    `skills/README.md`.
 7. **Layout** — standalone Cargo crates under `examples/<name>/`. Locked structure:
@@ -294,7 +294,7 @@ FunctionalSpec.md. The FunctionalSpec provides only the compatibility requiremen
 everything else from board-spec files.
 
 v1 catalog is ESP32-C6 only. Default board: **Espressif ESP32-C6-DevKitC-1-N8**.
-Also supported: **Seeed XIAO ESP32-C6**. Other SoCs (ESP32, S3, C5, …) are catalog-only until a chip feature exists.
+Also supported: **Seeed XIAO ESP32-C6**. The board catalog is those two boards. Do not add other SoCs.
 
 ### Discovery workflow
 
@@ -324,8 +324,10 @@ Also supported: **Seeed XIAO ESP32-C6**. Other SoCs (ESP32, S3, C5, …) are cat
 5. **Add WS2812 footnote** automatically whenever any row in the table has LED type
    WS2812 or SK6812. Standard footnote text: "A GPIO level alone produces no
    visible output — use an RMT (or equivalent `esp-hal`) driver to generate the 800 kHz NRZ waveform."
-6. **Add exclusion callout** for any board-spec in the catalog that fails a required
-   check, naming the specific reason (e.g. "ESP32-S3 boards: not in v1 — C6 only").
+6. **Add an exclusion callout** only when a scanned board-spec fails a required
+   check, and name the reason. The v1 catalog is the two C6 boards. A scan that
+   passes both has no exclusion callout. Do not invent a list of boards that are
+   not in `board-specs/`.
 
 ### Why auto-discovery, not FunctionalSpec tables
 
@@ -366,7 +368,7 @@ Behavior table.
 | --- | --- |
 | Serial monitor during deep sleep | UART bridge chip (CP2104, CH343P, etc.) → "Stays connected throughout sleep"; Native USB Serial/JTAG → "Drops and reconnects on wake (USB Serial/JTAG)"; Native USB CDC → "Drops and reconnects on wake (USB CDC)" |
 | LED feedback | WS2812/SK6812 → "Color: green = success, red = failure, off = sleep (WS2812)"; Simple GPIO active LOW → "On / off, active LOW"; Simple GPIO active HIGH → "On / off, active HIGH" |
-| WiFi scan coverage | Dual-band WiFi 6 (e.g. ESP32-C5) → "**2.4 GHz + 5 GHz** (dual-band WiFi 6)"; Single-band WiFi 6 → "2.4 GHz (WiFi 6 ax)"; WiFi 4 (802.11n) → "2.4 GHz only". v1 C6 boards are 2.4 GHz WiFi 6. |
+| WiFi scan coverage | v1 C6 boards are 2.4 GHz Wi-Fi 6. Omit this column unless a C6 board-spec documents a different band. |
 | Deep sleep floor | From board-spec Power Management table deep sleep current figure; use "See board-spec" if no figure is documented |
 
 ### Formatting rules

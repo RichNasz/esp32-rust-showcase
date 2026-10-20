@@ -49,8 +49,6 @@ Auto-discovered from `board-specs/`, filtered to ESP32-C6. Wi-Fi, deep-sleep tim
 
 I2C (from board-specs): DevKitC default SDA/SCL = GPIO 6 / 7. XIAO D4/D5 = GPIO 22 / 23.
 
-> **Excluded from v1:** Adafruit HUZZAH32 (ESP32), Seeed XIAO ESP32S3 (ESP32-S3), Seeed XIAO ESP32-C5 (ESP32-C5), YEJMKJ ESP32-S3-DevKitC-1-N16R8 (ESP32-S3) — not in v1 — C6 only.
-
 GPIO 9 (XIAO boot button) is **not** an RTC GPIO and cannot wake the chip from deep sleep.
 
 ## Per-Board Behavior

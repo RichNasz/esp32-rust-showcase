@@ -70,7 +70,7 @@ ESP-IDF often lets you `idf.py set-target` and rebuild. **rust-on-metal does not
 | **Chip (SoC)** | `esp-hal` feature, rustc target, RTC/LP GPIO set, LP-core, radio/`unstable` | **`esp32c6` only** |
 | **Board** | Pins, LED type, USB-UART vs native USB, antenna, LiPo — `board-specs/` → generated `src/board.rs` | `board-devkitc-c6` (default), optional `board-xiao-c6` |
 
-Changing **board** on C6 is a Cargo feature + regenerate. Changing **SoC** is a new FunctionalSpec, a `rust-toolchain.md` row, and (for Xtensa) `espup`. Do not write `if S3 { … } else if C6 { … }` examples. Non-C6 files under `board-specs/` are hardware reference only.
+Changing **board** on C6 is a Cargo feature + regenerate. Changing **SoC** is a new FunctionalSpec, a `rust-toolchain.md` row, new board-specs, and (for Xtensa) `espup`. Do not write `if S3 { … } else if C6 { … }` examples. `board-specs/` contains only the two ESP32-C6 boards.
 
 ## What looks like ESP-IDF but is not an IDF install
 

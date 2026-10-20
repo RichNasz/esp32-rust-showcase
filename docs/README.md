@@ -12,7 +12,7 @@
 
 The ESP32 Rust SDD Showcase is a reference implementation of **Spec-Driven Development (SDD)** for **rust-on-metal ESP32** (`no_std` `esp-hal` on ESP32-C6). Humans write specs. Agents generate firmware and these docs. As of 2026-10-20 the tree has generated crates for all nine examples, including raw IEEE 802.15.4 frames. `specs/showcase-master-spec.md` still lists the OTA example, the ESP-NOW example, and `lp-core-wakeup` as Specs only; humans own that catalog. Example 9 is Firmware generated there.
 
-**Chip ≠ board.** v1 firmware is **ESP32-C6 only** (`esp32c6`). rust-on-metal does not port across ESP32 / S3 / C6 the way ESP-IDF `idf.py set-target` often does. Required **board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported. Other SoCs in `board-specs/` are hardware reference until a chip feature exists. No ESP-IDF install is required — [why](guides/why-esp-idf-is-not-required.md).
+**Chip ≠ board.** v1 firmware is **ESP32-C6 only** (`esp32c6`). rust-on-metal does not port across ESP32 / S3 / C6 the way ESP-IDF `idf.py set-target` often does. Required **board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported. `board-specs/` contains only those two boards. No ESP-IDF install is required — [why](guides/why-esp-idf-is-not-required.md).
 
 ## Documentation Sections
 
@@ -39,7 +39,7 @@ The ESP32 Rust SDD Showcase is a reference implementation of **Spec-Driven Devel
 
 ## Agent Skills
 
-Eleven skills implement the full SDD pipeline (10 original plus `esp32-lp-core-engineer`). Skills live in `skills/<name>/SKILL.md` inside this repository. No extra install command is required once you open the project in an agent that reads that tree.
+Ten skills implement the full SDD pipeline. Skills live in `skills/<name>/SKILL.md` inside this repository. No extra install command is required once you open the project in an agent that reads that tree.
 
 See [docs/guides/using-with-ai-agents.md](guides/using-with-ai-agents.md) for setup and workflow details.
 
@@ -52,7 +52,6 @@ See [docs/guides/using-with-ai-agents.md](guides/using-with-ai-agents.md) for se
 | `esp32-ble-beacon-engineer` | Designs `esp-radio` + TrouBLE advertising and teardown before deep sleep |
 | `esp32-deep-sleep-engineer` | Designs sleep configurations and power budgets |
 | `esp32-hardware-crypto-configurer` | Configures hardware AES and `esp-storage` key storage |
-| `esp32-ansi-monitor-engineer` | Generates ANSI TUI serial dashboards via `esp-println` |
 | `esp32-sdd-documentation-generator` | Regenerates all documentation from specs (this file!) |
 | `esp32-sdd-project-validator` | Validates any example against the locked crate structure |
 | `esp32-lp-core-engineer` | LP-core firmware (`esp-lp-hal`) and HP load/handshake |

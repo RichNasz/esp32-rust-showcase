@@ -12,7 +12,7 @@
 
 | File | Purpose |
 |---|---|
-| `showcase-master-spec.md` | Master catalog: nine examples, eleven skills, C6 hardware bar, and the implementation-status table (firmware generated vs specs only) |
+| `showcase-master-spec.md` | Master catalog: nine examples, ten skills, C6 hardware bar, and the implementation-status table (firmware generated vs specs only) |
 | `repo-overview-spec.md` | Repository purpose, key features, and quick-start instructions |
 | `documentation-generation-spec.md` | Rules for AI documentation generation (AI-first rule, file layout, tone, Cargo + espflash) |
 | `contributing-spec.md` | Contribution guidelines: what humans may edit and how to trigger regeneration |

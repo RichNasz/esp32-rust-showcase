@@ -90,7 +90,6 @@ Typical items to consider:
 - PSRAM size and use cases (ML buffers, JPEG frames, audio DSP)
 - Antenna options and range trade-offs
 - Built-in LiPo charger
-- SoC vector extensions (S3 AIE for TFLite)
 - ADC1-safe pads during Wi-Fi
 - Form factor advantages (size, breadboard compatibility)
 -->
@@ -99,13 +98,13 @@ Typical items to consider:
 
 ## Cargo chip / board features
 
-v1 firmware generation consumes **ESP32-C6** only. Other SoCs may still be documented here as hardware reference — mark them **not in v1**.
+Board specs in this repository are **ESP32-C6** only. Do not fill this template for another SoC.
 
 | Item | Value |
 | --- | --- |
-| SoC | <!-- FILL: ESP32-C6 or other; non-C6 = not in v1 --> |
-| Chip Cargo feature | <!-- FILL: `esp32c6` or "not in v1" --> |
-| Board Cargo feature | <!-- FILL: `board-devkitc-c6` / `board-xiao-c6` / none --> |
+| SoC | ESP32-C6 |
+| Chip Cargo feature | `esp32c6` |
+| Board Cargo feature | <!-- FILL: `board-devkitc-c6` or `board-xiao-c6` --> |
 | RTC / LP GPIOs | <!-- FILL: C6 = GPIO 0–7 only; GPIO 9 is not RTC --> |
 
 ```toml

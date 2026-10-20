@@ -1,0 +1,18 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Heap is justified (OpenThread and the 802.15.4 driver allocate).
+# build-std includes alloc. THREAD_DATASET is a lab TLV, not a secret.
+# The placeholder is the upstream NEST-PAN-0FD8 dataset so `cargo build --release`
+# succeeds with no second board. A shell export overrides this [env] table.
+# Both roles must use the same value.
+
+[build]
+target = "riscv32imac-unknown-none-elf"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "espflash flash --monitor"
+
+[unstable]
+build-std = ["core", "alloc"]
+
+[env]
+THREAD_DATASET = "000300001901020fd80208b566147d38e384200e080000639c5d67a3bd0510c490f58d4be0d5eaeb0f09b395d1ae17030d4e4553542d50414e2d304644380708fd7d4f8232cb00000410a7e08419ae47c177fb91bcfcec789aa50c0402a0f77835060004001fffe0"

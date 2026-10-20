@@ -88,7 +88,7 @@ Every generated `.md` file at the example root (`README.md`) must begin with:
 **FAIL** if `target/` is missing or binaries are not excluded.
 
 ### CHECK-08 — Cargo.toml has feature `esp32c6`
-`Cargo.toml` must enable `esp-hal` feature `esp32c6` (for example `esp-hal = { version = "1.2.1", features = ["esp32c6"] }` or the git-pin equivalent). v1 has no other chip feature.
+`Cargo.toml` must enable `esp-hal` feature `esp32c6` (for example `esp-hal = { version = "=1.2.1", features = ["esp32c6"] }` from the crates.io pin in `shared-specs/rust-toolchain.md`). v1 has no other chip feature. Do not git-pin HP radio crates. The nested LP crate still git-pins `esp-lp-hal`.
 
 Match chip features as **whole Cargo feature identifiers**, not substrings. The allowed chip feature is exactly `esp32c6`. Do **not** FAIL `esp32c6` as if it were the unrelated feature `esp32` — `esp32c6` contains those letters but is not that feature.
 
@@ -133,7 +133,7 @@ If any board is mentioned in `FunctionalSpec.md`, the corresponding `board-specs
 These files belong to ESP-IDF. This repository is rust-on-metal. Their presence is never a warning. `lp-core/` is an allowed nested **Cargo** crate, not an exception for CMake.
 
 ### CHECK-14a — Application descriptor
-`Cargo.toml` must depend on `esp-bootloader-esp-idf` with feature `esp32c6` (crates.io 0.6.0 for non-radio, or git tag `esp-hal-v1.2.1` for radio). `src/main.rs` must invoke `esp_bootloader_esp_idf::esp_app_desc!()`.
+`Cargo.toml` must depend on `esp-bootloader-esp-idf` with feature `esp32c6` (crates.io `=0.6.0` for radio and non-radio). `src/main.rs` must invoke `esp_bootloader_esp_idf::esp_app_desc!()`. Radio HP crates use the crates.io pin in `shared-specs/rust-toolchain.md`. The nested LP crate still git-pins `esp-lp-hal`.
 
 **FAIL** if the dependency or the macro invocation is absent.
 

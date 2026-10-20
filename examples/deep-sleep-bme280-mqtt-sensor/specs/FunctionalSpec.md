@@ -82,8 +82,9 @@ require `esp-hal` feature `unstable`.
 
 Wi-Fi STA + MQTT 3.1.1 over TCP, no TLS (TLS is the `secure-ota-https` example).
 
-This is a **radio** example: git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc`
-from tag `esp-hal-v1.2.1`. Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`.
+This is a **radio** example. Copy the crates.io radio pin from
+`shared-specs/rust-toolchain.md` (`esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`,
+`esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`). Do not git-pin the HP radio crates.
 `esp-radio` is an unstable beta.
 
 ## Security Requirements

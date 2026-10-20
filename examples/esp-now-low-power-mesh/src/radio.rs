@@ -77,7 +77,7 @@ pub async fn sensor_once(
 
 #[cfg(feature = "role-sensor")]
 async fn send_one(
-    esp_now: &mut esp_radio::esp_now::EspNow<'_>,
+    esp_now: &mut esp_radio::esp_now::EspNow,
     boot: u32,
     deadline: Instant,
 ) -> bool {

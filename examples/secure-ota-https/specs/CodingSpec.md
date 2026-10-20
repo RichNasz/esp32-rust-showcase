@@ -57,11 +57,12 @@ this example must not depend on automatic revert, and it must not look for
 
 ## Radio, HTTP, and TLS
 
-This is a **radio** example. Git-pin `esp-hal`, `esp-radio` (features `esp32c6`,
-`unstable`, `wifi`), `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`), `esp-alloc`,
-`esp-bootloader-esp-idf`, and `esp-storage` from tag `esp-hal-v1.2.1`. `esp-storage` at
-that tag path-depends on `esp-hal`; crates.io `esp-storage` next to git `esp-hal` builds
-two HALs.
+This is a **radio** example. Copy the crates.io radio pin from
+`shared-specs/rust-toolchain.md`: `esp-hal` `=1.2.1`, `esp-radio` (features `esp32c6`,
+`unstable`, `wifi`) `=1.0.0-beta.1`, `esp-rtos` (features `esp32c6`, `embassy`,
+`esp-radio`) `=0.4.0`, `esp-alloc` `=0.11.0`, `esp-bootloader-esp-idf` `=0.6.0`, and
+`esp-storage` `=0.10.0`. Do not git-pin those HP crates. Mixing a git `esp-hal` with
+crates.io `esp-storage` builds two HALs.
 
 Wi-Fi STA uses `esp-radio` + `embassy-net` 0.9 with DHCPv4, same shape as the BME280
 example. Association is capped at about 15 seconds. DNS only if the URL host is not a
@@ -114,9 +115,9 @@ is already low when the wait begins.
 
 ## Preferred Crates and APIs
 
-- Git-pinned `esp-hal` / `esp-radio` / `esp-rtos` / `esp-alloc` / `esp-bootloader-esp-idf` /
-  `esp-storage` at `esp-hal-v1.2.1` (reason: one HAL, and the OTA updater lives on the
-  bootloader crate).
+- Crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`,
+  `esp-alloc` `=0.11.0`, `esp-bootloader-esp-idf` `=0.6.0`, and `esp-storage` `=0.10.0`
+  (reason: one HAL, and the OTA updater lives on the bootloader crate).
 - `embassy-net` 0.9 (reason: same STA stack as the other Wi-Fi example).
 - `embedded-tls` 0.19.0, no `std` (reason: TLS 1.3 trust-anchor check without ESP-IDF).
 - `esp-hal` RMT for the DevKitC WS2812; `embassy-time` for debounce, blinks, and timeouts.

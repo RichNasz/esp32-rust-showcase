@@ -1,0 +1,12 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Heap is justified (Wi-Fi, BLE, and X.509). build-std includes alloc.
+# No Wi-Fi password is compiled in. The commissioner supplies it.
+
+[build]
+target = "riscv32imac-unknown-none-elf"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "espflash flash --monitor --partition-table partitions.csv"
+
+[unstable]
+build-std = ["core", "alloc"]

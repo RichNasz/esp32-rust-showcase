@@ -15,7 +15,7 @@ These files are human-written constraints that apply to every example. A **spec*
 | File | Purpose |
 |---|---|
 | **[`AIGenLessonsLearned.md`](AIGenLessonsLearned.md)** | **MANDATORY FIRST READ — Gold standard institutional memory, core rules, and lessons from real AI generation** |
-| `rust-toolchain.md` | rustup stable, MSRV 1.95.0, `esp-hal` 1.2.1 pins, radio git-pin at tag `esp-hal-v1.2.1` |
+| `rust-toolchain.md` | rustup stable, MSRV 1.95.0, `esp-hal` 1.2.1 pins, crates.io `esp-radio` `=1.0.0-beta.1` |
 | `cargo-conventions.md` | Standalone crates, board Cargo features, `build.rs`, `.cargo/config.toml` |
 | `coding-conventions.md` | `no_std` Rust style, naming, error handling, Embassy notes |
 | `power-budget-template.md` | Standard power budget calculation template for all low-power examples |

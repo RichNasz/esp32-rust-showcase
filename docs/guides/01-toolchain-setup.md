@@ -35,7 +35,7 @@ cargo install espflash
 cargo install cargo-espflash
 ```
 
-Generated `.cargo/config.toml` sets `runner = "espflash flash --monitor"`, so `cargo run --release` flashes and opens a serial monitor.
+Generated `.cargo/config.toml` sets `runner = "espflash flash --monitor"`, so `cargo run --release` flashes and opens a serial monitor. A custom partition table appends `--partition-table partitions.csv`.
 
 ## 4. Verify
 

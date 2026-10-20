@@ -8,9 +8,9 @@
 
 This documentation is for a reader who wants an AI coding agent to help with ESP32 Rust and may not already know spec-driven development.
 
-**Spec-driven development (SDD)** means a **spec** — Markdown a person writes — is the source of truth. The agent reads those files and **generates** the Rust firmware and these docs. The firmware is rust-on-metal: `no_std` (Rust without the standard library, running on the chip through `esp-hal`) on the ESP32-C6. As of 2026-10-20 all nine examples are **Firmware generated**: nine crates, zero specs-only. That label means the crate is in the tree. It is not a hardware pass.
+**Spec-driven development (SDD)** means a **spec** — Markdown a person writes — is the source of truth. The agent reads those files and **generates** the Rust firmware and these docs. The firmware is rust-on-metal: `no_std` (Rust without the standard library, running on the chip through `esp-hal`) on the ESP32-C6. As of 2026-10-20 all eleven examples are **Firmware generated**: eleven crates, zero specs-only. That label means the crate is in the tree. It is not a hardware pass.
 
-The catalog matches that status. ESP-NOW is a sensor-to-gateway pair, not a mesh. HTTPS OTA is a slot flip with a CRC check, not a Secure Boot demo. LP-core wakeup is GPIO on RTC GPIO 0–7, not capacitive touch. Raw IEEE 802.15.4 is node and peer data frames, not Thread, Zigbee, or a mesh.
+The catalog matches that status. ESP-NOW is a sensor-to-gateway pair, not a mesh. HTTPS OTA is a slot flip with a CRC check, not a Secure Boot demo. LP-core wakeup is GPIO on RTC GPIO 0–7, not capacitive touch. Raw IEEE 802.15.4 is node and peer data frames, not Thread, Zigbee, or a mesh. Thread is a two-node UDP lab link, not a border router. Matter over Wi-Fi uses test credentials. It is not Matter over Thread and not a certified product.
 
 **Chip ≠ board.** The chip (SoC) is Cargo feature `esp32c6` only. The board is pins, LED, and USB: default `board-devkitc-c6` (ESP32-C6-DevKitC-1-N8) or optional `board-xiao-c6` (XIAO ESP32-C6). rust-on-metal is not ESP-IDF `idf.py set-target`. Swapping an S3 or classic ESP32 spec onto the C6 is not a flag flip. No ESP-IDF install is required — [why](guides/why-esp-idf-is-not-required.md).
 
@@ -38,6 +38,8 @@ One-liners are copied from `specs/showcase-master-spec.md`. Status is the master
 | 7 | [esp-now-low-power-mesh](../examples/esp-now-low-power-mesh/) | ESP-NOW sensor-to-gateway unicast. The directory name is historical. This is not a multi-hop mesh | Firmware generated |
 | 8 | [lp-core-wakeup](../examples/lp-core-wakeup/) | LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch) | Firmware generated |
 | 9 | [ieee802154-raw-frames](../examples/ieee802154-raw-frames/) | raw IEEE 802.15.4 data frames between a node and a peer. Not Thread, not Zigbee, not a mesh | Firmware generated |
+| 10 | [thread-udp-pair](../examples/thread-udp-pair/) | two-node Thread lab network. A leader and a child exchange one UDP payload. Not a border router and not Zigbee | Firmware generated |
+| 11 | [matter-wifi-onoff](../examples/matter-wifi-onoff/) | Matter on/off light over Wi-Fi, commissioned over BLE with test credentials. Not Matter over Thread and not a certified product | Firmware generated |
 
 ## Agent skills
 

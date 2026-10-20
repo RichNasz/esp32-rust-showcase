@@ -14,7 +14,7 @@
 
 A spec is Markdown a person writes; the agent generates the crate from it. See [Using With AI Agents](../../docs/guides/using-with-ai-agents.md).
 
-`esp-hal` feature **`unstable`** is on because Wi-Fi and RMT need it on the `esp-hal-v1.2.1` pin. Those APIs can change. **`esp-radio` is an unstable beta.**
+`esp-hal` feature **`unstable`** is on because Wi-Fi and RMT need it on crates.io `esp-hal` `=1.2.1`. Those APIs can change. **`esp-radio` is an unstable beta** (`=1.0.0-beta.1`). Do not git-pin the HP radio crates.
 
 ## Overview
 
@@ -187,7 +187,7 @@ One short blink when the log says `ota_0`. Two short blinks after a flip to `ota
 
 ## Key Concepts
 
-- Radio crates are git-pinned together at tag `esp-hal-v1.2.1`: `esp-hal`, `esp-radio` (features `esp32c6`, `unstable`, `wifi`), `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`), `esp-alloc`, `esp-bootloader-esp-idf`, and `esp-storage`. `esp-radio` is an unstable beta. Wi-Fi and RMT use `esp-hal` feature `unstable`. Do not mix crates.io copies of those crates with git `esp-hal`.
+- Radio crates are the crates.io pin: `esp-hal` `=1.2.1`, `esp-radio` (features `esp32c6`, `unstable`, `wifi`) `=1.0.0-beta.1`, `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`) `=0.4.0`, `esp-alloc` `=0.11.0`, `esp-bootloader-esp-idf` `=0.6.0`, and `esp-storage` `=0.10.0`. `esp-radio` is an unstable beta. Wi-Fi and RMT use `esp-hal` feature `unstable`. Do not git-pin those HP crates.
 - Embassy entry is `#[esp_rtos::main]`. One `embassy-net` 0.9 stack (DHCPv4) stays up across BOOT presses. Association is capped at 15 seconds and DHCP at 10 seconds. DNS runs only when the URL host is not an IPv4 literal. A failed stage returns to the button wait with the radio down.
 - `embedded-tls` 0.19.0 with `std` off and feature `rustpki`. TLS 1.3 only, one trust anchor, hostname check, lab clock (`OTA_NOW_UNIX`). Record buffers live in a static `Scratch`, not on the main-task future. A leaf must be signed by the embedded CA itself.
 - OTA uses `esp-bootloader-esp-idf`: read the table, write the inactive app slot, then `activate_next_partition` only after length, magic `0xE9`, and IEEE CRC32 match. Every image calls `esp_app_desc!()`. Current `espflash` refuses an image without that descriptor. Stock `espflash` does not auto-rollback.

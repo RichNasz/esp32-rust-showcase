@@ -80,15 +80,15 @@ one decimal** from the same conversion (integer hPa = `pressure_pa / 100`, tenth
 
 ## Radio, network, and MQTT
 
-This is a **radio** example. Git-pin `esp-hal`, `esp-radio` (features `esp32c6`,
-`unstable`, `wifi`), `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`), and
-`esp-alloc` from tag `esp-hal-v1.2.1`. Never mix crates.io `esp-rtos = "0.4.0"` with git
-`esp-hal`.
+This is a **radio** example. Copy the crates.io radio pin from
+`shared-specs/rust-toolchain.md`: `esp-hal` `=1.2.1`, `esp-radio` (features `esp32c6`,
+`unstable`, `wifi`) `=1.0.0-beta.1`, `esp-rtos` (features `esp32c6`, `embassy`,
+`esp-radio`) `=0.4.0`, and `esp-alloc` `=0.11.0`. Do not git-pin the HP radio crates.
 
 Wi-Fi STA uses `esp-radio` + `embassy-net` DHCPv4, matching the `esp-hal` 1.2
 `embassy_dhcp` example (Interface + WifiController + net runner task). Heap is required
 for the Wi-Fi blob and `embassy-net` (about 72 KiB internal DRAM). The image must emit an ESP-IDF-compatible application descriptor
-(`esp-bootloader-esp-idf`, git-pinned with the radio stack). Current `espflash`
+(`esp-bootloader-esp-idf` `=0.6.0` from the crates.io radio pin). Current `espflash`
 will not flash without it. `#[ram(reclaimed)]` is allowed only because that
 descriptor is present — the attribute is rejected without it. `build-std` must include `alloc`. Do not allocate
 after init except as the radio / net stack does internally.
@@ -131,8 +131,8 @@ skip association and still sleep.
 
 ## Preferred Crates and APIs
 
-- Git-pinned `esp-hal` / `esp-radio` / `esp-rtos` / `esp-alloc` at `esp-hal-v1.2.1`
-  (reason: radio pin; crates.io `esp-radio` does not resolve with HAL 1.2.1).
+- Crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, and
+  `esp-alloc` `=0.11.0` (reason: radio pin in `shared-specs/rust-toolchain.md`).
 - `embassy-net` 0.9 with DHCPv4 + TCP (+ DNS only if the broker host is not a literal
   IPv4 address) (reason: same stack as the HAL 1.2 Wi-Fi examples).
 - `esp-hal` I2C master for BME280 (reason: metal I2C; no IDF driver).

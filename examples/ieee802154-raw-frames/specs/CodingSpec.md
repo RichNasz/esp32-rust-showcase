@@ -19,10 +19,10 @@ A radio module owns channel, PAN, short addresses, and the send or receive loop.
 
 ## Why this radio stack
 
-Raw 802.15.4 on this pin is `esp-radio`'s IEEE 802.15.4 driver, feature `ieee802154`,
-git-pinned with `esp-hal`, `esp-rtos`, `esp-alloc`, and `esp-bootloader-esp-idf` at tag
-`esp-hal-v1.2.1`. Do not enable the Wi-Fi feature: that driver does not coexist with
-Wi-Fi. Do not add Thread or Zigbee crates.
+Raw 802.15.4 on this pin is `esp-radio`'s IEEE 802.15.4 driver, feature `ieee802154`.
+Copy the crates.io radio pin from `shared-specs/rust-toolchain.md`. Do not enable
+the Wi-Fi feature: that driver does not coexist with Wi-Fi. Do not add Thread,
+Zigbee, or Matter crates. Do not git-pin the HP radio crates.
 
 MAC header types come from crates.io `ieee802154` 0.6.1, the same crate the pinned
 `esp-radio` already uses. Disable its default features. Frames are 2003 data frames

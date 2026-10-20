@@ -2,7 +2,7 @@
 
 ## Examples Catalog
 
-One-liners below are copied into reader-facing tables. Write them for someone new to this repository. Name the visible behavior. Do not put SDD, skill, or spec in a one-liner. Do not claim a mesh, a multi-year battery, Secure Boot, Thread, or Zigbee.
+One-liners below are copied into reader-facing tables. Write them for someone new to this repository. Name the visible behavior. Do not put SDD, skill, or spec in a one-liner. Do not claim a product mesh, a multi-year battery, Secure Boot, Zigbee, a certified Matter device, or a Thread border router. Example 10 may name a two-node Thread lab network. Example 11 may name Matter over Wi-Fi with test credentials.
 
 1. blinky – breathing LED, multi-board (ESP32-C6-DevKitC-1-N8 + XIAO ESP32-C6)
 2. deep-sleep-timer-node – RTC wakeup + persistence
@@ -13,6 +13,8 @@ One-liners below are copied into reader-facing tables. Write them for someone ne
 7. esp-now-low-power-mesh – ESP-NOW sensor-to-gateway unicast. The directory name is historical. This is not a multi-hop mesh
 8. lp-core-wakeup – LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch)
 9. ieee802154-raw-frames – raw IEEE 802.15.4 data frames between a node and a peer. Not Thread, not Zigbee, not a mesh
+10. thread-udp-pair – two-node Thread lab network. A leader and a child exchange one UDP payload. Not a border router and not Zigbee
+11. matter-wifi-onoff – Matter on/off light over Wi-Fi, commissioned over BLE with test credentials. Not Matter over Thread and not a certified product
 
 ## Implementation status
 
@@ -29,12 +31,14 @@ Catalog source of truth for what is actually in the tree. Rechecked 2026-10-20 a
 | 7 | esp-now-low-power-mesh | Firmware generated | Crate generated 2026-10-20 (sensor-to-gateway unicast). Directory name is historical. A host build is not an on-air pass. |
 | 8 | lp-core-wakeup | Firmware generated | Crate generated 2026-10-20 (C6 LP-core GPIO 0–7). Not capacitive touch. A host build is not a board pass. |
 | 9 | ieee802154-raw-frames | Firmware generated | Crate generated 2026-10-20 (raw 802.15.4 node/peer). Not Thread, Zigbee, or a mesh. A host build is not a two-board on-air pass. |
+| 10 | thread-udp-pair | Firmware generated | Crate generated 2026-10-20 (FTD leader / MTD child, one UDP payload). Not a border router, not Zigbee, not Matter. A host build is not a two-board on-air pass. The leader role builds OpenThread from source. |
+| 11 | matter-wifi-onoff | Firmware generated | Crate generated 2026-10-20 (Matter on/off over Wi-Fi, BLE commissioning, test credentials, RAM key store). Not Matter over Thread and not CSA-certified. A host build is not a commissioning pass. |
 
-Generated docs copy this table. As of this recheck, all nine rows are **Firmware generated** (nine crates, zero specs-only). They must not describe examples 6–8 as a mesh, as signed production updates, or as capacitive touch. They must not describe `ieee802154-raw-frames` as Thread, Zigbee, or a mesh. Where a row says Specs only, do not describe that example as if `cargo run` works. Where a row says Firmware generated, the crate is in the tree and that label is not a hardware pass. Each example `FunctionalSpec.md` repeats its row. If the two disagree, this table wins and the FunctionalSpec is updated to match.
+Generated docs copy this table. As of this recheck, all eleven rows are **Firmware generated** (eleven crates, zero specs-only). They must not describe examples 6–8 as a mesh, as signed production updates, or as capacitive touch. They must not describe `ieee802154-raw-frames` as Thread, Zigbee, or a mesh. They must not describe `thread-udp-pair` as a border router or as Matter. They must not describe `matter-wifi-onoff` as Matter over Thread or as a certified product. Where a row says Specs only, do not describe that example as if `cargo run` works. Where a row says Firmware generated, the crate is in the tree and that label is not a hardware pass. Each example `FunctionalSpec.md` repeats its row. If the two disagree, this table wins and the FunctionalSpec is updated to match.
 
 ## Deferred
 
-Thread, Zigbee, a multi-hop ESP-NOW mesh, ESP32-S3 capacitive touch, and Secure Boot eFuse enrollment are not catalog examples. Raw IEEE 802.15.4 is example 9 (`ieee802154-raw-frames`). Do not add those excluded designs as further example specs.
+Zigbee, a multi-hop ESP-NOW mesh, ESP32-S3 capacitive touch, Secure Boot eFuse enrollment, and Matter over Thread are not catalog examples. Raw IEEE 802.15.4 is example 9 (`ieee802154-raw-frames`). Thread is example 10 (`thread-udp-pair`), a two-node UDP lab network. Matter over Wi-Fi is example 11 (`matter-wifi-onoff`). Do not add the excluded designs as further example specs. Do not fold Thread or Matter into example 9.
 
 ## Hardware bar
 

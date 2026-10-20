@@ -102,10 +102,11 @@ Radio and RMT APIs require `esp-hal` feature `unstable`.
 IEEE 802.15.4 raw data frames only. One PAN, one channel, two short addresses. No
 Thread, no Zigbee, no Wi-Fi association, no MQTT, no BLE, no ESP-NOW.
 
-This is a **radio** example: git-pin `esp-hal`, `esp-radio`, `esp-rtos`, `esp-alloc`,
-and `esp-bootloader-esp-idf` from tag `esp-hal-v1.2.1`. Enable the `ieee802154` feature
-on `esp-radio` (unstable). Do not enable `wifi`. Never mix crates.io `esp-rtos = "0.4.0"`
-with git `esp-hal`. `esp-radio` is an unstable beta.
+This is a **radio** example. Copy the crates.io radio pin from
+`shared-specs/rust-toolchain.md` (`esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`,
+`esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, `esp-bootloader-esp-idf` `=0.6.0`).
+Enable the `ieee802154` feature on `esp-radio` (unstable). Do not enable `wifi`.
+Do not git-pin the HP radio crates. `esp-radio` is an unstable beta.
 
 ## Security Requirements
 

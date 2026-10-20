@@ -26,7 +26,7 @@ After a successful publish the DevKitC WS2812 blinks green three times (GRB, ≤
 
 Pin numbers live in generated `src/board.rs`. Do not hard-code GPIOs in `main.rs`.
 
-This example enables `esp-hal` feature **`unstable`** (radio, sleep / RTC, and RMT). Those APIs may change with `esp-hal` minor releases. **`esp-radio` is an unstable beta**, git-pinned with `esp-hal`, `esp-rtos`, and `esp-alloc` at tag `esp-hal-v1.2.1`. Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`.
+This example enables `esp-hal` feature **`unstable`** (radio, sleep / RTC, and RMT). Those APIs may change with `esp-hal` minor releases. **`esp-radio` is an unstable beta** (crates.io `=1.0.0-beta.1` with `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, and `esp-alloc` `=0.11.0`). Do not git-pin those HP crates.
 
 ## Prerequisites
 
@@ -137,7 +137,7 @@ Persistent RAM (boot counter, magic + checksum) is retained across deep sleep an
 
 - **Duty-cycled STA + MQTT** — one Instant, 15 s from wake (sense+STA+MQTT+LED); stage waits use remaining time so they cannot stack past 15 s; disconnect and drop `esp-radio` before sleep (including on deadline expiry)
 - **Serial and MQTT pressure** — hPa, same conversion from Pascal (`Pa/100` and `(Pa/10)%10`). Logging `pressure_pa / 10000` is about 100× too small (sea-level ~10.1)
-- **`esp-radio` Wi-Fi** — unstable beta; git-pin `esp-hal` / `esp-radio` / `esp-rtos` / `esp-alloc` at tag `esp-hal-v1.2.1`. Features include `unstable` and `wifi`. APIs may change with `esp-hal` minor releases
+- **`esp-radio` Wi-Fi** — unstable beta; crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, and `esp-alloc` `=0.11.0`. Do not git-pin those HP crates. Features include `unstable` and `wifi`. APIs may change with `esp-hal` minor releases
 - **`embassy-net` + MQTT 3.1.1 QoS 0** — one TCP publish (CONNECT → PUBLISH → DISCONNECT), no long-lived MQTT session crate, no TLS. `rust-mqtt` is MQTT 5 only and is not the stack here
 - **Compile-time credentials** — `env!` / Cargo `[env]`; never log the PSK. Placeholder `unset` skips association and still sleeps
 - **BME280 forced mode over I2C** — 400 kHz, pins from `src/board.rs`; probe 0x76 then 0x77; one-shot then standby. A stuck bus must time out (software transaction timeout and hardware `BusTimeout`) so it cannot consume the 15 s window. Skipping the conversion wait yields zeros that look like a wiring fault
@@ -145,7 +145,7 @@ Persistent RAM (boot counter, magic + checksum) is retained across deep sleep an
 - **RTC GPIO wakeup** — C6 GPIO 0–7 only; GPIO 0 active LOW with pull-up on both boards; GPIO 9 is not RTC
 - **WS2812 heartbeat** — three green blinks on success, three red blinks on failure, ≤64/255 via RMT NRZ; GPIO boards blink active LOW. RMT, sleep, and radio are **unstable** APIs
 - **USB vs UART console** — UART bridge stays up; USB Serial/JTAG drops on sleep
-- **No sdkconfig** — board differences live in Cargo features + `src/board.rs`. The image emits `esp_app_desc!()` from git-pinned `esp-bootloader-esp-idf` so current `espflash` will flash it. That crate is image metadata, not ESP-IDF
+- **No sdkconfig** — board differences live in Cargo features + `src/board.rs`. The radio pin is crates.io (`esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`). Do not git-pin those HP crates.
 
 ## Power Budget
 
@@ -184,7 +184,7 @@ Testing philosophy: automated first, manual only when hardware observation is un
    cargo clippy --release -- -D warnings
    ```
 
-   Pass criterion: both commands exit 0 with no warnings. This also confirms the radio git-pin resolves. Real Wi-Fi secrets are not required in source.
+   Pass criterion: both commands exit 0 with no warnings. This also confirms the crates.io radio pin resolves. Real Wi-Fi secrets are not required in source.
 
 2. **T-A2 — Zero-warning build (Seeed XIAO ESP32-C6)**
 

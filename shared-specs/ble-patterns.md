@@ -170,7 +170,7 @@ BLE 5 extended advertising is optional and only when the FunctionalSpec asks for
 
 | Issue | Root Cause | Fix |
 |---|---|---|
-| Duplicate `esp-hal` / radio resolve failure | crates.io `esp-radio` or crates.io `esp-rtos = "0.4.0"` next to git `esp-hal` | Git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` (when justified) at tag `esp-hal-v1.2.1` (`rust-toolchain.md`) |
+| Duplicate `esp-hal` / radio resolve failure | git `esp-hal` mixed with crates.io `esp-radio` or `esp-rtos`, or `esp-radio` `1.0.0-beta.0` next to HAL 1.2.1 | Use the crates.io radio pin in `rust-toolchain.md`: `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0` |
 | Panic: scheduler not initialized | `BleConnector::new` before `esp_rtos::start` | Start `esp-rtos` first (C6: timer + `FROM_CPU_INTR0`) |
 | Radio left powered in deep sleep | Advertiser / `BleConnector` still live | Stop advertising, stop runner, drop connector, then sleep |
 | 31-byte PDU overflow | Payload + headers exceed limit | Count bytes: Flags (3) + Mfr header (4) = 7 bytes consumed before payload (max 24); use `AdStructure::encode_slice` and check `len` |

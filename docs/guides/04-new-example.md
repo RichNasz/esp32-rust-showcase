@@ -23,7 +23,7 @@ To modify an example, edit those files. Behavior goes in FunctionalSpec, archite
 7. From `examples/<name>/`: `cargo run --release` — this builds and flashes the crate the agent just wrote.
 8. Say: Activate esp32-sdd-documentation-generator and rebuild all documentation. — the agent rewrites Markdown so the docs match the spec.
 
-Use a domain skill only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core). ESP-NOW unicast, raw IEEE 802.15.4, and an HTTPS CRC slot flip are steps inside `esp32-sdd-full-project-generator`, not separate skills. Do not send CRC HTTPS OTA to `esp32-hardware-crypto-configurer`. Phrases are in [skill invocation](../reference/skill-invocation.md).
+Use a domain skill only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core). ESP-NOW unicast, raw IEEE 802.15.4, Thread UDP pair, Matter over Wi-Fi, and an HTTPS CRC slot flip are steps inside `esp32-sdd-full-project-generator`, not separate skills. Do not send CRC HTTPS OTA to `esp32-hardware-crypto-configurer`. Phrases are in [skill invocation](../reference/skill-invocation.md).
 
 ## Locked layout
 

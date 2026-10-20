@@ -14,7 +14,7 @@
 
 A spec is Markdown a person writes; the agent generates the crate. See [Using with AI agents](../../docs/guides/using-with-ai-agents.md).
 
-`esp-radio` is an unstable beta (in-tree `1.0.0-beta.0` at git tag `esp-hal-v1.2.1`). `esp-hal` feature `unstable` is required for ESP-NOW, sleep, RTC, and RMT. The `esp-now` feature is unstable. These APIs can change with the next `esp-hal` minor.
+`esp-radio` is an unstable beta (crates.io `=1.0.0-beta.1` with `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0`). Do not git-pin those HP crates. `esp-hal` feature `unstable` is required for ESP-NOW, sleep, RTC, and RMT. The `esp-now` feature is unstable. These APIs can change with the next `esp-hal` minor.
 
 ## Overview
 
@@ -152,7 +152,7 @@ A frame without the payload magic logs `drop frame from … (magic mismatch)` an
 - **Radio teardown** — the sensor drops the ESP-NOW driver and the Wi-Fi controller before `sleep_deep`. ESP-NOW shares the 802.11 radio. There is no `embassy-net` and no AP association. Leaving the radio up keeps sleep current in milliamps.
 - **Persistent boot count** — `#[esp_hal::ram(persistent)]` (or the equivalent `#[ram(unstable(...))]` form) on the sensor only. Lost on power-cycle. Guarded by magic and a checksum.
 - **Payload** — four-byte magic plus a little-endian boot count. Eight bytes, under the 250-byte ESP-NOW maximum. Send wait is about 200 ms.
-- **Git pin** — `esp-hal`, `esp-radio`, `esp-rtos`, `esp-alloc`, and `esp-bootloader-esp-idf` from tag `esp-hal-v1.2.1`. Do not mix crates.io `esp-rtos` 0.4.0 with git `esp-hal`. Heap for the radio blob is about 72 KiB (`esp-alloc`). `esp-radio` is an unstable beta. `esp-hal` feature `unstable` and the `esp-now` feature are unstable.
+- **Radio pin** — crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0`. Do not git-pin those HP crates. Heap for the radio blob is about 72 KiB (`esp-alloc`). `esp-radio` is an unstable beta. `esp-hal` feature `unstable` and the `esp-now` feature are unstable.
 - **Application descriptor** — `esp_app_desc!()` is required for current `espflash`. This is not an ESP-IDF install.
 - **WS2812** — DevKitC GPIO 8 is RMT, GRB, 800 kHz NRZ, brightness cap 64/255. XIAO GPIO 15 is active-LOW. A GPIO write on the DevKitC data pin stays dark.
 

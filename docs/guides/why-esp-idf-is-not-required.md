@@ -46,11 +46,13 @@ Chip (`esp32c6`) and board (`board-devkitc-c6` / `board-xiao-c6`) are Cargo feat
 
 ### Flash and monitor are `espflash`
 
-`cargo run --release` uses `runner = "espflash flash --monitor"`. [`espflash`](https://github.com/esp-rs/espflash) is the official `esp-rs` serial flasher, not `idf.py flash` or `idf.py monitor`.
+`cargo run --release` uses `runner = "espflash flash --monitor"`. An example whose FunctionalSpec names a custom partition table appends `--partition-table partitions.csv`. [`espflash`](https://github.com/esp-rs/espflash) is the official `esp-rs` serial flasher, not `idf.py flash` or `idf.py monitor`.
 
 ### Radio is `esp-radio`, plus binary blobs
 
-Wi-Fi, BLE, ESP-NOW, and raw IEEE 802.15.4 use `esp-radio` on top of `esp-hal`, plus Espressif **binary blobs**. Copy the radio pin from [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md), including `esp-bootloader-esp-idf`. Raw 802.15.4 does not also enable Wi-Fi: that driver does not coexist with it. That is not the ESP-IDF Wi-Fi or Bluetooth stack. Radio APIs remain an **unstable beta**. Radio example READMEs say so. Do not treat them as frozen.
+Wi-Fi, BLE, ESP-NOW, raw IEEE 802.15.4, Thread, and Matter over Wi-Fi use `esp-radio` on top of `esp-hal`, plus Espressif **binary blobs**. Copy the radio pin from [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md), including `esp-bootloader-esp-idf`. Raw 802.15.4 and Thread use IEEE 802.15.4 with Wi-Fi off: that driver does not coexist with Wi-Fi. Matter over Wi-Fi enables `wifi`, `ble`, and `coex`, and does not enable `ieee802154`. Thread is a two-node UDP lab link, not a border router. Matter over Wi-Fi uses test credentials. It is not Matter over Thread and not a certified product. That is not the ESP-IDF Wi-Fi or Bluetooth stack, not OpenThread from ESP-IDF, and not the ESP-IDF Matter stack. Radio APIs remain an **unstable beta**. Radio example READMEs say so. Do not treat them as frozen.
+
+The Thread leader build needs Clang, CMake, and Ninja. A skip is not a leader pass. When the Matter image exceeds the 1 MB factory slot, the example README records the measured flash span and points `espflash` at one single-app `partitions.csv` that fits 4 MB flash.
 
 ## C-developer mapping
 

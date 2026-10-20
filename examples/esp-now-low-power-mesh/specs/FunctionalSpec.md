@@ -102,9 +102,9 @@ require `esp-hal` feature `unstable`.
 
 ESP-NOW only, one unicast peer, one fixed channel. No Wi-Fi association, no MQTT, no BLE.
 
-This is a **radio** example: git-pin `esp-hal`, `esp-radio`, `esp-rtos`, `esp-alloc`, and
-`esp-bootloader-esp-idf` from tag `esp-hal-v1.2.1`. Enable the `esp-now` feature (unstable).
-Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`. `esp-radio` is an unstable beta.
+This is a **radio** example. Copy the crates.io radio pin from
+`shared-specs/rust-toolchain.md`. Enable the `esp-now` feature (unstable). Do not
+git-pin the HP radio crates. `esp-radio` is an unstable beta.
 
 ## Security Requirements
 

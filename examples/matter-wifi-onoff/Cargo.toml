@@ -1,0 +1,35 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Radio pin: crates.io exact versions from shared-specs/rust-toolchain.md.
+# esp-hal =1.2.1, esp-radio =1.0.0-beta.1 (wifi, ble, coex; not ieee802154),
+# esp-rtos =0.4.0, esp-alloc =0.11.0, esp-bootloader-esp-idf =0.6.0.
+# rs-matter-embassy is the git rev in rust-toolchain.md. crates.io 0.0.0 is empty.
+# esp-radio is an unstable beta. Do not git-pin the HP radio crates.
+# No esp-storage: the key store is RAM.
+
+[package]
+name = "matter_wifi_onoff"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[dependencies]
+esp-hal = { version = "=1.2.1", features = ["esp32c6", "unstable"] }
+esp-radio = { version = "=1.0.0-beta.1", features = ["esp32c6", "unstable", "wifi", "ble", "coex"] }
+esp-rtos = { version = "=0.4.0", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-alloc = { version = "=0.11.0" }
+esp-bootloader-esp-idf = { version = "=0.6.0", features = ["esp32c6"] }
+esp-metadata-generated = "0.5"
+rs-matter-embassy = { git = "https://github.com/sysgrok/rs-matter-embassy", rev = "2a806b0b1b521293b34a773618499e87402c843c", default-features = false, features = ["esp", "log", "trouble", "embassy-net", "rustcrypto"] }
+tinyrlibc = { version = "0.5", default-features = false, features = ["memchr", "utoa", "strtoul"] }
+embassy-executor = "0.10"
+embassy-time = "0.5"
+esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }
+esp-println = { version = "0.18.0", features = ["esp32c6", "log-04"] }
+log = "0.4"
+static_cell = "2"
+
+[features]
+default = ["board-devkitc-c6"]
+board-devkitc-c6 = []
+board-xiao-c6 = []

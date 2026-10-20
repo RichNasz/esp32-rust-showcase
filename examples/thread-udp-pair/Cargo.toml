@@ -1,0 +1,38 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Radio pin: crates.io exact versions from shared-specs/rust-toolchain.md.
+# esp-hal =1.2.1, esp-radio =1.0.0-beta.1 (ieee802154, not wifi),
+# esp-rtos =0.4.0, esp-alloc =0.11.0, esp-bootloader-esp-idf =0.6.0.
+# openthread 0.4.0. Leader feature role-leader enables openthread/ftd,
+# which compiles OpenThread from C (Clang, CMake, Ninja). The child links
+# the prebuilt MTD archive. esp-radio is an unstable beta.
+# Do not git-pin the HP radio crates.
+
+[package]
+name = "thread_udp_pair"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[dependencies]
+esp-hal = { version = "=1.2.1", features = ["esp32c6", "unstable"] }
+esp-radio = { version = "=1.0.0-beta.1", features = ["esp32c6", "unstable", "ieee802154"] }
+esp-rtos = { version = "=0.4.0", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-alloc = { version = "=0.11.0" }
+esp-bootloader-esp-idf = { version = "=0.6.0", features = ["esp32c6"] }
+openthread = { version = "0.4.0", features = ["esp-radio", "isupper", "log", "udp"] }
+tinyrlibc = { version = "0.5", default-features = false, features = ["utoa", "strtoul"] }
+embassy-executor = "0.10"
+embassy-time = "0.5"
+esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }
+esp-println = { version = "0.18.0", features = ["esp32c6", "log-04"] }
+log = "0.4"
+static_cell = "2"
+rand_core = { version = "0.10", default-features = false }
+
+[features]
+default = ["board-devkitc-c6", "role-child"]
+board-devkitc-c6 = []
+board-xiao-c6 = []
+role-child = []
+role-leader = ["openthread/ftd"]

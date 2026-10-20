@@ -18,7 +18,7 @@ On-air frame delivery needs a second C6 board. That check stays manual.
 
 **Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
 **What it verifies**: Default features (`board-devkitc-c6`, `role-node`) compile cleanly
-with the git-pinned `esp-radio` IEEE 802.15.4 stack and placeholder channel / PAN.
+with crates.io `esp-radio` `=1.0.0-beta.1` (IEEE 802.15.4) and placeholder channel / PAN.
 
 ```sh
 cd examples/ieee802154-raw-frames

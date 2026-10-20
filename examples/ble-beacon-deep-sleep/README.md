@@ -14,7 +14,7 @@
 
 A spec is Markdown a person writes; the agent generates the crate from it. See [Using With AI Agents](../../docs/guides/using-with-ai-agents.md).
 
-`esp-hal` feature **`unstable`** is required for the radio, sleep / RTC, and RMT. Those APIs may change with an `esp-hal` minor release. **`esp-radio` is an unstable beta** (git tag `esp-hal-v1.2.1`, in-tree `1.0.0-beta.0`, feature `ble`). The host is crates.io `trouble-host` **0.7**. Do not mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`.
+`esp-hal` feature **`unstable`** is required for the radio, sleep / RTC, and RMT. Those APIs may change with an `esp-hal` minor release. **`esp-radio` is an unstable beta** (crates.io `=1.0.0-beta.1` with `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, and `esp-alloc` `=0.11.0`, feature `ble`). Do not git-pin those HP crates. The host is crates.io `trouble-host` **0.7**.
 
 ## Overview
 
@@ -83,7 +83,7 @@ Optional XIAO ESP32-C6:
 cargo run --release --no-default-features --features board-xiao-c6
 ```
 
-Radio crates are git-pinned together at tag `esp-hal-v1.2.1`: `esp-hal`, `esp-radio` (features `esp32c6`, `unstable`, `ble`), `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`), and `esp-alloc`. `trouble-host` 0.7 comes from crates.io. The image emits an ESP-IDF-compatible application descriptor (`esp_bootloader_esp_idf::esp_app_desc!()`). Current `espflash` will not flash without it. BLE buffers use about **72 KiB** of internal DRAM.
+Radio crates are the crates.io pin: `esp-hal` `=1.2.1`, `esp-radio` (features `esp32c6`, `unstable`, `ble`) `=1.0.0-beta.1`, `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`) `=0.4.0`, and `esp-alloc` `=0.11.0`. Do not git-pin those HP crates. `trouble-host` 0.7 comes from crates.io. BLE buffers use about **72 KiB** of internal DRAM.
 
 Use the DevKitC **left** USB-C UART-C port so the monitor stays up through sleep.
 
@@ -136,7 +136,7 @@ A GPIO 0 wake names a GPIO cause instead of `timer`. XIAO logs the GPIO 15 activ
 
 - **Standalone Cargo crate** — `#![no_std]` `#![no_main]`; Embassy entry via `esp-rtos` on TIMG0 + `FROM_CPU_INTR0`; no workspace at the repo root
 - **`esp-radio` + TrouBLE** — non-connectable scannable undirected advertising at about 100 ms; host sized for zero connections; `esp-radio` is an unstable beta
-- **Git pin** — `esp-hal` / `esp-radio` / `esp-rtos` / `esp-alloc` from tag `esp-hal-v1.2.1`; `trouble-host` 0.7; never mix crates.io `esp-rtos` 0.4.0 with git `esp-hal`
+- **Radio pin** — crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, and `esp-alloc` `=0.11.0`; `trouble-host` 0.7; do not git-pin the HP radio crates
 - **`esp-hal` `unstable`** — radio, sleep, RTC, and RMT
 - **Bounded advertising window** — `embassy_time` `select` against the TrouBLE runner; whole wake ≤ 12 s
 - **Radio teardown before sleep** — drop the advertiser, stop the runner, drop `BleConnector`, then `sleep_deep`. Skipping teardown leaves the radio in milliamps

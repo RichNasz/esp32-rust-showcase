@@ -16,7 +16,7 @@ Do not specify `idf.py`, ESP-IDF Unity, or CMake-based harnesses.
 
 **Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
 **What it verifies**: Default features (`board-devkitc-c6`, `role-sensor`) compile cleanly
-with the git-pinned `esp-radio` ESP-NOW stack and placeholder channel / MAC env values.
+with crates.io `esp-radio` `=1.0.0-beta.1` (ESP-NOW) and placeholder channel / MAC env values.
 
 ```sh
 cd examples/esp-now-low-power-mesh

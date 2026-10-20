@@ -60,7 +60,7 @@ Do **not** seed, write, or overwrite `specs/FunctionalSpec.md` (or any file unde
 
 Copy the crate table and **Radio pin** section of `shared-specs/rust-toolchain.md`. Do not restate a shorter pin list here or in a domain skill.
 
-That table is the only version list. It already requires `esp-bootloader-esp-idf` and `esp_app_desc!()` on every example, git-pins every monorepo crate a radio example uses (including `esp-bootloader-esp-idf`, `esp-alloc` when the CodingSpec justifies a heap, and `esp-storage` when the example writes flash), and forbids mixing a crates.io monorepo crate with git `esp-hal`.
+That table is the only version list. It already requires `esp-bootloader-esp-idf` and `esp_app_desc!()` on every example. Radio examples use the crates.io exact pin in that file (`esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0` when the CodingSpec justifies a heap, and `esp-storage` `=0.10.0` when the example writes flash). Do not git-pin those HP crates. The nested LP crate still git-pins `esp-lp-hal`. Do not mix a git `esp-hal` into an HP radio crate.
 
 Enable `esp-hal` feature `unstable` in addition to `esp32c6` when the example uses radio or sleep / RTC APIs that require it. Document that in the README. Radio READMEs must say `esp-radio` is an unstable beta.
 
@@ -81,13 +81,34 @@ When the FunctionalSpec is raw IEEE 802.15.4:
 - Copy the radio pin. Enable `esp-radio` feature `ieee802154`. Do not enable `wifi`: this driver does not coexist with Wi-Fi (`shared-specs/cargo-conventions.md`).
 - MAC header types come from the crates.io `ieee802154` version named in the CodingSpec, with default features disabled.
 - The catalog example does not sleep. Do not add a sleep path unless the spec does.
+- Do not add Thread, Zigbee, or Matter crates to this example. Thread is `thread-udp-pair`. Matter over Wi-Fi is `matter-wifi-onoff`.
+
+## Thread UDP pair
+
+When the FunctionalSpec is a two-role Thread lab link (`thread-udp-pair`):
+
+- One image. Mutually exclusive `role-leader` and `role-child`. Default is `role-child`. Both roles, or neither, fail at compile time.
+- Copy the radio pin and the Thread pin in `rust-toolchain.md`. Enable `esp-radio` feature `ieee802154`. Do not enable `wifi`.
+- `openthread` 0.4.0 features `esp-radio`, `isupper`, `log`, and `udp`. The leader feature also enables `openthread/ftd`. The child does not, so it links the prebuilt MTD archive. `ftd` makes `openthread-sys` compile OpenThread; the host then needs Clang, CMake, and Ninja. This crate's `build.rs` does not invoke CMake. It still emits `-Tlinkall.x` last.
+- Link `tinyrlibc` 0.5 with default features off and features `utoa` and `strtoul`.
+- Both roles load the same `THREAD_DATASET` lab TLV. RAM settings. Keep the TRNG source alive. No border router, no Matter, no Zigbee, no CSL, no deep sleep.
+
+## Matter over Wi-Fi
+
+When the FunctionalSpec is a Matter on/off light over Wi-Fi (`matter-wifi-onoff`):
+
+- One role. Copy the radio pin and the Matter pin in `rust-toolchain.md`. Enable `esp-radio` features `wifi`, `ble`, and `coex`. Do not enable `ieee802154`.
+- Git `rs-matter-embassy` at the rev in that pin, default features off, features `esp`, `log`, `trouble`, `embassy-net`, and `rustcrypto`. Do not use crates.io `rs-matter-embassy` 0.0.0. Do not use ESP-IDF or C++ `esp-matter`.
+- Link `tinyrlibc` 0.5 with default features off and features `memchr`, `utoa`, and `strtoul`.
+- Concurrent BLE and Wi-Fi commissioning. Test attestation only. RAM key store. Log the manual pairing code and the QR payload from the test commissioning data. The LED follows the on/off attribute. No Matter OTA and no Thread.
+- If the linked app exceeds the 1 MB factory slot, emit one single-app `partitions.csv` that fits in 4 MB and point the espflash runner at it.
 
 ## HTTPS OTA (CRC slot flip)
 
 When the FunctionalSpec downloads an image over HTTPS and activates the inactive slot after a CRC check:
 
 - Do **not** invoke `esp32-hardware-crypto-configurer`. CRC is not AES, not a signature, and not Secure Boot. Follow `shared-specs/security-baseline.md` and `shared-specs/AIGenLessonsLearned.md`.
-- Use partition profile `dual-ota` (`shared-specs/partition-table-profiles.md`). Copy the radio pin and git-pin `esp-storage` with that set.
+- Use partition profile `dual-ota` (`shared-specs/partition-table-profiles.md`). Copy the radio pin, including crates.io `esp-storage` `=0.10.0`.
 - TLS is `embedded-tls` from the `rust-toolchain.md` table, with default `std` disabled. Verify the server certificate. Embed the CA PEM from `certs/`. Ship a placeholder CA that does not authenticate a public server. Refuse a PEM that contains a private key. Do not commit passwords or put them in `src/`.
 - Activate the inactive slot only after length and IEEE CRC32 match. A CRC failure leaves the current boot selection in place. Stock `espflash` does not auto-rollback. Do not emit `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, `esp_https_ota`, or `esp_ota_mark_app_valid_cancel_rollback`.
 
@@ -111,7 +132,7 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
    - `esp32-ws2812-led-engineer` — any referenced board-spec lists a WS2812 / SK6812 LED
    - `esp32-hardware-crypto-configurer` — hardware AES or flash-backed keys. A Security section, a CRC, or HTTPS OTA does not qualify
    - `esp32-lp-core-engineer` — LP-core firmware or LP-core wakeup (`lp-core-wakeup` and any spec that names the LP core)
-   - ESP-NOW unicast, raw IEEE 802.15.4, and HTTPS CRC slot-flip — the sections above. They are steps of this skill, not separate skills
+   - ESP-NOW unicast, raw IEEE 802.15.4, Thread UDP pair, Matter over Wi-Fi, and HTTPS CRC slot-flip — the sections above. They are steps of this skill, not separate skills
 6. Verify internal consistency: pin assignments match the board spec via `src/board.rs`, Cargo features match the chip/board, radio crates match the `rust-toolchain.md` radio pin (including `esp-bootloader-esp-idf`), all FunctionalSpec features are accounted for. Zero `unwrap()` / `expect()` on fallible HAL / radio in production paths (`coding-conventions.md`).
 7. Generate `examples/<name>/README.md` with agent-generated header and all of the following sections in order:
    - **Overview** — one-paragraph summary of what the example demonstrates

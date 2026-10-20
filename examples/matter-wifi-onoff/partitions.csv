@@ -1,0 +1,8 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Single factory app. Not dual-ota. The linked image is larger than the
+# 1 MB default factory slot and must still fit the XIAO's 4 MB flash.
+# Factory is 0x2F0000 bytes and the table ends at 0x300000.
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x6000,
+phy_init, data, phy,     0xF000,  0x1000,
+factory,  app,  factory, 0x10000, 0x2F0000,

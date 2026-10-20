@@ -1,7 +1,8 @@
 # AGENT-GENERATED — DO NOT EDIT BY HAND
-# Radio pin: git-pin esp-hal, esp-radio, esp-rtos, esp-bootloader-esp-idf,
-# and esp-alloc from tag esp-hal-v1.2.1. Never mix crates.io esp-rtos or
-# esp-bootloader-esp-idf with git esp-hal.
+# Radio pin: crates.io exact versions from shared-specs/rust-toolchain.md.
+# esp-hal =1.2.1, esp-radio =1.0.0-beta.1, esp-rtos =0.4.0,
+# esp-alloc =0.11.0, esp-bootloader-esp-idf =0.6.0.
+# Do not git-pin these HP crates.
 # ESP-NOW needs the wifi driver feature plus esp-now. Both are unstable.
 # Sleep, RTC, and RMT also need esp-hal feature `unstable`.
 # esp-radio is an unstable beta. No embassy-net and no AP association.
@@ -14,11 +15,11 @@ license = "MIT"
 publish = false
 
 [dependencies]
-esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
-esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable", "wifi", "esp-now"] }
-esp-rtos = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "embassy", "esp-radio"] }
-esp-alloc = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1" }
-esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6"] }
+esp-hal = { version = "=1.2.1", features = ["esp32c6", "unstable"] }
+esp-radio = { version = "=1.0.0-beta.1", features = ["esp32c6", "unstable", "wifi", "esp-now"] }
+esp-rtos = { version = "=0.4.0", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-alloc = { version = "=0.11.0" }
+esp-bootloader-esp-idf = { version = "=0.6.0", features = ["esp32c6"] }
 embassy-executor = "0.10"
 embassy-time = "0.5"
 esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }

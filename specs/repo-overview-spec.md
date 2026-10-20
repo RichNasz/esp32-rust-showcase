@@ -9,7 +9,7 @@ The method is spec-driven development: a person writes Markdown specs, and the a
 Copy example one-liners and skill purposes from `specs/showcase-master-spec.md`. Do not invent a second list.
 
 - Board specs generated from vendor docs (Espressif and Seeed), then turned into `src/board.rs`
-- 9 examples on ESP32-C6: breathing LED, deep sleep, a BME280 MQTT sensor, hardware AES, a BLE beacon, HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, LP-core GPIO wakeup, and raw IEEE 802.15.4 frames. Status counts come from the master-spec table.
+- 11 examples on ESP32-C6: breathing LED, deep sleep, a BME280 MQTT sensor, hardware AES, a BLE beacon, HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, LP-core GPIO wakeup, raw IEEE 802.15.4 frames, a two-node Thread UDP lab link, and a Matter on/off light over Wi-Fi. Status counts come from the master-spec table.
 - Skills: Markdown workflows in `skills/<name>/SKILL.md` that a person asks the agent to follow. They are not a separate install.
 - People edit specs. The agent writes Rust and Markdown.
 - No ESP-IDF / `idf.py` / `sdkconfig` — rust-on-metal `esp-hal` on RISC-V ESP32-C6 (see Why ESP-IDF is not required)

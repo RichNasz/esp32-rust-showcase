@@ -88,9 +88,10 @@ require `esp-hal` feature `unstable`.
 
 BLE advertising only (broadcaster). Non-connectable. No Wi-Fi, no GATT, no pairing.
 
-This is a **radio** example: git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc`
-from tag `esp-hal-v1.2.1`. Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`.
-`esp-radio` is an unstable beta. Host is TrouBLE `trouble-host` **0.7** (same pin as
+This is a **radio** example. Copy the crates.io radio pin from
+`shared-specs/rust-toolchain.md` (`esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`,
+`esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`). Do not git-pin the HP radio crates.
+`esp-radio` is an unstable beta. Host is TrouBLE `trouble-host` **0.7** (same line as
 upstream `esp-hal` 1.2.1 BLE examples). Follow `shared-specs/ble-patterns.md`.
 
 ## Security Requirements

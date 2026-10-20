@@ -1,7 +1,8 @@
 # AGENT-GENERATED — DO NOT EDIT BY HAND
-# Radio pin: git-pin esp-hal, esp-radio, esp-rtos, esp-bootloader-esp-idf,
-# esp-alloc, and esp-storage from tag esp-hal-v1.2.1. Never mix crates.io
-# esp-rtos / esp-bootloader-esp-idf / esp-storage / esp-alloc with git esp-hal.
+# Radio pin: crates.io exact versions from shared-specs/rust-toolchain.md.
+# esp-hal =1.2.1, esp-radio =1.0.0-beta.1, esp-rtos =0.4.0,
+# esp-alloc =0.11.0, esp-bootloader-esp-idf =0.6.0, esp-storage =0.10.0.
+# Do not git-pin these HP crates.
 # Wi-Fi STA and RMT require esp-hal feature `unstable`. esp-radio is an
 # unstable beta. Security here is TLS 1.3 plus an IEEE CRC32. No AES crate.
 
@@ -13,12 +14,12 @@ license = "MIT"
 publish = false
 
 [dependencies]
-esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
-esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable", "wifi"] }
-esp-rtos = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "embassy", "esp-radio"] }
-esp-alloc = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1" }
-esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6"] }
-esp-storage = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6"] }
+esp-hal = { version = "=1.2.1", features = ["esp32c6", "unstable"] }
+esp-radio = { version = "=1.0.0-beta.1", features = ["esp32c6", "unstable", "wifi"] }
+esp-rtos = { version = "=0.4.0", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-alloc = { version = "=0.11.0" }
+esp-bootloader-esp-idf = { version = "=0.6.0", features = ["esp32c6"] }
+esp-storage = { version = "=0.10.0", features = ["esp32c6"] }
 embassy-executor = "0.10"
 embassy-time = "0.5"
 embassy-net = { version = "0.9.0", features = ["dhcpv4", "medium-ethernet", "tcp", "proto-ipv4", "dns"] }

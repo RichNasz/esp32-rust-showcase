@@ -8,7 +8,7 @@ pub const MAGIC: [u8; 4] = [0xC6, 0xE5, 0x4E, 0x57];
 
 pub const LEN: usize = 8;
 
-const _: () = assert!(LEN <= esp_radio::esp_now::ESP_NOW_MAX_DATA_LEN);
+const _: () = assert!(LEN <= esp_radio::esp_now::ESP_NOW_MAX_DATA_LEN_V1);
 
 #[cfg_attr(not(feature = "role-sensor"), allow(dead_code))]
 pub fn encode(boot: u32) -> [u8; LEN] {

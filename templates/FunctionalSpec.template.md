@@ -35,7 +35,7 @@ Do not add non-C6 boards. RTC / LP GPIOs on C6 are **0–7 only**; GPIO 9 (XIAO 
 
 ## Connectivity
 
-<!-- FILL: none / BLE / Wi-Fi / ESP-NOW / MQTT / raw IEEE 802.15.4. Radio examples copy the pin from rust-toolchain.md. Raw 802.15.4 does not also enable Wi-Fi. -->
+<!-- FILL: none / BLE / Wi-Fi / ESP-NOW / MQTT / raw IEEE 802.15.4 / Thread / Matter over Wi-Fi. Radio examples copy the pin from rust-toolchain.md. Raw 802.15.4 and Thread do not also enable Wi-Fi. Matter over Wi-Fi enables wifi, ble, and coex, not ieee802154. -->
 
 ## Security Requirements
 

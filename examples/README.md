@@ -6,7 +6,7 @@
 
 # examples/
 
-Nine rust-on-metal ESP32-C6 examples, ordered so you can start with `blinky`. As of 2026-10-20, **nine crates are generated** and **zero examples are specs only**. Every folder below contains a generated crate, and the locked directory tree is the layout on disk. **Firmware generated** means the crate is in the tree. It is not a hardware test result.
+Eleven rust-on-metal ESP32-C6 examples, ordered so you can start with `blinky`. As of 2026-10-20, **eleven crates are generated** and **zero examples are specs only**. Every folder below contains a generated crate, and the locked directory tree is the layout on disk. **Firmware generated** means the crate is in the tree. It is not a hardware test result. Thread is not a border router. Matter over Wi-Fi uses test credentials. It is not Matter over Thread and not a certified product.
 
 A **spec** is Markdown a person writes. The agent generates the crate from `examples/<name>/specs/`. The lesson is [Using an AI coding agent](../docs/guides/using-with-ai-agents.md).
 
@@ -25,6 +25,8 @@ A **spec** is Markdown a person writes. The agent generates the crate from `exam
 | 7 | [esp-now-low-power-mesh](esp-now-low-power-mesh/) | ESP-NOW sensor-to-gateway unicast. The directory name is historical. This is not a multi-hop mesh | Firmware generated |
 | 8 | [lp-core-wakeup](lp-core-wakeup/) | LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch) | Firmware generated |
 | 9 | [ieee802154-raw-frames](ieee802154-raw-frames/) | Raw IEEE 802.15.4 data frames between a node and a peer. Not Thread, not Zigbee, not a mesh | Firmware generated |
+| 10 | [thread-udp-pair](thread-udp-pair/) | Two-node Thread lab network. A leader and a child exchange one UDP payload. Not a border router and not Zigbee | Firmware generated |
+| 11 | [matter-wifi-onoff](matter-wifi-onoff/) | Matter on/off light over Wi-Fi, commissioned over BLE with test credentials. Not Matter over Thread and not a certified product | Firmware generated |
 
 `lp-core-wakeup` also has the nested `lp-core/` crate the generator is allowed to add.
 

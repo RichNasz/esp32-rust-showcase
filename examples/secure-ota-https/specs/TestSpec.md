@@ -15,8 +15,8 @@ Do not specify `idf.py`, ESP-IDF Unity, or CMake-based harnesses.
 ### T-A1 — Zero-warning build (ESP32-C6-DevKitC-1-N8, default features)
 
 **Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
-**What it verifies**: The crate compiles cleanly for DevKitC-C6 with the git-pinned radio
-stack, `embedded-tls` without `std`, and placeholder Wi-Fi / URL / CA values. No `rustc`
+**What it verifies**: The crate compiles cleanly for DevKitC-C6 with the crates.io radio
+pin (`esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`), `embedded-tls` without `std`, and placeholder Wi-Fi / URL / CA values. No `rustc`
 or clippy warnings.
 
 ```sh

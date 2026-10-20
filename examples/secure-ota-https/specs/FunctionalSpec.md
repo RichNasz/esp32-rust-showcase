@@ -85,9 +85,9 @@ It does not enter deep sleep.
 
 Wi-Fi STA + one HTTPS GET. No MQTT, no BLE, no ESP-NOW.
 
-This is a **radio** example: git-pin `esp-hal`, `esp-radio`, `esp-rtos`, `esp-alloc`,
-`esp-bootloader-esp-idf`, and `esp-storage` from tag `esp-hal-v1.2.1`. Never mix those
-crates from crates.io with git `esp-hal`. `esp-radio` is an unstable beta.
+This is a **radio** example. Copy the crates.io radio pin from
+`shared-specs/rust-toolchain.md`, including `esp-storage` `=0.10.0`. Do not git-pin
+the HP radio crates. `esp-radio` is an unstable beta.
 
 TLS is `embedded-tls` **0.19.0** with the `std` feature off (see
 `shared-specs/rust-toolchain.md`). That crate speaks TLS 1.3 only. The lab server must

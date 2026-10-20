@@ -12,7 +12,7 @@
 
 | File | Purpose |
 |---|---|
-| `showcase-master-spec.md` | Catalog of nine examples, ten skills, the C6 hardware bar, and the implementation-status table. As of 2026-10-20 all nine examples are **Firmware generated**. |
+| `showcase-master-spec.md` | Catalog of eleven examples, ten skills, the C6 hardware bar, and the implementation-status table. As of 2026-10-20 all eleven examples are **Firmware generated**. |
 | `repo-overview-spec.md` | Repository purpose, features, and the two quick-start tasks (flash blinky, or change firmware with an agent) |
 | `documentation-generation-spec.md` | Rules for generated Markdown: readers, file checklist, tone, Cargo + espflash |
 | `contributing-spec.md` | What people may edit, how to ask the agent to regenerate, commit types |

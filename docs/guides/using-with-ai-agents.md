@@ -93,7 +93,7 @@ Phrases: [skill invocation](../reference/skill-invocation.md).
 4. From examples/<name>/: cargo run --release
 ```
 
-A domain skill (WS2812, BLE, deep sleep, hardware AES, LP-core) is only for a spec that needs that topic. It is not a step on every example. ESP-NOW unicast, raw IEEE 802.15.4, and an HTTPS CRC slot flip are steps inside `esp32-sdd-full-project-generator`, not separate skills.
+A domain skill (WS2812, BLE, deep sleep, hardware AES, LP-core) is only for a spec that needs that topic. It is not a step on every example. ESP-NOW unicast, raw IEEE 802.15.4, Thread UDP pair, Matter over Wi-Fi, and an HTTPS CRC slot flip are steps inside `esp32-sdd-full-project-generator`, not separate skills.
 
 ## Open only the example folder
 

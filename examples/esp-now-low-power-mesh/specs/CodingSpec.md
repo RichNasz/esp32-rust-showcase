@@ -58,10 +58,10 @@ tear down and sleep.
 
 ## ESP-NOW
 
-Git-pin `esp-hal`, `esp-radio`, `esp-rtos`, `esp-alloc`, and `esp-bootloader-esp-idf`
-from tag `esp-hal-v1.2.1`. Enable `esp-radio` features `esp32c6`, `unstable`, and
-`esp-now` (and the Wi-Fi driver feature that `esp-now` requires on this pin). Do not
-enable `embassy-net`. Do not associate to an AP. Do not scan.
+Copy the crates.io radio pin from `shared-specs/rust-toolchain.md`. Enable
+`esp-radio` features `esp32c6`, `unstable`, and `esp-now` (and the Wi-Fi driver
+feature that `esp-now` requires on this pin). Do not git-pin the HP radio crates.
+Do not enable `embassy-net`. Do not associate to an AP. Do not scan.
 
 Reason: ESP-NOW is a peer datagram on the 802.11 radio. A TCP stack and an AP session
 are the MQTT example's problem, not this one. `esp-now` is an unstable beta API. Say so
@@ -98,8 +98,9 @@ No relay table, no beacon timer, no light sleep, no per-role `sdkconfig`.
 
 ## Preferred Crates and APIs
 
-- Git-pinned `esp-hal` / `esp-radio` / `esp-rtos` / `esp-alloc` / `esp-bootloader-esp-idf`
-  at `esp-hal-v1.2.1` (reason: `esp-now` is not on a crates.io release that matches HAL 1.2.1).
+- Crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`,
+  `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0` (reason: radio pin in
+  `shared-specs/rust-toolchain.md`).
 - `esp-radio` ESP-NOW (reason: first-party datagram API). Not an application mesh crate.
 - `esp-hal` RTC / `LowPower` for the sensor sleep path (reason: same metal sleep API as
   the timer-node example).

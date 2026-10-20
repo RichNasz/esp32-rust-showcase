@@ -51,6 +51,8 @@ esp32-sdd-functional-spec-creator
         ├─► esp32-lp-core-engineer           (if the spec uses the LP core)
         ├─► ESP-NOW unicast                  (step of this skill, not a separate skill)
         ├─► raw IEEE 802.15.4                (step of this skill, not a separate skill)
+        ├─► Thread UDP pair                  (step of this skill, not a separate skill)
+        ├─► Matter over Wi-Fi                (step of this skill, not a separate skill)
         └─► HTTPS CRC slot-flip              (step of this skill, not the AES skill)
               └─► cargo run --release
 esp32-sdd-documentation-generator

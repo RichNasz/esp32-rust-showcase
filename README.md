@@ -20,7 +20,7 @@ This repository shows how to use an AI coding agent for rust-on-metal ESP32-C6 f
 
 ## Features
 
-- **Nine examples** on ESP32-C6 — a breathing LED, deep sleep, a BME280 MQTT sensor, hardware AES, a BLE beacon, an HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, LP-core GPIO wakeup, and raw IEEE 802.15.4 frames. **Nine crates are generated** and **zero examples are specs only** as of 2026-10-20. **Firmware generated** means the crate is in the tree. It is not a hardware test result.
+- **Eleven examples** on ESP32-C6 — a breathing LED, deep sleep, a BME280 MQTT sensor, hardware AES, a BLE beacon, an HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, LP-core GPIO wakeup, raw IEEE 802.15.4 frames, a two-node Thread UDP lab link, and a Matter on/off light over Wi-Fi. **Eleven crates are generated** and **zero examples are specs only** as of 2026-10-20. **Firmware generated** means the crate is in the tree. It is not a hardware test result. Thread is not a border router. Matter over Wi-Fi uses test credentials and is not Matter over Thread and not a certified product.
 - **Ten skills** — Markdown workflows in `skills/` that you ask the agent to follow. They ship in this clone. A separate install is not required.
 - **Board specs** from Espressif and Seeed vendor docs. The agent turns them into `src/board.rs`.
 - **People edit specs. The agent writes Rust and Markdown.** When output is wrong, change the spec and generate again.
@@ -81,7 +81,7 @@ ESP-IDF, `idf.py`, `espup`, and the `esp` rustup channel are not prerequisites. 
 
 ## Examples
 
-Nine examples, ordered by complexity. Start with `blinky`. **Firmware generated** means the crate is in the tree. It is not a hardware test result. As of 2026-10-20 every row is Firmware generated.
+Eleven examples, ordered by complexity. Start with `blinky`. **Firmware generated** means the crate is in the tree. It is not a hardware test result. As of 2026-10-20 every row is Firmware generated.
 
 | # | Example | Description | Status | Link |
 |---|---|---|---|---|
@@ -94,6 +94,8 @@ Nine examples, ordered by complexity. Start with `blinky`. **Firmware generated*
 | 7 | esp-now-low-power-mesh | ESP-NOW sensor-to-gateway unicast. The directory name is historical. This is not a multi-hop mesh | Firmware generated | [examples/esp-now-low-power-mesh](examples/esp-now-low-power-mesh/) |
 | 8 | lp-core-wakeup | LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch) | Firmware generated | [examples/lp-core-wakeup](examples/lp-core-wakeup/) |
 | 9 | ieee802154-raw-frames | Raw IEEE 802.15.4 data frames between a node and a peer. Not Thread, not Zigbee, not a mesh | Firmware generated | [examples/ieee802154-raw-frames](examples/ieee802154-raw-frames/) |
+| 10 | thread-udp-pair | Two-node Thread lab network. A leader and a child exchange one UDP payload. Not a border router and not Zigbee | Firmware generated | [examples/thread-udp-pair](examples/thread-udp-pair/) |
+| 11 | matter-wifi-onoff | Matter on/off light over Wi-Fi, commissioned over BLE with test credentials. Not Matter over Thread and not a certified product | Firmware generated | [examples/matter-wifi-onoff](examples/matter-wifi-onoff/) |
 
 ## Skills
 

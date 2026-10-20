@@ -51,29 +51,29 @@ board-devkitc-c6 = []
 board-xiao-c6 = []
 ```
 
-Radio examples **must not** mix crates.io crates from the `esp-hal` monorepo with git pins. Do **not** paste crates.io `esp-radio = "1.0.0-beta.0"` next to crates.io `esp-hal = "1.2.1"` (that crates.io radio crate depends on `esp-hal ~1.1.0` and will not resolve). Do **not** paste crates.io `esp-rtos = "0.4.0"` next to git `esp-hal`. Git-pin `esp-hal`, `esp-radio`, `esp-rtos`, and `esp-alloc` (when heap is justified) from tag `esp-hal-v1.2.1` so path deps unify (`rust-toolchain.md`):
+Radio examples use the crates.io radio pin in `rust-toolchain.md`. Do **not** paste crates.io `esp-radio = "1.0.0-beta.0"` next to `esp-hal` 1.2.1 (beta.0 depends on `esp-hal ~1.1.0`). Do **not** mix a git `esp-hal` pin into an HP radio crate. The nested LP crate still git-pins `esp-lp-hal` and does not pull the HP crates with it.
 
 ```toml
-esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
-esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
-esp-rtos = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "embassy", "esp-radio"] }
-esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6"] }
+esp-hal = { version = "=1.2.1", features = ["esp32c6", "unstable"] }
+esp-radio = { version = "=1.0.0-beta.1", features = ["esp32c6", "unstable"] }
+esp-rtos = { version = "=0.4.0", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-bootloader-esp-idf = { version = "=0.6.0", features = ["esp32c6"] }
 # when the CodingSpec justifies a heap:
-esp-alloc = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1" }
+esp-alloc = { version = "=0.11.0" }
 embassy-executor = "0.10"
 embassy-time = "0.5"
-# plus wifi and/or ble and/or esp-now and/or ieee802154 on esp-radio, matching the example
+# plus wifi and/or ble and/or esp-now and/or ieee802154 and/or coex on esp-radio, matching the example
 ```
 
 Rules:
 
-- Pin versions from `rust-toolchain.md` (looked up 2026-09-08). Do not use `"*"`.
+- Pin versions from `rust-toolchain.md` (radio pin rechecked 2026-10-20). Do not use `"*"`.
 - Enable `esp-hal` feature `"unstable"` **in addition to** `"esp32c6"` when radio or sleep needs it.
-- `esp-rtos` (features `esp32c6` + `embassy`) is the Embassy integration path. Time is `embassy_time`. Radio examples also enable `esp-rtos` feature `esp-radio` and git-pin `esp-rtos` at tag `esp-hal-v1.2.1`. Non-radio examples use crates.io `esp-rtos` 0.4.0.
-- `esp-radio` is **only** for radio examples. Git pin at tag `esp-hal-v1.2.1` with the rest of the monorepo stack — see `rust-toolchain.md`. Treat it as an unstable beta. Enable `wifi` / `ble` / `esp-now` / `ieee802154` features as the example requires. Raw IEEE 802.15.4 does not enable `wifi`: that driver does not coexist with Wi-Fi.
-- `esp-alloc` is **only** when the CodingSpec justifies a heap. Radio examples that need it git-pin it from the same tag; non-radio examples use crates.io 0.11.0.
-- `esp-bootloader-esp-idf` is **required on every example** (feature `esp32c6`). Current `espflash` will not flash an `esp-hal` image that lacks the ESP-IDF-compatible application descriptor. Invoke `esp_bootloader_esp_idf::esp_app_desc!()` in `src/main.rs`. This crate is **not** ESP-IDF. Non-radio examples use crates.io 0.6.0; radio examples git-pin it at tag `esp-hal-v1.2.1` with the rest of the monorepo stack.
-- `esp-storage` is **only** when the example needs flash storage.
+- `esp-rtos` (features `esp32c6` + `embassy`) is the Embassy integration path. Time is `embassy_time`. Radio examples also enable `esp-rtos` feature `esp-radio`. Radio and non-radio both use crates.io `esp-rtos` `=0.4.0`.
+- `esp-radio` is **only** for radio examples. crates.io `=1.0.0-beta.1` with crates.io `esp-hal` `=1.2.1`. Treat it as an unstable beta. Enable `wifi` / `ble` / `esp-now` / `ieee802154` / `coex` as the example requires. Raw IEEE 802.15.4 and Thread do not enable `wifi`: that driver does not coexist with Wi-Fi. Matter over Wi-Fi enables `wifi`, `ble`, and `coex`, and does not enable `ieee802154`.
+- `esp-alloc` is **only** when the CodingSpec justifies a heap. crates.io `=0.11.0`.
+- `esp-bootloader-esp-idf` is **required on every example** (feature `esp32c6`, crates.io `=0.6.0`). Current `espflash` will not flash an `esp-hal` image that lacks the ESP-IDF-compatible application descriptor. Invoke `esp_bootloader_esp_idf::esp_app_desc!()` in `src/main.rs`. This crate is **not** ESP-IDF.
+- `esp-storage` is **only** when the example needs flash storage. crates.io `=0.10.0`.
 - Board features `board-devkitc-c6` (default) and `board-xiao-c6` are **mutually exclusive**. Generated `src/board.rs` (or `main.rs`) must `compile_error!` if both are enabled or if neither is enabled.
 - Do not add a chip feature other than `esp32c6` in v1.
 
@@ -139,6 +139,7 @@ cargo run --release --no-default-features --features board-xiao-c6
 | `channel = "esp"` or `espup` | v1 uses rustup stable |
 | Chip features other than `esp32c6` | Other SoCs are not in v1 |
 | Both board features enabled without `compile_error!` | Pins would be silently wrong |
-| crates.io `esp-radio = "1.0.0-beta.0"` with crates.io `esp-hal = "1.2.1"` | crates.io radio depends on `esp-hal ~1.1.0` and will not resolve |
-| crates.io `esp-rtos = "0.4.0"` with git `esp-hal` | crates.io `esp-rtos` pulls crates.io `esp-hal`; Cargo then builds two HAL packages |
+| crates.io `esp-radio = "1.0.0-beta.0"` with crates.io `esp-hal = "1.2.1"` | beta.0 depends on `esp-hal ~1.1.0` and will not resolve. Use `=1.0.0-beta.1` |
+| git `esp-hal` mixed with crates.io `esp-radio` / `esp-rtos` on an HP crate | Cargo builds two HAL packages. Radio HP crates are crates.io. LP `esp-lp-hal` stays on the git tag |
+| `esp-radio` `1.0.0-beta.2` | Yanked |
 | Firmware without `esp-bootloader-esp-idf` / `esp_app_desc!()` | Current `espflash` refuses to flash (`ESP-IDF App Descriptor missing`) |

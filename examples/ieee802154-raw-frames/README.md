@@ -14,7 +14,7 @@
 
 A spec is Markdown a person writes; the agent generates the crate. See [Using with AI agents](../../docs/guides/using-with-ai-agents.md).
 
-`esp-radio` is an unstable beta (in-tree `1.0.0-beta.0` at git tag `esp-hal-v1.2.1`). `esp-hal` feature `unstable` is required for the radio and for RMT. The `ieee802154` feature is unstable. These APIs can change with the next `esp-hal` minor.
+`esp-radio` is an unstable beta (crates.io `=1.0.0-beta.1` with `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0`). Do not git-pin those HP crates. `esp-hal` feature `unstable` is required for the radio and for RMT. The `ieee802154` feature is unstable. These APIs can change with the next `esp-hal` minor.
 
 ## Overview
 
@@ -140,7 +140,7 @@ XIAO logs `GPIO LED (active-LOW)` instead of the WS2812 line. These lines are th
 
 ## Key Concepts
 
-- `esp-radio` IEEE 802.15.4 driver (`ieee802154` feature), git tag `esp-hal-v1.2.1`, with `esp-hal`, `esp-rtos`, `esp-alloc`, and `esp-bootloader-esp-idf` from that same tag. Do not enable `wifi`. Do not mix crates.io `esp-rtos` 0.4.0 with git `esp-hal`.
+- `esp-radio` IEEE 802.15.4 driver (`ieee802154` feature), crates.io `=1.0.0-beta.1`, with `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0`. Do not enable `wifi`. Do not git-pin those HP crates.
 - `esp-radio` is an unstable beta. `esp-hal` feature `unstable` is required for the radio and for RMT.
 - Raw 2003 data frames and hardware auto-ACK. Payload is 6 bytes (fixed magic plus one sequence byte). No Thread, no Zigbee, and no mesh.
 - Embassy on TIMG0. The radio stays up (`rx_when_idle`). This example does not deep-sleep.

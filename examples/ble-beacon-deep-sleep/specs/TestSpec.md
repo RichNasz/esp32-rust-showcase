@@ -16,8 +16,8 @@ Do not specify `idf.py`, ESP-IDF Unity, or CMake-based harnesses.
 
 **Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
 **What it verifies**: The crate compiles cleanly for the default board (DevKitC-C6, WS2812 /
-RMT + RTC sleep + git-pinned `esp-radio` BLE + TrouBLE) with no `rustc` or clippy warnings.
-Confirms the radio git-pin resolves.
+RMT + RTC sleep + crates.io `esp-radio` `=1.0.0-beta.1` BLE + TrouBLE) with no `rustc` or clippy warnings.
+Confirms the crates.io radio pin resolves.
 
 ```sh
 cd examples/ble-beacon-deep-sleep

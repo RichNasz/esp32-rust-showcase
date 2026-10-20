@@ -15,7 +15,7 @@ Do not specify `idf.py`, ESP-IDF Unity, or CMake-based harnesses.
 ### T-A1 — Zero-warning build (ESP32-C6-DevKitC-1-N8, default features)
 
 **Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
-**What it verifies**: The crate compiles cleanly for the default board (DevKitC-C6, WS2812 / RMT + RTC sleep + git-pinned `esp-radio` Wi-Fi) with no `rustc` or clippy warnings. Confirms the radio git-pin resolves.
+**What it verifies**: The crate compiles cleanly for the default board (DevKitC-C6, WS2812 / RMT + RTC sleep + crates.io `esp-radio` `=1.0.0-beta.1` Wi-Fi) with no `rustc` or clippy warnings. Confirms the crates.io radio pin resolves.
 
 ```sh
 cd examples/deep-sleep-bme280-mqtt-sensor

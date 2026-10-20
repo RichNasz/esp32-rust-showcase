@@ -76,10 +76,11 @@ Drive the LED dark before sleep. Allow a brief UART drain after the last log lin
 
 ## BLE stack
 
-This is a **radio** example. Git-pin `esp-hal`, `esp-radio` (features `esp32c6`,
-`unstable`, `ble`), `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`), and
-`esp-alloc` from tag `esp-hal-v1.2.1`. Never mix crates.io `esp-rtos = "0.4.0"` with git
-`esp-hal`. Host is crates.io `trouble-host` **0.7** (upstream `esp-hal` 1.2.1 BLE examples
+This is a **radio** example. Copy the crates.io radio pin from
+`shared-specs/rust-toolchain.md`: `esp-hal` `=1.2.1`, `esp-radio` (features `esp32c6`,
+`unstable`, `ble`) `=1.0.0-beta.1`, `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`)
+`=0.4.0`, and `esp-alloc` `=0.11.0`. Do not git-pin the HP radio crates. Host is
+crates.io `trouble-host` **0.7** (upstream `esp-hal` 1.2.1 BLE examples
 use that line). Enable TrouBLE **peripheral** + default packet pool; do **not** enable
 GATT, scan/central, or security for this broadcaster.
 
@@ -99,7 +100,7 @@ CPU clock: max is acceptable for the short BLE window (matches HAL radio example
 
 TrouBLE + the BLE controller blob allocate. Heap is justified for radio / HCI / host
 buffers only: about **72 KiB** internal DRAM (`esp_alloc::heap_allocator!`). The image must emit an ESP-IDF-compatible application descriptor
-(`esp-bootloader-esp-idf`, git-pinned with the radio stack). Current `espflash`
+(`esp-bootloader-esp-idf` `=0.6.0` from the crates.io radio pin). Current `espflash`
 will not flash without it. `#[ram(reclaimed)]` is allowed only because that
 descriptor is present — the attribute is rejected without it. `build-std` must include `alloc`. Do not allocate
 after init except as the radio / host stack does internally.
@@ -118,8 +119,8 @@ after init except as the radio / host stack does internally.
 
 ## Preferred Crates and APIs
 
-- Git-pinned `esp-hal` / `esp-radio` / `esp-rtos` / `esp-alloc` at `esp-hal-v1.2.1`
-  (reason: radio pin; crates.io `esp-radio` does not resolve with HAL 1.2.1).
+- Crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, and
+  `esp-alloc` `=0.11.0` (reason: radio pin in `shared-specs/rust-toolchain.md`).
 - `trouble-host` 0.7 peripheral + packet pool (reason: same host as HAL 1.2 BLE examples;
   no NimBLE C).
 - `embassy-futures` for `select` of runner vs advertising window (reason: runner must be

@@ -1,0 +1,7 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Flash size is detected from the chip.
+# ESP32-C6-DevKitC-1-N8 is 8 MB. Seeed XIAO ESP32-C6 is 4 MB.
+# This table ends at 0x300000 and fits both.
+
+[idf]
+partition_table = "partitions.csv"

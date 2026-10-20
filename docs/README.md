@@ -95,4 +95,6 @@ A spec is Markdown a person writes. It states what the firmware must do and what
 2. **Ask the agent to follow a skill** — for a crate, say "Activate esp32-sdd-full-project-generator". That phrase goes to the agent, not the shell.
 3. **Build and flash** — open the example folder and run `cargo run --release`.
 
+From the repository root, `scripts/check-firmware-pins.sh` must pass. It checks every example `src/main.rs` for the application descriptor and the exact crates.io pins in `shared-specs/rust-toolchain.md`.
+
 Full workflows: [docs/workflows/README.md](workflows/README.md). The longer lesson is [Using With AI Agents](guides/using-with-ai-agents.md).

@@ -147,7 +147,7 @@ spec+gen: describe the spec workflow and regenerate the docs
 Generated-by: <invoking agent name>
 ```
 
-Do not commit generated files unless the spec change is in the same commit or an earlier one.
+Do not commit generated files unless the spec change is in the same commit or an earlier one. From the repository root, `scripts/check-firmware-pins.sh` must pass. It checks every example `src/main.rs` for the application descriptor and the exact crates.io pins in `shared-specs/rust-toolchain.md`.
 
 ## Why this method
 

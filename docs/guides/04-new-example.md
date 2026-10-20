@@ -22,6 +22,7 @@ To modify an example, edit those files. Behavior goes in FunctionalSpec, archite
 6. Say: Activate esp32-sdd-full-project-generator — the agent writes the crate and leaves `specs/` in place.
 7. From `examples/<name>/`: `cargo run --release` — this builds and flashes the crate the agent just wrote.
 8. Say: Activate esp32-sdd-documentation-generator and rebuild all documentation. — the agent rewrites Markdown so the docs match the spec.
+9. From the repository root, `scripts/check-firmware-pins.sh` must pass. — it checks every example `src/main.rs` for the application descriptor and the exact crates.io pins in `shared-specs/rust-toolchain.md`.
 
 Use a domain skill only when the spec needs it (WS2812, BLE, deep sleep, hardware AES, or LP-core). ESP-NOW unicast, raw IEEE 802.15.4, Thread UDP pair, Matter over Wi-Fi, and an HTTPS CRC slot flip are steps inside `esp32-sdd-full-project-generator`, not separate skills. Do not send CRC HTTPS OTA to `esp32-hardware-crypto-configurer`. Phrases are in [skill invocation](../reference/skill-invocation.md).
 

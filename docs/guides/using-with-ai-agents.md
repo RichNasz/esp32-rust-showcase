@@ -91,7 +91,12 @@ Phrases: [skill invocation](../reference/skill-invocation.md).
       │
       ▼
 4. From examples/<name>/: cargo run --release
+      │
+      ▼
+5. From the repository root: scripts/check-firmware-pins.sh
 ```
+
+That script checks every example `src/main.rs` for the application descriptor and the exact crates.io pins in `shared-specs/rust-toolchain.md`. It must pass.
 
 A domain skill (WS2812, BLE, deep sleep, hardware AES, LP-core) is only for a spec that needs that topic. It is not a step on every example. ESP-NOW unicast, raw IEEE 802.15.4, Thread UDP pair, Matter over Wi-Fi, and an HTTPS CRC slot flip are steps inside `esp32-sdd-full-project-generator`, not separate skills.
 
@@ -112,3 +117,5 @@ You can still open the repository root to edit specs. After a spec edit, regener
 **You are not sure which skill to use.** See [workflows](../workflows/README.md).
 
 **You want a structural check.** Say `Activate esp32-sdd-project-validator skill`. It reports PASS or FAIL per check. `main.c`, `CMakeLists.txt`, or `sdkconfig.defaults` is a hard FAIL. Fix a failure in the spec and regenerate. Do not hand-edit the crate.
+
+**You want the pin and descriptor check.** From the repository root, `scripts/check-firmware-pins.sh` must pass. It checks every example `src/main.rs` for the application descriptor and the exact crates.io pins.

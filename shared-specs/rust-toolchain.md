@@ -87,7 +87,7 @@ Radio examples **must** git-pin **all** monorepo crates they use from `esp-rs/es
 ```toml
 esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
 esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
-# plus wifi and/or ble and/or esp-now on esp-radio, matching the example
+# plus wifi and/or ble and/or esp-now and/or ieee802154 on esp-radio, matching the example
 esp-rtos = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "embassy", "esp-radio"] }
 esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6"] }
 # when the CodingSpec justifies a heap (typical for radio blobs / TrouBLE):

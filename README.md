@@ -20,7 +20,7 @@ This repository is a production-grade demonstration of **Spec-Driven Development
 
 ## Features
 
-- **8 progressive examples** on ESP32-C6 — breathing LED, deep sleep, MQTT, hardware AES, a duty-cycled BLE beacon, an HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, and LP-core GPIO wakeup. **Eight crates are generated** as of 2026-10-20 (blinky through lp-core-wakeup). `specs/showcase-master-spec.md` still lists examples 6, 7, and 8 as Specs only; humans own that catalog
+- **9 progressive examples** on ESP32-C6 — breathing LED, deep sleep, MQTT, hardware AES, a duty-cycled BLE beacon, an HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, LP-core GPIO wakeup, and raw IEEE 802.15.4 frames. **Nine crates are generated** as of 2026-10-20 (blinky through ieee802154-raw-frames). `specs/showcase-master-spec.md` still lists examples 6, 7, and 8 as Specs only; humans own that catalog. Example 9 is Firmware generated there
 - **11 published agent skills** (10 original SDD skills plus `esp32-lp-core-engineer`) covering spec creation, crate generation, WS2812, BLE, deep sleep, LP-core, ANSI dashboards, hardware AES, board specs, documentation, and validation
 - **AI-generated board specs** from vendor datasheets (Espressif, Seeed, Adafruit, LilyGo, and more); v1 **chip** is ESP32-C6 (`esp32c6`); **boards** are ESP32-C6-DevKitC-1-N8 (required) and XIAO ESP32-C6
 - **Strict human/AI separation** — generated files carry agent headers; only `specs/`, `shared-specs/`, and `examples/*/specs/` are human-authored
@@ -69,7 +69,7 @@ C developers usually expect Espressif’s **ESP-IDF** (CMake, `idf.py`, `sdkconf
 
 ## Examples
 
-Eight examples, ordered by complexity. Start with `blinky`. Required board: **ESP32-C6-DevKitC-1**. **Firmware generated** means the crate is in the tree. **Specs only** means there is nothing to flash yet. Neither label is a hardware test result. `specs/showcase-master-spec.md` still lists examples 6, 7, and 8 as Specs only; that human catalog was not edited.
+Nine examples, ordered by complexity. Start with `blinky`. Required board: **ESP32-C6-DevKitC-1**. **Firmware generated** means the crate is in the tree. **Specs only** means there is nothing to flash yet. Neither label is a hardware test result. `specs/showcase-master-spec.md` still lists examples 6, 7, and 8 as Specs only; that human catalog was not edited. Example 9 is Firmware generated in that catalog.
 
 | # | Example | Description | Status | Link |
 |---|---|---|---|---|
@@ -81,6 +81,7 @@ Eight examples, ordered by complexity. Start with `blinky`. Required board: **ES
 | 6 | secure-ota-https | HTTPS download into the inactive OTA slot, CRC check, reboot. Not Secure Boot | Firmware generated | [examples/secure-ota-https](examples/secure-ota-https/) |
 | 7 | esp-now-low-power-mesh | ESP-NOW sensor-to-gateway unicast. The directory name is historical. Not a mesh | Firmware generated | [examples/esp-now-low-power-mesh](examples/esp-now-low-power-mesh/) |
 | 8 | lp-core-wakeup | LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch) | Firmware generated | [examples/lp-core-wakeup](examples/lp-core-wakeup/) |
+| 9 | ieee802154-raw-frames | Raw IEEE 802.15.4 data frames between a node and a peer. Not Thread, not Zigbee, not a mesh | Firmware generated | [examples/ieee802154-raw-frames](examples/ieee802154-raw-frames/) |
 
 ## Skills
 

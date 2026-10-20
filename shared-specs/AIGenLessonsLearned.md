@@ -53,7 +53,7 @@
 
 - **The stock `espflash` bootloader does not auto-rollback OTA.** Slot changes go through `esp-bootloader-esp-idf`'s OTA updater (write the inactive app slot, update `otadata`). Do not spec `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, `esp_https_ota`, or `esp_ota_mark_app_valid_cancel_rollback`. A CRC failure must not activate the new slot. Setting the image state is still useful for a rollback-capable bootloader, but the default flasher will not revert a bad image by itself. (Oct 2026)
 
-- **Do not regenerate the retired S3 / ESP-IDF example specs.** `secure-ota-https` is an HTTPS slot flip on C6, not Secure Boot enrollment and not a three-LED S3 demo. `esp-now-low-power-mesh` is a two-role unicast pair (the directory name is historical), not a Kconfig mesh. `lp-core-wakeup` is C6 LP-core GPIO 0–7, not capacitive touch. IEEE 802.15.4 raw frames are deferred, not a ninth example. (Oct 2026)
+- **Do not regenerate the retired S3 / ESP-IDF example specs.** `secure-ota-https` is an HTTPS slot flip on C6, not Secure Boot enrollment and not a three-LED S3 demo. `esp-now-low-power-mesh` is a two-role unicast pair (the directory name is historical), not a Kconfig mesh. `lp-core-wakeup` is C6 LP-core GPIO 0–7, not capacitive touch. Raw IEEE 802.15.4 is example `ieee802154-raw-frames` (node/peer data frames). It is not Thread, not Zigbee, and not a mesh. (Oct 2026)
 
 ## Required Workflow When Something Goes Wrong
 1. Read this file.

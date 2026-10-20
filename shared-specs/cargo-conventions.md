@@ -62,7 +62,7 @@ esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", tag = "esp
 esp-alloc = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1" }
 embassy-executor = "0.10"
 embassy-time = "0.5"
-# plus wifi and/or ble and/or esp-now on esp-radio, matching the example
+# plus wifi and/or ble and/or esp-now and/or ieee802154 on esp-radio, matching the example
 ```
 
 Rules:
@@ -70,7 +70,7 @@ Rules:
 - Pin versions from `rust-toolchain.md` (looked up 2026-09-08). Do not use `"*"`.
 - Enable `esp-hal` feature `"unstable"` **in addition to** `"esp32c6"` when radio or sleep needs it.
 - `esp-rtos` (features `esp32c6` + `embassy`) is the Embassy integration path. Time is `embassy_time`. Radio examples also enable `esp-rtos` feature `esp-radio` and git-pin `esp-rtos` at tag `esp-hal-v1.2.1`. Non-radio examples use crates.io `esp-rtos` 0.4.0.
-- `esp-radio` is **only** for radio examples. Git pin at tag `esp-hal-v1.2.1` with the rest of the monorepo stack — see `rust-toolchain.md`. Treat it as an unstable beta. Enable `wifi` / `ble` / `esp-now` features as the example requires.
+- `esp-radio` is **only** for radio examples. Git pin at tag `esp-hal-v1.2.1` with the rest of the monorepo stack — see `rust-toolchain.md`. Treat it as an unstable beta. Enable `wifi` / `ble` / `esp-now` / `ieee802154` features as the example requires. Raw IEEE 802.15.4 does not enable `wifi`: that driver does not coexist with Wi-Fi.
 - `esp-alloc` is **only** when the CodingSpec justifies a heap. Radio examples that need it git-pin it from the same tag; non-radio examples use crates.io 0.11.0.
 - `esp-bootloader-esp-idf` is **required on every example** (feature `esp32c6`). Current `espflash` will not flash an `esp-hal` image that lacks the ESP-IDF-compatible application descriptor. Invoke `esp_bootloader_esp_idf::esp_app_desc!()` in `src/main.rs`. This crate is **not** ESP-IDF. Non-radio examples use crates.io 0.6.0; radio examples git-pin it at tag `esp-hal-v1.2.1` with the rest of the monorepo stack.
 - `esp-storage` is **only** when the example needs flash storage.

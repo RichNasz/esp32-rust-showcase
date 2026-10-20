@@ -156,7 +156,7 @@ Average when the send finishes promptly: about 2.6 mA, target under 3 mA. Wakeup
 | Encrypted ESP-NOW | Frames are plaintext lab traffic |
 | An access-point client | No association, no DHCP, no TCP |
 
-IEEE 802.15.4 raw frames are a deferred catalog item, not a feature of this example.
+IEEE 802.15.4 raw frames are `ieee802154-raw-frames`, not a feature of this example.
 
 ## Testing
 

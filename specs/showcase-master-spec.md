@@ -10,6 +10,7 @@
 6. secure-ota-https – HTTPS download into the inactive OTA slot, CRC check, reboot. Not Secure Boot or flash-encryption enrollment
 7. esp-now-low-power-mesh – ESP-NOW sensor-to-gateway unicast. The directory name is historical. This is not a multi-hop mesh
 8. lp-core-wakeup – LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch)
+9. ieee802154-raw-frames – raw IEEE 802.15.4 data frames between a node and a peer. Not Thread, not Zigbee, not a mesh
 
 ## Implementation status
 
@@ -25,12 +26,13 @@ Catalog source of truth for what is actually in the tree. Checked 2026-10-20. **
 | 6 | secure-ota-https | Specs only | Specs rewritten 2026-10-20 (HTTPS slot flip, CRC, no Secure Boot). No `Cargo.toml` or `src/`. |
 | 7 | esp-now-low-power-mesh | Specs only | Specs rewritten 2026-10-20 (sensor-to-gateway unicast). Directory name is historical. No crate. |
 | 8 | lp-core-wakeup | Specs only | Specs rewritten 2026-10-20 (C6 LP-core GPIO 0). No crate. The retired S3 touch spec is gone. |
+| 9 | ieee802154-raw-frames | Firmware generated | Crate generated 2026-10-20 (raw 802.15.4 node/peer). Not Thread, Zigbee, or a mesh. A host build is not a two-board on-air pass. |
 
-Generated docs copy this table. They must not say all eight examples already contain Rust, and they must not describe examples 6–8 as a mesh, as signed production updates, or as capacitive touch.
+Generated docs copy this table. They must not describe examples 6–8 as a mesh, as signed production updates, or as capacitive touch. They must not describe `ieee802154-raw-frames` as Thread, Zigbee, or a mesh. Where a row says Specs only, do not describe that example as if `cargo run` works; where a row says Firmware generated, the crate is in the tree and that label is not a hardware pass.
 
 ## Deferred
 
-IEEE 802.15.4 raw frames (`esp-radio` feature `ieee802154`) are supported on ESP32-C6 and are the next catalog candidate. They are not one of the eight v1 examples. Do not add Thread, Zigbee, a multi-hop ESP-NOW mesh, ESP32-S3 capacitive touch, or Secure Boot eFuse enrollment as v1 example specs.
+Thread, Zigbee, a multi-hop ESP-NOW mesh, ESP32-S3 capacitive touch, and Secure Boot eFuse enrollment are not catalog examples. Raw IEEE 802.15.4 is example 9 (`ieee802154-raw-frames`). Do not add those excluded designs as further example specs.
 
 ## Hardware bar
 

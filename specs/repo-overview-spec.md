@@ -6,7 +6,7 @@ Every line of firmware and every piece of documentation is generated exclusively
 
 ## Key Features
 - AI-generated board specs from vendor docs (Espressif, Seeed, Adafruit, LilyGo, etc.)
-- 8 progressive examples on ESP32-C6 leveraging hardware superpowers (deep sleep, LP core, radio, AES, OTA)
+- 9 progressive examples on ESP32-C6 leveraging hardware superpowers (deep sleep, LP core, radio, AES, OTA, raw IEEE 802.15.4)
 - Full suite of published Agent Skills (`skills/<name>/SKILL.md`; mirrored for Claude; Grok via `AGENTS.md`)
 - Strict 100 % AI-first workflow: humans edit specs only; agents generate Rust and Markdown
 - No ESP-IDF / `idf.py` / `sdkconfig` — rust-on-metal `esp-hal` on RISC-V ESP32-C6 (see Why ESP-IDF is not required)

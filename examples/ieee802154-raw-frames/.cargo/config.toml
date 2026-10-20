@@ -1,0 +1,18 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Heap is justified (802.15.4 frame payloads are allocated by the driver).
+# build-std includes alloc. Channel and PAN are compile-time env.
+# Placeholders exist so `cargo build --release` succeeds with no second board.
+# A shell export overrides this [env] table. Neither value is a secret.
+
+[build]
+target = "riscv32imac-unknown-none-elf"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "espflash flash --monitor"
+
+[unstable]
+build-std = ["core", "alloc"]
+
+[env]
+IEEE802154_CHANNEL = "15"
+IEEE802154_PAN_ID = "0x4242"

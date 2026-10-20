@@ -160,7 +160,7 @@ the planning figure (peaks higher). Radio left powered reads milliamps in sleep.
 | An access-point client | No association, no DHCP, no TCP |
 
 Extension path: add a third role only after this pair is reliable on two boards. Raw
-IEEE 802.15.4 is a separate, deferred example, not a feature flag here.
+IEEE 802.15.4 is `ieee802154-raw-frames`, not a feature flag here.
 
 ## Success Criteria
 

@@ -53,7 +53,7 @@
 
 - **The stock `espflash` bootloader does not auto-rollback OTA.** Slot changes go through `esp-bootloader-esp-idf`'s OTA updater (write the inactive app slot, update `otadata`). Do not spec `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, `esp_https_ota`, or `esp_ota_mark_app_valid_cancel_rollback`. A CRC failure must not activate the new slot. Setting the image state is still useful for a rollback-capable bootloader, but the default flasher will not revert a bad image by itself. (Oct 2026)
 
-- **Do not regenerate the retired S3 / ESP-IDF example specs.** `secure-ota-https` is an HTTPS slot flip on C6, not Secure Boot enrollment and not a three-LED S3 demo. `esp-now-low-power-mesh` is a two-role unicast pair (the directory name is historical), not a Kconfig mesh. `lp-core-wakeup` is C6 LP-core GPIO 0–7, not capacitive touch. Raw IEEE 802.15.4 is example `ieee802154-raw-frames` (node/peer data frames). It is not Thread, not Zigbee, and not a mesh. Thread is `thread-udp-pair`. Matter over Wi-Fi is `matter-wifi-onoff`. Do not fold either into the raw frame example. (Oct 2026)
+- **Do not restore retired S3 / ESP-IDF behavior.** `secure-ota-https` is an HTTPS slot flip on C6, not Secure Boot enrollment and not a three-LED S3 demo. `esp-now-low-power-mesh` is a two-role unicast pair, not a Kconfig mesh. `lp-core-wakeup` is C6 LP-core GPIO 0–7, not capacitive touch. Raw IEEE 802.15.4 is example `ieee802154-raw-frames` (node/peer data frames). It is not Thread, not Zigbee, and not a mesh. Thread is `thread-udp-pair`. Matter over Wi-Fi is `matter-wifi-onoff`. Do not fold either into the raw frame example. The directory names are historical labels for that behavior. A catalog rename is allowed when `specs/showcase-master-spec.md`, the example path, and this lesson change together. A rename does not change the behavior in this paragraph. (Oct 2026, narrowed Oct 2026)
 
 - **Thread leader builds OpenThread from C.** crates.io `openthread` 0.4.0 ships a prebuilt MTD archive for `riscv32imac-unknown-none-elf` when the default `matter` feature set is unchanged. Feature `ftd` is not that profile, so `openthread-sys` runs CMake. The leader role needs Clang, CMake, and Ninja on the host. The example `build.rs` only emits `linkall.x`. Link `tinyrlibc` for the C `str*` symbols. (Oct 2026)
 
@@ -72,11 +72,13 @@
 
 ## CodingSpec.md Must Be High-Level Guidance (Not Implementation Instructions)
 
-CodingSpec.md describes **what** and **why** — never **how**. It must not contain code snippets, `const` item definitions, specific API call sequences, or numbered step-by-step instructions. It should describe architecture, constraints, preferred crates and the reasoning behind them, non-functional requirements, trade-off decisions, and known gotchas.
+CodingSpec.md describes **what** and **why**. It should describe architecture, constraints, preferred crates and the reasoning behind them, non-functional requirements, trade-off decisions, and known gotchas.
 
-The guiding principle: "The model we use today is the worst model we will ever use." A high-level spec benefits from better future models. A low-level spec just duplicates code in prose and locks the implementation to the current generation's idioms.
+Name the Rust constraints a generator gets wrong when they are missing. That includes the Embassy entry `#[esp_rtos::main]`, exact crates.io pins, radio teardown order, and partition offsets. Those are constraints.
 
-If you find yourself writing a function call, a struct definition, or a numbered sequence of API calls in CodingSpec.md, stop and reframe it as an architectural constraint or a trade-off decision. (Feb 2026)
+Do not paste implementation bodies, full listings, `const` items that duplicate `src/`, or a numbered sequence of API calls. A low-level spec just duplicates code in prose and locks the implementation to the current generation's idioms.
+
+The guiding principle: "The model we use today is the worst model we will ever use." A high-level spec benefits from better future models. (Feb 2026, narrowed Oct 2026)
 
 ## Template for Adding New Lessons
 When you discover something important:

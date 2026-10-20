@@ -8,8 +8,11 @@ use core::ptr::addr_of_mut;
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
+use esp_alloc::heap_allocator;
 use esp_backtrace as _;
 use esp_hal::clock::CpuClock;
+use esp_hal::ram;
+use esp_metadata_generated::memory_range;
 use esp_hal::gpio::{Event, Input, InputConfig, Pull, WakeupConfig};
 use esp_hal::rng::Rng;
 use esp_hal::rtc_cntl::sleep::{LowPower, RtcSleepConfig};
@@ -21,6 +24,14 @@ use trouble_host::prelude::Address;
 mod beacon;
 mod board;
 mod led;
+
+esp_bootloader_esp_idf::esp_app_desc!();
+
+/// BLE controller blob plus TrouBLE. Part of this budget is reclaimed DRAM.
+const HEAP_SIZE: usize = 72 * 1024;
+const RECLAIMED_RAM: usize =
+    memory_range!("DRAM2_UNINIT").end - memory_range!("DRAM2_UNINIT").start;
+const _: () = assert!(HEAP_SIZE > RECLAIMED_RAM);
 
 const SLEEP_SECS: u64 = 10;
 const UART_DRAIN_MS: u64 = 20;
@@ -45,9 +56,9 @@ struct Persist {
 async fn main(spawner: Spawner) -> ! {
     let peripherals = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
-    // DRAM heap for the BLE controller blob + TrouBLE. `ram(reclaimed)` needs
-    // an ESP-IDF-compatible app descriptor; this example does not ship one.
-    esp_alloc::heap_allocator!(size: 72 * 1024);
+    // Both regions join one heap. The descriptor above is what allows `ram(reclaimed)`.
+    heap_allocator!(size: HEAP_SIZE - RECLAIMED_RAM);
+    heap_allocator!(#[ram(reclaimed)] size: RECLAIMED_RAM);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     esp_rtos::start(timg0.timer0, peripherals.FROM_CPU_INTR0);

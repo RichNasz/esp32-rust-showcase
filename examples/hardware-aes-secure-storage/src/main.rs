@@ -16,6 +16,8 @@ mod crypto;
 mod led;
 mod store;
 
+esp_bootloader_esp_idf::esp_app_desc!();
+
 const SELFTEST: &[u8] = b"hardware AES-256-CBC round-trip";
 
 #[esp_rtos::main]

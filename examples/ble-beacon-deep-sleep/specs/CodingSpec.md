@@ -99,11 +99,12 @@ CPU clock: max is acceptable for the short BLE window (matches HAL radio example
 ## Heap
 
 TrouBLE + the BLE controller blob allocate. Heap is justified for radio / HCI / host
-buffers only: about **72 KiB** internal DRAM (`esp_alloc::heap_allocator!`). The image must emit an ESP-IDF-compatible application descriptor
-(`esp-bootloader-esp-idf` `=0.6.0` from the crates.io radio pin). Current `espflash`
-will not flash without it. `#[ram(reclaimed)]` is allowed only because that
-descriptor is present — the attribute is rejected without it. `build-std` must include `alloc`. Do not allocate
-after init except as the radio / host stack does internally.
+buffers only: about **72 KiB** internal DRAM. Part of that budget is the
+reclaimed DRAM region. The image must emit an ESP-IDF-compatible application
+descriptor (`esp-bootloader-esp-idf` `=0.6.0` from the crates.io radio pin).
+Current `espflash` will not flash without it, and the linker rejects the
+reclaimed region without that descriptor. `build-std` must include `alloc`.
+Do not allocate after init except as the radio / host stack does internally.
 
 ## Key Constraints
 

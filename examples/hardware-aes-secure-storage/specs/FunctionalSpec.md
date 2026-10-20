@@ -112,8 +112,10 @@ single-app layout plus a dedicated `storage` data partition (not IDF NVS format)
 | factory | app | factory | 0x10000 | 1 MiB |
 | storage | data | 0x40 | 0x110000 | 64 KiB |
 
-Flash via `espflash` with `--partition-table partitions.csv`. Fits both 4 MB (XIAO) and
-8 MB (DevKitC-N8) parts.
+Flash via `espflash` with `--partition-table partitions.csv`. Also ship
+`espflash.toml` with that same table so a direct `espflash flash` in this
+directory does not fall back to the default single-app layout. Fits both 4 MB
+(XIAO) and 8 MB (DevKitC-N8) parts.
 
 ## Limitations
 

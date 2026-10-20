@@ -8,8 +8,11 @@ use core::ptr::addr_of_mut;
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Instant, Timer};
+use esp_alloc::heap_allocator;
 use esp_backtrace as _;
 use esp_hal::clock::CpuClock;
+use esp_hal::ram;
+use esp_metadata_generated::memory_range;
 use esp_hal::gpio::{Event, Input, InputConfig, Pull, WakeupConfig};
 use esp_hal::rtc_cntl::sleep::{LowPower, RtcSleepConfig};
 use esp_hal::rtc_cntl::{WakeupSource, wakeup_cause};
@@ -21,6 +24,14 @@ mod led;
 mod mqtt;
 mod net;
 mod sensor;
+
+esp_bootloader_esp_idf::esp_app_desc!();
+
+/// Wi-Fi blob plus embassy-net. Part of this budget is reclaimed DRAM.
+const HEAP_SIZE: usize = 72 * 1024;
+const RECLAIMED_RAM: usize =
+    memory_range!("DRAM2_UNINIT").end - memory_range!("DRAM2_UNINIT").start;
+const _: () = assert!(HEAP_SIZE > RECLAIMED_RAM);
 
 const SLEEP_SECS: u64 = 15;
 const ACTIVE_WINDOW: Duration = Duration::from_secs(15);
@@ -43,9 +54,9 @@ pub(crate) fn remaining(deadline: Instant) -> Option<Duration> {
 async fn main(spawner: Spawner) -> ! {
     let peripherals = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
-    // DRAM heap for the Wi-Fi blob + embassy-net. `ram(reclaimed)` needs the
-    // ESP-IDF-compatible app descriptor; this example does not ship one.
-    esp_alloc::heap_allocator!(size: 72 * 1024);
+    // Both regions join one heap. The descriptor above is what allows `ram(reclaimed)`.
+    heap_allocator!(size: HEAP_SIZE - RECLAIMED_RAM);
+    heap_allocator!(#[ram(reclaimed)] size: RECLAIMED_RAM);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     esp_rtos::start(timg0.timer0, peripherals.FROM_CPU_INTR0);
@@ -71,14 +82,8 @@ async fn main(spawner: Spawner) -> ! {
     )
     .await;
 
-    let success = run_cycle(
-        spawner,
-        peripherals.WIFI,
-        sample.as_ref(),
-        boot_count,
-        deadline,
-    )
-    .await;
+    let _ = spawner;
+    let success = run_cycle(peripherals.WIFI, sample.as_ref(), boot_count, deadline).await;
 
     led::show_result(
         #[cfg(feature = "board-devkitc-c6")]
@@ -99,7 +104,6 @@ async fn main(spawner: Spawner) -> ! {
 }
 
 async fn run_cycle(
-    spawner: Spawner,
     wifi: esp_hal::peripherals::WIFI<'static>,
     sample: Option<&sensor::Sample>,
     boot_count: u32,
@@ -118,7 +122,7 @@ async fn run_cycle(
         log::warn!("Wi-Fi SSID not configured (compile-time env); skipping MQTT");
         return false;
     }
-    net::publish_sample(spawner, wifi, s, boot_count, &c, deadline).await
+    net::publish_sample(wifi, s, boot_count, &c, deadline).await
 }
 
 fn log_sample(s: &sensor::Sample) {

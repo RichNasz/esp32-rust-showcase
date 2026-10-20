@@ -1,8 +1,8 @@
 // AGENT-GENERATED — DO NOT EDIT BY HAND
 //! Wi-Fi STA via esp-radio + embassy-net (HAL 1.2 embassy_dhcp pattern).
 
-use embassy_executor::Spawner;
-use embassy_net::{Config as NetConfig, Runner, Stack, StackResources};
+use embassy_futures::select::{Either, select};
+use embassy_net::{Config as NetConfig, Stack, StackResources};
 use embassy_time::{Duration, Instant, with_timeout};
 use esp_hal::rng::Rng;
 use esp_radio::wifi::sta::StationConfig;
@@ -51,7 +51,6 @@ pub fn wifi_configured(c: &Creds) -> bool {
 }
 
 pub async fn publish_sample(
-    spawner: Spawner,
     wifi: esp_hal::peripherals::WIFI<'static>,
     sample: &Sample,
     boot: u32,
@@ -69,16 +68,7 @@ pub async fn publish_sample(
         None => return false,
     };
 
-    let ok = associate_and_publish(
-        &mut controller,
-        wifi_interface,
-        spawner,
-        sample,
-        boot,
-        c,
-        deadline,
-    )
-    .await;
+    let ok = run_session(&mut controller, wifi_interface, sample, boot, c, deadline).await;
     teardown(controller).await;
     ok
 }
@@ -121,18 +111,66 @@ fn start_controller(
     }
 }
 
-async fn associate_and_publish(
+/// Poll the embassy-net runner only while the socket work runs, then drop it
+/// before the caller drops the Wi-Fi controller.
+async fn run_session(
     controller: &mut WifiController<'static>,
     wifi_interface: Interface,
-    spawner: Spawner,
     sample: &Sample,
     boot: u32,
     c: &Creds,
     deadline: Instant,
 ) -> bool {
-    let Some(stack) = bring_up_net(controller, wifi_interface, spawner, deadline).await else {
+    let rng = Rng::new();
+    let seed = (u64::from(rng.random()) << 32) | u64::from(rng.random());
+    let (stack, mut runner) = embassy_net::new(
+        wifi_interface,
+        NetConfig::dhcpv4(Default::default()),
+        mk_static!(StackResources<3>, StackResources::<3>::new()),
+        seed,
+    );
+    let work = session_work(controller, &stack, sample, boot, c, deadline);
+    match select(runner.run(), work).await {
+        Either::First(stopped) => stopped,
+        Either::Second(ok) => ok,
+    }
+}
+
+async fn session_work(
+    controller: &mut WifiController<'static>,
+    stack: &Stack<'static>,
+    sample: &Sample,
+    boot: u32,
+    c: &Creds,
+    deadline: Instant,
+) -> bool {
+    let Some(wifi_wait) = remaining(deadline) else {
+        log::warn!("Active window expired; skipping Wi-Fi");
         return false;
     };
+    match with_timeout(wifi_wait.min(WIFI_CAP), controller.connect_async()).await {
+        Ok(Ok(_)) => log::info!("Wi-Fi associated"),
+        Ok(Err(_)) | Err(_) => {
+            log::warn!("Wi-Fi associate failed or timed out");
+            return false;
+        }
+    }
+
+    let Some(dhcp_wait) = remaining(deadline) else {
+        log::warn!("Active window expired before DHCP");
+        return false;
+    };
+    match with_timeout(dhcp_wait.min(DHCP_CAP), stack.wait_config_up()).await {
+        Ok(()) => {
+            if let Some(cfg) = stack.config_v4() {
+                log::info!("Got IP {}", cfg.address);
+            }
+        }
+        Err(_) => {
+            log::warn!("DHCP timed out");
+            return false;
+        }
+    }
 
     let mut payload = [0u8; 96];
     let Some(n) = mqtt::format_payload(sample, boot, &mut payload) else {
@@ -145,7 +183,7 @@ async fn associate_and_publish(
     }
 
     let ok = mqtt::publish_once(
-        stack,
+        *stack,
         c.mqtt_host,
         c.mqtt_port,
         c.mqtt_client_id,
@@ -161,63 +199,10 @@ async fn associate_and_publish(
     ok
 }
 
-async fn bring_up_net(
-    controller: &mut WifiController<'static>,
-    wifi_interface: Interface,
-    spawner: Spawner,
-    deadline: Instant,
-) -> Option<Stack<'static>> {
-    let rng = Rng::new();
-    let seed = (u64::from(rng.random()) << 32) | u64::from(rng.random());
-    let (stack, runner) = embassy_net::new(
-        wifi_interface,
-        NetConfig::dhcpv4(Default::default()),
-        mk_static!(StackResources<3>, StackResources::<3>::new()),
-        seed,
-    );
-
-    let token = match net_task(runner) {
-        Ok(token) => token,
-        Err(_) => {
-            log::error!("net task spawn failed");
-            return None;
-        }
-    };
-    spawner.spawn(token);
-
-    let wifi_wait = remaining(deadline)?.min(WIFI_CAP);
-    match with_timeout(wifi_wait, controller.connect_async()).await {
-        Ok(Ok(_)) => log::info!("Wi-Fi associated"),
-        Ok(Err(_)) | Err(_) => {
-            log::warn!("Wi-Fi associate failed or timed out");
-            return None;
-        }
-    }
-
-    let dhcp_wait = remaining(deadline)?.min(DHCP_CAP);
-    match with_timeout(dhcp_wait, stack.wait_config_up()).await {
-        Ok(()) => {
-            if let Some(cfg) = stack.config_v4() {
-                log::info!("Got IP {}", cfg.address);
-            }
-        }
-        Err(_) => {
-            log::warn!("DHCP timed out");
-            return None;
-        }
-    }
-    Some(stack)
-}
-
 async fn teardown(mut controller: WifiController<'static>) {
     if controller.is_connected() {
         let _ = with_timeout(TEARDOWN_CAP, controller.disconnect_async()).await;
     }
     log::info!("radio teardown; sleeping");
     drop(controller);
-}
-
-#[embassy_executor::task]
-async fn net_task(mut runner: Runner<'static, Interface>) {
-    runner.run().await
 }

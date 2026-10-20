@@ -30,6 +30,7 @@ The longer lesson is [Using an AI coding agent](docs/guides/using-with-ai-agents
 3. If the change affects a crate, ask the agent: "Activate esp32-sdd-full-project-generator".
 4. Those phrases are typed to the agent, not in the shell.
 5. Commit the spec edit and the files the agent regenerated. Open the pull request with both.
+6. From the repository root, `scripts/check-firmware-pins.sh` must pass. It checks every example `src/main.rs` for the application descriptor and the exact crates.io pins in `shared-specs/rust-toolchain.md`.
 
 A pull request contains the spec edit and the regenerated files. Do not hand-edit generated files. Do not open a pull request that only tweaks generated Rust or Markdown. Do not drop the regenerated files to leave a spec-only diff.
 

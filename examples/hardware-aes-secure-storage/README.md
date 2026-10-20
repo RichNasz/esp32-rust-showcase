@@ -76,9 +76,9 @@ Optional XIAO ESP32-C6:
 cargo run --release --no-default-features --features board-xiao-c6
 ```
 
-Non-radio pins (crates.io, not the git radio set): `esp-hal` 1.2.1, `esp-rtos` 0.4.0, `esp-storage` 0.10.0 with feature `esp32c6`. Do not mix crates.io `esp-rtos` 0.4.0 with a git `esp-hal`. There is no heap.
+Non-radio pins use an exact `=` so Cargo cannot select a later 1.2.x: crates.io `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-storage` `=0.10.0` with feature `esp32c6`, and `esp-bootloader-esp-idf` `=0.6.0`. Do not mix crates.io `esp-rtos` 0.4.0 with a git `esp-hal`. There is no heap. The image carries `esp_app_desc!()` so current `espflash` will flash it. That crate is image metadata, not ESP-IDF.
 
-The runner passes `--partition-table partitions.csv`. The `storage` data partition (subtype `0x40`) is 64 KiB at offset **0x110000**, immediately after a 1 MiB factory app. One 4 KiB sector holds the AES key; the next holds the self-test blob. The table fits 4 MB (XIAO) and 8 MB (DevKitC-N8).
+The Cargo runner passes `--partition-table partitions.csv`. `espflash.toml` sets that same table, so `espflash flash` in this directory, outside the Cargo runner, still writes the `storage` partition at `0x110000` instead of the default single-app layout. The `storage` data partition (subtype `0x40`) is 64 KiB at offset **0x110000**, immediately after a 1 MiB factory app. One 4 KiB sector holds the AES key; the next holds the self-test blob. The table ends at `0x120000` and fits 4 MB (XIAO) and 8 MB (DevKitC-N8).
 
 | Name | Type | SubType | Offset | Size |
 | --- | --- | --- | --- | --- |
@@ -142,7 +142,8 @@ Three slow blinks on the blue user LED, then off. Fail on either board is three 
 - **Round-trip self-test** on boot; LED pass/fail (three blinks, cap 64/255); failure does not panic
 - **Throughput log** — 64 KiB encrypt; RISC-V C6 target ≥ 2 MB/s; no heap and no `f32` formatting crate
 - **Security model** — example key is stored as generated plaintext in flash; not a full HSM; no `const` key in `src/`
-- **Crates.io pin** — `esp-hal` 1.2.1 + `esp-rtos` 0.4.0 + `esp-storage` 0.10.0; `unstable` for AES, FLASH, and RMT
+- **Crates.io pin** — `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-storage` `=0.10.0`, and `esp-bootloader-esp-idf` `=0.6.0`; `unstable` for AES, FLASH, and RMT
+- **Partition table** — `espflash.toml` and the Cargo runner both point at `partitions.csv`, so the key lands in `storage` at `0x110000`
 
 ## Limitations
 

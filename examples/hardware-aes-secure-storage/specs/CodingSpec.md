@@ -104,8 +104,9 @@ no RMT.
 - AES-256-CBC only; unique IV per write; PKCS#7 padding.
 - 64 KiB throughput encrypt; log MB/s; ≥ 2 MB/s is the FunctionalSpec bar.
 - No heap. No `std`. No FreeRTOS. No `sdkconfig`. No IDF NVS. No mbedTLS.
-- Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0, `esp-storage`
-  0.10.0, `esp-bootloader-esp-idf` 0.6.0. Do not git-pin the radio stack.
+- Non-radio crates.io pins use an exact `=` so Cargo cannot select a later
+  1.2.x: `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-storage` `=0.10.0`,
+  `esp-bootloader-esp-idf` `=0.6.0`. Do not git-pin the radio stack.
 - The image must include an ESP-IDF-compatible application descriptor
   (`esp-bootloader-esp-idf`). Current `espflash` will not flash without it.
 - `build.rs` emits `-Tlinkall.x` last.
@@ -114,6 +115,8 @@ no RMT.
 - Zero `unwrap()` / `expect()` on fallible HAL, AES, or flash in the demo path.
   Init may halt if clocks or RMT cannot start.
 - `.cargo/config.toml` runner must pass `--partition-table partitions.csv`.
+  `espflash.toml` sets that same table so `espflash flash` in this directory,
+  outside the Cargo runner, still writes the `storage` partition at `0x110000`.
 
 ## Preferred Crates and APIs
 

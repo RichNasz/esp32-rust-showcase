@@ -262,7 +262,7 @@ Source: `specs/contributing-spec.md`. Required sections, in this order:
 
 1. Opening paragraph: who the page is for, and spec vs generated file (see **Readers**).
 2. What a person may edit — the path table from contributing-spec.
-3. Workflow: edit a spec, ask the agent to regenerate, commit the spec and the regenerated files together.
+3. Workflow: edit a spec, ask the agent to regenerate, commit the spec and the regenerated files together. Name `scripts/check-firmware-pins.sh` as the check that must pass from the repository root.
 4. Commit convention: types, examples, and the `Generated-by` trailer.
 5. Link to `CODE_OF_CONDUCT.md`.
 
@@ -319,6 +319,7 @@ PR checklist enforcing the spec workflow. Must include:
         `FunctionalSpec.md` / `CodingSpec.md` / `TestSpec.md`)
   - [ ] `esp32-sdd-documentation-generator` was run after the spec change
   - [ ] No agent-generated files were edited by hand
+  - [ ] `scripts/check-firmware-pins.sh` passes from the repository root
   - [ ] Commit messages follow the Conventional Commits format (see CONTRIBUTING.md)
   - [ ] I have read and agree to the Code of Conduct
 

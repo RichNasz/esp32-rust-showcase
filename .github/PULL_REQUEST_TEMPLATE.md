@@ -16,5 +16,6 @@ Specs are the human Markdown. This pull request should contain that edit plus th
 - [ ] `esp32-sdd-documentation-generator` was run after the spec change
 - [ ] No agent-generated files were edited by hand
 - [ ] The regenerated files are included, not dropped to leave a spec-only diff
+- [ ] `scripts/check-firmware-pins.sh` passes from the repository root
 - [ ] Commit messages follow the Conventional Commits format (see CONTRIBUTING.md)
 - [ ] I have read and agree to the Code of Conduct

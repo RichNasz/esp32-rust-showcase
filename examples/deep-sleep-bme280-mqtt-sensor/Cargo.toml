@@ -1,6 +1,7 @@
 # AGENT-GENERATED — DO NOT EDIT BY HAND
 # Radio pin: crates.io exact versions from shared-specs/rust-toolchain.md.
-# esp-hal =1.2.1, esp-radio =1.0.0-beta.1, esp-rtos =0.4.0, esp-alloc =0.11.0.
+# esp-hal =1.2.1, esp-radio =1.0.0-beta.1, esp-rtos =0.4.0, esp-alloc =0.11.0,
+# esp-bootloader-esp-idf =0.6.0.
 # Do not git-pin these HP crates.
 # Wi-Fi STA, sleep / RTC, and RMT require esp-hal feature `unstable`.
 
@@ -16,7 +17,10 @@ esp-hal = { version = "=1.2.1", features = ["esp32c6", "unstable"] }
 esp-radio = { version = "=1.0.0-beta.1", features = ["esp32c6", "unstable", "wifi"] }
 esp-rtos = { version = "=0.4.0", features = ["esp32c6", "embassy", "esp-radio"] }
 esp-alloc = { version = "=0.11.0" }
+esp-bootloader-esp-idf = { version = "=0.6.0", features = ["esp32c6"] }
+esp-metadata-generated = "0.5"
 embassy-executor = "0.10"
+embassy-futures = "0.1"
 embassy-time = "0.5"
 embassy-net = { version = "0.9.0", features = ["dhcpv4", "medium-ethernet", "tcp", "proto-ipv4"] }
 esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }

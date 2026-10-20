@@ -17,6 +17,8 @@ use esp_hal::timer::timg::TimerGroup;
 
 mod board;
 
+esp_bootloader_esp_idf::esp_app_desc!();
+
 const SLEEP_SECS: u64 = 5;
 const HEARTBEAT_MS: u64 = 100;
 const UART_DRAIN_MS: u64 = 20;

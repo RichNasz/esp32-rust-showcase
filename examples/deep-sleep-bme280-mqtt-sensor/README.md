@@ -26,7 +26,7 @@ After a successful publish the DevKitC WS2812 blinks green three times (GRB, ≤
 
 Pin numbers live in generated `src/board.rs`. Do not hard-code GPIOs in `main.rs`.
 
-This example enables `esp-hal` feature **`unstable`** (radio, sleep / RTC, and RMT). Those APIs may change with `esp-hal` minor releases. **`esp-radio` is an unstable beta** (crates.io `=1.0.0-beta.1` with `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, and `esp-alloc` `=0.11.0`). Do not git-pin those HP crates.
+This example enables `esp-hal` feature **`unstable`** (radio, sleep / RTC, and RMT). Those APIs may change with `esp-hal` minor releases. **`esp-radio` is an unstable beta** (crates.io `=1.0.0-beta.1` with `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0`). Do not git-pin those HP crates.
 
 ## Prerequisites
 
@@ -105,7 +105,7 @@ WIFI_SSID='your-ap' WIFI_PASSWORD='your-psk' MQTT_BROKER_HOST='192.168.1.10' \
 
 Add `--no-default-features --features board-xiao-c6` to that same command when the board is a XIAO. Or edit `.cargo/config.toml` `[env]`. Cargo may cache env values — **clean rebuild** (`cargo clean`) after changing `[env]`. Do not commit real PSKs. Serial logs never print the password.
 
-MQTT stack: `embassy-net` TCP plus an in-crate MQTT 3.1.1 QoS 0 encoder (CONNECT → PUBLISH → DISCONNECT). That matches a duty-cycled sleep cycle better than a forever-running MQTT client crate, and it matches the `esp-hal` 1.2 `embassy_dhcp` networking path. No TLS. Heap (about 72 KiB internal DRAM) is for the Wi-Fi blob and `embassy-net` only. `build-std` includes `alloc`.
+MQTT stack: `embassy-net` TCP plus an in-crate MQTT 3.1.1 QoS 0 encoder (CONNECT → PUBLISH → DISCONNECT). That matches a duty-cycled sleep cycle better than a forever-running MQTT client crate, and it matches the `esp-hal` 1.2 `embassy_dhcp` networking path. No TLS. Heap (about 72 KiB internal DRAM, including the reclaimed DRAM region) is for the Wi-Fi blob and `embassy-net` only. `esp_app_desc!()` is required: current `espflash` will not flash without it, and the linker rejects reclaimed RAM without that descriptor. `build-std` includes `alloc`.
 
 ### Opening in VS Code / Cursor
 
@@ -135,9 +135,9 @@ Persistent RAM (boot counter, magic + checksum) is retained across deep sleep an
 
 ## Key Concepts
 
-- **Duty-cycled STA + MQTT** — one Instant, 15 s from wake (sense+STA+MQTT+LED); stage waits use remaining time so they cannot stack past 15 s; disconnect and drop `esp-radio` before sleep (including on deadline expiry)
+- **Duty-cycled STA + MQTT** — one Instant, 15 s from wake (sense+STA+MQTT+LED); stage waits use remaining time so they cannot stack past 15 s; poll the embassy-net runner with the socket work, drop that runner, then disconnect and drop the Wi-Fi controller before sleep (including on deadline expiry). A runner that is still alive when the controller drops leaves the sleep current in milliamps
 - **Serial and MQTT pressure** — hPa, same conversion from Pascal (`Pa/100` and `(Pa/10)%10`). Logging `pressure_pa / 10000` is about 100× too small (sea-level ~10.1)
-- **`esp-radio` Wi-Fi** — unstable beta; crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, and `esp-alloc` `=0.11.0`. Do not git-pin those HP crates. Features include `unstable` and `wifi`. APIs may change with `esp-hal` minor releases
+- **`esp-radio` Wi-Fi** — unstable beta; crates.io `esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0`. Do not git-pin those HP crates. Features include `unstable` and `wifi`. APIs may change with `esp-hal` minor releases
 - **`embassy-net` + MQTT 3.1.1 QoS 0** — one TCP publish (CONNECT → PUBLISH → DISCONNECT), no long-lived MQTT session crate, no TLS. `rust-mqtt` is MQTT 5 only and is not the stack here
 - **Compile-time credentials** — `env!` / Cargo `[env]`; never log the PSK. Placeholder `unset` skips association and still sleeps
 - **BME280 forced mode over I2C** — 400 kHz, pins from `src/board.rs`; probe 0x76 then 0x77; one-shot then standby. A stuck bus must time out (software transaction timeout and hardware `BusTimeout`) so it cannot consume the 15 s window. Skipping the conversion wait yields zeros that look like a wiring fault
@@ -145,7 +145,7 @@ Persistent RAM (boot counter, magic + checksum) is retained across deep sleep an
 - **RTC GPIO wakeup** — C6 GPIO 0–7 only; GPIO 0 active LOW with pull-up on both boards; GPIO 9 is not RTC
 - **WS2812 heartbeat** — three green blinks on success, three red blinks on failure, ≤64/255 via RMT NRZ; GPIO boards blink active LOW. RMT, sleep, and radio are **unstable** APIs
 - **USB vs UART console** — UART bridge stays up; USB Serial/JTAG drops on sleep
-- **No sdkconfig** — board differences live in Cargo features + `src/board.rs`. The radio pin is crates.io (`esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`). Do not git-pin those HP crates.
+- **No sdkconfig** — board differences live in Cargo features + `src/board.rs`. The radio pin is crates.io (`esp-hal` `=1.2.1`, `esp-radio` `=1.0.0-beta.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, `esp-bootloader-esp-idf` `=0.6.0`). Do not git-pin those HP crates.
 
 ## Power Budget
 

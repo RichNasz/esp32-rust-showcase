@@ -86,12 +86,19 @@ This is a **radio** example. Copy the crates.io radio pin from
 `esp-radio`) `=0.4.0`, and `esp-alloc` `=0.11.0`. Do not git-pin the HP radio crates.
 
 Wi-Fi STA uses `esp-radio` + `embassy-net` DHCPv4, matching the `esp-hal` 1.2
-`embassy_dhcp` example (Interface + WifiController + net runner task). Heap is required
-for the Wi-Fi blob and `embassy-net` (about 72 KiB internal DRAM). The image must emit an ESP-IDF-compatible application descriptor
-(`esp-bootloader-esp-idf` `=0.6.0` from the crates.io radio pin). Current `espflash`
-will not flash without it. `#[ram(reclaimed)]` is allowed only because that
-descriptor is present — the attribute is rejected without it. `build-std` must include `alloc`. Do not allocate
-after init except as the radio / net stack does internally.
+`embassy_dhcp` example (Interface + WifiController). Heap is required
+for the Wi-Fi blob and `embassy-net` (about 72 KiB internal DRAM). Part of that
+budget is the reclaimed DRAM region. The image must emit an ESP-IDF-compatible
+application descriptor (`esp-bootloader-esp-idf` `=0.6.0` from the crates.io
+radio pin). Current `espflash` will not flash without it, and the linker
+rejects the reclaimed region without that descriptor. `build-std` must include
+`alloc`. Do not allocate after init except as the radio / net stack does
+internally.
+
+Poll the embassy-net runner together with the socket work, and drop the runner
+before dropping the Wi-Fi controller. A runner that is still alive when the
+controller drops deinits the radio while the driver is still being polled, and
+the sleep current stays in milliamps.
 
 **MQTT choice:** MQTT 3.1.1 QoS 0, single CONNECT → PUBLISH → DISCONNECT over an
 `embassy-net` TCP socket. Do **not** pull a long-lived Embassy MQTT client (those assume
@@ -147,8 +154,9 @@ skip association and still sleep.
   hPa at the MQTT `pres` scale), MQTT success (topic only), radio teardown, and sleep
   entry. WARN for timeouts, active-window expiry, and unexpected wakeup causes. ERROR for
   init failures. Never print SSID+password together; never print the PSK.
-- Concurrency: one net-stack runner task plus main. Do not spawn reconnect loops that
-  outlive the active window.
+- Concurrency: poll the net runner with the socket work. Drop that runner
+  before the Wi-Fi controller. Do not spawn a runner that outlives the
+  controller or the active window.
 - Error recovery: any failed stage logs and continues to teardown + sleep.
 - CPU clock: max is acceptable for the short Wi-Fi window (matches HAL radio examples).
 
@@ -168,6 +176,7 @@ skip association and still sleep.
 - `sleep_deep` panics if no wakeup source is enabled or if the timer deadline is already
   too near. Arm the 15 s deadline immediately before sleep, after radio teardown.
 - Tear down Wi-Fi before sleep or the sleep floor is milliamps, not microamps.
+  Drop the net runner first, then disconnect and drop the controller.
 - `env!` credentials: changing `.cargo/config.toml` `[env]` may require a clean rebuild
   (Cargo env-cache bug). Document that in the README.
 - BME280 forced mode needs a short conversion wait; skipping it yields zeros that look

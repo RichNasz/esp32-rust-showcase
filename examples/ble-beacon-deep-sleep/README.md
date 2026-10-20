@@ -14,7 +14,7 @@
 
 A spec is Markdown a person writes; the agent generates the crate from it. See [Using With AI Agents](../../docs/guides/using-with-ai-agents.md).
 
-`esp-hal` feature **`unstable`** is required for the radio, sleep / RTC, and RMT. Those APIs may change with an `esp-hal` minor release. **`esp-radio` is an unstable beta** (crates.io `=1.0.0-beta.1` with `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, and `esp-alloc` `=0.11.0`, feature `ble`). Do not git-pin those HP crates. The host is crates.io `trouble-host` **0.7**.
+`esp-hal` feature **`unstable`** is required for the radio, sleep / RTC, and RMT. Those APIs may change with an `esp-hal` minor release. **`esp-radio` is an unstable beta** (crates.io `=1.0.0-beta.1` with feature `ble`, plus `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0`). Do not git-pin those HP crates. The host is crates.io `trouble-host` **0.7**.
 
 ## Overview
 
@@ -83,7 +83,7 @@ Optional XIAO ESP32-C6:
 cargo run --release --no-default-features --features board-xiao-c6
 ```
 
-Radio crates are the crates.io pin: `esp-hal` `=1.2.1`, `esp-radio` (features `esp32c6`, `unstable`, `ble`) `=1.0.0-beta.1`, `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`) `=0.4.0`, and `esp-alloc` `=0.11.0`. Do not git-pin those HP crates. `trouble-host` 0.7 comes from crates.io. BLE buffers use about **72 KiB** of internal DRAM.
+Radio crates are the crates.io pin: `esp-hal` `=1.2.1`, `esp-radio` (features `esp32c6`, `unstable`, `ble`) `=1.0.0-beta.1`, `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`) `=0.4.0`, `esp-alloc` `=0.11.0`, and `esp-bootloader-esp-idf` `=0.6.0`. Do not git-pin those HP crates. `trouble-host` 0.7 comes from crates.io. BLE buffers use about **72 KiB** of internal DRAM. Part of that budget is the reclaimed DRAM region, which the linker rejects without `esp_app_desc!()`.
 
 Use the DevKitC **left** USB-C UART-C port so the monitor stays up through sleep.
 
@@ -143,7 +143,7 @@ A GPIO 0 wake names a GPIO cause instead of `timer`. XIAO logs the GPIO 15 activ
 - **Persistent counters + BLE address** — `#[esp_hal::ram(unstable(rtc_fast, persistent))]`; magic + checksum; lost on power-cycle
 - **LED = advertising-active only** — dark during init and teardown; DevKitC blue at 64/255; XIAO active LOW
 - **GPIO 9 is not RTC** — XIAO BOOT cannot wake from deep sleep; GPIO 0 is the RTC wake pin
-- **Heap** — about 72 KiB internal DRAM for BLE buffers; `esp_app_desc!()` is required for current `espflash`
+- **Heap** — about 72 KiB internal DRAM for BLE buffers, including the reclaimed DRAM region; `esp_app_desc!()` is required for current `espflash` and for that reclaimed region
 - **No sdkconfig** — board differences live in Cargo features and `src/board.rs`
 
 ## Advertising payload

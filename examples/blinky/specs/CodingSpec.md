@@ -29,8 +29,9 @@ numbers. Chip feature is `esp32c6` only.
 
 Use `esp_hal::rmt` (`PulseCode` newtype on the 1.2 line). Enable `esp-hal` feature
 `unstable` — the RMT API requires it. Encode 800 kHz NRZ (T0H ~300 ns / T0L ~900 ns,
-T1H ~900 ns / T1L ~300 ns) and a reset/latch of at least 50 µs low, preferably in the
-RMT buffer. Hold the line LOW after a frame. Pack colours as GRB, not RGB.
+T1H ~900 ns / T1L ~300 ns) and a reset/latch of at least 280 µs low in the RMT
+buffer. The WS2812B minimum is 50 µs; the longer gap is what latches clone parts.
+Hold the line LOW after a frame. Pack colours as GRB, not RGB.
 
 Write black once at init so the LED starts dark. Cap every channel at 64/255 (a
 maximum, not a floor). Cycle a fixed table at that cap: red, green, blue, cyan,
@@ -49,8 +50,9 @@ Do not run the RMT WS2812 encoder on this board.
 
 - Breathing period: 4 seconds total (2 s up, 2 s down) on both paths.
 - No heap. No `std`. No FreeRTOS. No `sdkconfig`.
-- Non-radio crates.io pins: `esp-hal` 1.2.1, `esp-rtos` 0.4.0,
-  `esp-bootloader-esp-idf` 0.6.0. Do not git-pin the radio stack.
+- Non-radio crates.io pins use an exact `=` so Cargo cannot select a later
+  1.2.x: `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, `esp-bootloader-esp-idf`
+  `=0.6.0`. Do not git-pin the radio stack.
 - The image must include an ESP-IDF-compatible application descriptor
   (`esp-bootloader-esp-idf`). Current `espflash` will not flash without it.
   This crate is image metadata, not ESP-IDF.

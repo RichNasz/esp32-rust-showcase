@@ -87,7 +87,8 @@ async fn run_ws2812(rmt: esp_hal::peripherals::RMT<'static>, led_pin: AnyPin<'st
         t0l: 9,
         t1h: 9,
         t1l: 3,
-        reset_ticks: 500,
+        // 300 µs low. WS2812B latches at 50 µs; the longer gap covers clones.
+        reset_ticks: 3000,
     };
 
     let rmt = match Rmt::new(rmt, Rate::from_mhz(80)) {

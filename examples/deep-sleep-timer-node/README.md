@@ -22,7 +22,7 @@ On the DevKitC WS2812, each heartbeat is one colour drawn at random from the 6-c
 
 Pin numbers live in generated `src/board.rs`. Do not hard-code GPIOs in `main.rs`.
 
-Sleep, RTC, and RMT APIs need `esp-hal` feature `unstable`. Those APIs may change with `esp-hal` minor releases. This is a non-radio crate: crates.io `esp-hal` 1.2.1 and `esp-rtos` 0.4.0. Do not mix those with a git-pinned `esp-hal`.
+Sleep, RTC, and RMT APIs need `esp-hal` feature `unstable`. Those APIs may change with `esp-hal` minor releases. This is a non-radio crate. Pins use an exact `=` so Cargo cannot select a later 1.2.x: crates.io `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, and `esp-bootloader-esp-idf` `=0.6.0`. Do not mix those with a git-pinned `esp-hal`.
 
 GPIO 9 (XIAO boot button) is not an RTC GPIO and cannot wake the chip from deep sleep. This example is timer-only. DevKitC boot (GPIO 0) is RTC-capable and is not used as a wakeup source here.
 

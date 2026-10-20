@@ -25,7 +25,7 @@ Cargo board features select the path (default `board-devkitc-c6`):
 
 Pin numbers live in generated `src/board.rs`. Do not hard-code GPIOs in `main.rs`.
 
-This crate enables `esp-hal` feature `unstable` because the RMT (WS2812) and LEDC APIs are unstable on the 1.2.1 pin and may change with `esp-hal` minor releases. It does not enter deep sleep and it does not use the radio. Non-radio pins are crates.io `esp-hal` 1.2.1 and `esp-rtos` 0.4.0. Do not mix those with a git-pinned `esp-hal`.
+This crate enables `esp-hal` feature `unstable` because the RMT (WS2812) and LEDC APIs are unstable on the 1.2.1 pin and may change with `esp-hal` minor releases. It does not enter deep sleep and it does not use the radio. Non-radio pins use an exact `=` so Cargo cannot select a later 1.2.x: crates.io `esp-hal` `=1.2.1`, `esp-rtos` `=0.4.0`, and `esp-bootloader-esp-idf` `=0.6.0`. Do not mix those with a git-pinned `esp-hal`.
 
 ## Prerequisites
 
@@ -114,7 +114,7 @@ The blue user LED on GPIO 15 starts dark, then brightens, and breathes over abou
 - **Standalone Cargo crate** — `#![no_std]` `#![no_main]`; Embassy entry via `esp-rtos`; no workspace at the repo root
 - **Board features** — default `board-devkitc-c6`; optional `board-xiao-c6`; chip feature `esp32c6` only
 - **`src/board.rs`** — GPIO / LED / polarity constants from `board-specs/`; `compile_error!` if both or neither board features are enabled
-- **WS2812 via RMT** — GRB byte order, 800 kHz NRZ, brightness cap 64/255; `esp-hal` RMT is an **unstable** API and may change with `esp-hal` minor releases
+- **WS2812 via RMT** — GRB byte order, 800 kHz NRZ, brightness cap 64/255, reset/latch at least 280 µs low (the WS2812B minimum is 50 µs; the longer gap latches clone parts); `esp-hal` RMT is an **unstable** API and may change with `esp-hal` minor releases
 - **LEDC PWM** — XIAO C6 inverts duty so the breath still starts dark and brightens first; LEDC is an **unstable** API and may change with `esp-hal` minor releases
 - **Embassy time** — 4 s breath cadence with `embassy_time`; no busy-wait
 - **Application descriptor** — `esp-bootloader-esp-idf` `esp_app_desc!()`; current `espflash` will not flash without it. This is image metadata, not ESP-IDF. A missing descriptor fails at `espflash` with "ESP-IDF App Descriptor missing" before the firmware runs.

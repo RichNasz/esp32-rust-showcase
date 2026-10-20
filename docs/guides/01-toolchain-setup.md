@@ -6,7 +6,9 @@
 
 # 01 — Toolchain Setup
 
-Install the compiler and the flasher used by every example. Pins and the MSRV live in [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md). There is no ESP-IDF install, no `espup`, and no `esp` rustup channel. [Why ESP-IDF is not required](why-esp-idf-is-not-required.md).
+Install the compiler and the flasher used by the examples. Pins and the MSRV live in [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md). There is no ESP-IDF install, no `espup`, and no `esp` rustup channel. [Why ESP-IDF is not required](why-esp-idf-is-not-required.md).
+
+The Thread leader role is the exception. In `examples/thread-udp-pair`, feature `role-leader` compiles OpenThread from C and needs Clang, CMake, and Ninja. The default `cargo run` is the child role and does not. A missing leader link is not a leader pass. Those tools are not required for the other examples.
 
 `no_std` here means Rust without the standard library, running on the chip through `esp-hal`. ESP32-C6 is RISC-V, so rustup **stable** already has the target. Xtensa chips need `espup`; they are not in v1.
 

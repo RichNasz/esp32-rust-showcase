@@ -15,7 +15,7 @@ These files are starting points the agent reads when it generates a crate or a b
 | `FunctionalSpec.template.md` | esp32-sdd-functional-spec-creator | Structure and required sections for a new example functional specification (C6 board checklist) |
 | `BoardSpec.template.md` | esp32-board-spec-generator | Standard section layout for a new board specification |
 | `main.rs.template` | esp32-sdd-full-project-generator | `#![no_std]` `#![no_main]` Embassy entry stub |
-| `Cargo.toml.template` | esp32-sdd-full-project-generator | Non-radio crates.io pins + comment pointing at radio git pin; feature `esp32c6` |
+| `Cargo.toml.template` | esp32-sdd-full-project-generator | Crates.io exact pins for HP crates (radio and non-radio). The only git pin is nested `esp-lp-hal`. Feature `esp32c6` |
 | `build.rs.template` | esp32-sdd-full-project-generator | Linker config; emit `linkall.x` last |
 | `board.rs.template` | esp32-sdd-full-project-generator | Mutually exclusive board-feature `compile_error!` |
 | `gitignore.template` | esp32-sdd-full-project-generator | Must exclude `target/` and binaries |

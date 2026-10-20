@@ -57,4 +57,6 @@ Guide 02 is optional for task B: `skills/` is already in the clone. Guides 05–
 
 ESP-IDF is not required. Neither are `espup` and the `esp` rustup channel. [Why ESP-IDF is not required](why-esp-idf-is-not-required.md).
 
+The Thread leader role in `examples/thread-udp-pair` (`role-leader`) also needs Clang, CMake, and Ninja on the host. The default `cargo run` is the child role and does not. A missing leader link is not a leader pass.
+
 Task B also needs an agent that can read Markdown. Task A does not.

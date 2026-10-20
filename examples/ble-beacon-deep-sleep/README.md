@@ -203,7 +203,7 @@ Testing philosophy: automated first, manual only when hardware observation is un
    cargo clippy --release -- -D warnings
    ```
 
-   Pass criterion: both commands exit 0 with no warnings. This also checks that the radio git pin resolves (RMT + RTC sleep + `esp-radio` + TrouBLE). It does not need a board.
+   Pass criterion: both commands exit 0 with no warnings. This also checks that the crates.io radio pin resolves (RMT + RTC sleep + `esp-radio` + TrouBLE). It does not need a board.
 
 2. **T-A2 — Zero-warning build (Seeed XIAO ESP32-C6)**
 

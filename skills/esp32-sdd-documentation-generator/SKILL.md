@@ -52,6 +52,7 @@ MANDATORY: First read and follow `shared-specs/AIGenLessonsLearned.md` before do
 
    Must **not** list ESP-IDF, `espup`, or the `esp` rustup channel as prerequisites.
    After the required list, add 2–4 sentences of *why* (rust-on-metal `esp-hal`, RISC-V C6 uses rustup stable, Cargo + `espflash`) and link `docs/guides/why-esp-idf-is-not-required.md`. Do not stop at “not required.” Generate that guide from `documentation-generation-spec.md` section “Guide: Why ESP-IDF is not required.”
+   Then one sentence, not a new required-list bullet: the Thread leader feature in `examples/thread-udp-pair` (`role-leader`) also needs Clang, CMake, and Ninja; the default `cargo run` is the child role and does not; a missing leader link is not a pass. Do not list those host tools as prerequisites for every example. Put the same sentence in `docs/guides/01-toolchain-setup.md` and `docs/guides/README.md`.
 
 6. Root README **Quick Start** from `examples/<name>`:
 

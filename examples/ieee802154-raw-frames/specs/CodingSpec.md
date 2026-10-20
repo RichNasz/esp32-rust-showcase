@@ -84,4 +84,4 @@ cannot be constructed. Do not discard a transmit `Result`.
 ## Application descriptor
 
 Invoke `esp_bootloader_esp_idf::esp_app_desc!()` from `src/main.rs`. The bootloader
-crate is the git pin, feature `esp32c6`. This is image metadata, not ESP-IDF.
+crate is the crates.io pin (`=0.6.0`, feature `esp32c6`). This is image metadata, not ESP-IDF.

@@ -120,7 +120,7 @@ A label is not a pass/fail from a board. Do not write "tested", "verified on har
 ### Where to render it
 
 - **Root `README.md` examples table:** columns `#`, Example, Description, Status, Link. Description is the one-liner from the master catalog, not a retired claim (no "multi-year battery", no "signed production updates", no "Wi-Fi-free mesh"). The Features bullet must state how many crates exist and how many examples are specs only, using the counts in the status table. It also says Thread is a two-node lab link and not a border router, and that Matter over Wi-Fi uses test credentials, is not Matter over Thread, and is not a certified product.
-- **`examples/README.md`:** the learning-progression table gains a Status column copied from the master spec. State the Firmware generated count and the Specs only count from that table. When Specs only is zero, say every example folder contains a generated crate and the locked directory tree is the layout on disk. When it is not zero, name those folders and say they contain `specs/` and `README.md` until `esp32-sdd-full-project-generator` runs. The intro repeats the Features limits: Thread is not a border router; Matter over Wi-Fi uses test credentials, is not Matter over Thread, and is not a certified product. The build snippet stays on `blinky`.
+- **`examples/README.md`:** the learning-progression table gains a Status column copied from the master spec. State the Firmware generated count and the Specs only count from that table. When Specs only is zero, say every example folder contains a generated crate. The locked directory tree is the required base, not the whole layout on disk. After the tree, list the allowed extras from `specs/example-project-structure-spec.md` and say they appear only when the FunctionalSpec requires them (`src/board.rs` and other `src/` modules, `partitions.csv`, `espflash.toml`, `certs/`, nested `lp-core/`, `Cargo.lock`). When Specs only is not zero, name those folders and say they contain `specs/` and `README.md` until `esp32-sdd-full-project-generator` runs. The intro repeats the Features limits: Thread is not a border router; Matter over Wi-Fi uses test credentials, is not Matter over Thread, and is not a certified product. The build snippet stays on `blinky`.
 - **`docs/README.md` examples catalog:** add a Status column. The opening paragraph must match the catalog (ESP-NOW is a sensor-to-gateway pair; OTA is a slot flip; LP-core is GPIO 0–7; raw IEEE 802.15.4 is node and peer data frames, not Thread, Zigbee, or a mesh; Thread is a two-node UDP lab link, not a border router; Matter over Wi-Fi uses test credentials, is not Matter over Thread, and is not a certified product). Do not claim a mesh.
 - **Each `examples/<name>/README.md`:** an **Implementation status** section immediately after the title and tagline, before Overview. Quote the label, the date, and the note from the master-spec row. **Specs only** READMEs put `cargo build` / `cargo run` under a heading **After the crate is generated**, and say in that section that those commands fail today because there is no `Cargo.toml`.
 - **`specs/README.md`:** the `showcase-master-spec.md` row mentions the implementation-status table.
@@ -142,6 +142,7 @@ These strings belonged to `esp32-sdd-showcase`. Do not put them back into genera
 - `skills/esp32-sdd-documentation-generator` is titled for this repository (ESP32 Rust SDD Showcase). Its description does not say "100% AI-first".
 - C6 board specs call the low-power core the LP core. They do not say it runs ULP programs. A sentence that the LP core is not the ESP32 ULP coprocessor may stay.
 - `templates/build.rs.template`, and every crate whose FunctionalSpec does not require LP-core firmware, says the file emits the linker script and does not invoke CMake. It does not say the spec requires an LP-core image.
+- `templates/Cargo.toml.template` is the non-radio seed. Its header says HP crates, radio and non-radio, use crates.io exact pins from `shared-specs/rust-toolchain.md`. It must not tell the reader to git-pin `esp-hal`, `esp-radio`, `esp-rtos`, or `esp-alloc` at tag `esp-hal-v1.2.1`. The only git pin it names is `esp-lp-hal` in a nested `lp-core/` crate. `esp-hal`, `esp-rtos`, and `esp-bootloader-esp-idf` use exact `=` versions (`=1.2.1`, `=0.4.0`, `=0.6.0`). `templates/README.md` describes that file as crates.io exact pins for HP crates. It does not say the comment points at a radio git pin.
 - Partition profile `dual-ota` keeps bootloader `nvs` and `phy_init`. It has no extra `storage` partition and does not call any row application NVS. The table ends at `0x320000`. `examples/secure-ota-https/partitions.csv`, `espflash.toml`, and that example's README copy this profile.
 
 ---
@@ -219,6 +220,8 @@ Must list:
 Must **not** list ESP-IDF, `idf.py`, or `espup` as prerequisites.
 
 After that list, add 2–4 sentences on why ESP-IDF, `espup`, and the `esp` rustup channel are unused, plus a link to `docs/guides/why-esp-idf-is-not-required.md`. Facts are in **Guide: Why ESP-IDF is not required**. "Not required" alone is not enough.
+
+Then one sentence, not a new bullet in the required list: the Thread leader feature in `examples/thread-udp-pair` (`role-leader`) also needs Clang, CMake, and Ninja on the host; the default `cargo run` is the child role and does not; a missing leader link is not a leader pass. Do not present those host tools as prerequisites for every example. The same sentence appears in `docs/guides/01-toolchain-setup.md`, in `docs/guides/README.md` Prerequisites, and in the prerequisites step of `skills/esp32-sdd-documentation-generator/SKILL.md`.
 
 ---
 
@@ -386,6 +389,9 @@ The Testing section sits where **Example README required order** places it (afte
    not an embedded-Rust expert. Do not assume they know spec-driven development; follow **Readers**
    when the Testing section mentions specs, skills, or regeneration (one sentence plus a link is
    enough inside an example README).
+6. Copy the TestSpec's pin wording. When the TestSpec says the crates.io radio pin resolves,
+   the README says crates.io. Do not rewrite that check as a git pin. Do not tell readers to
+   git-pin HP radio crates at tag `esp-hal-v1.2.1`.
 
 ### When TestSpec.md Is Absent
 
@@ -515,7 +521,7 @@ Behavior table.
 | Serial monitor during deep sleep | UART bridge chip (CP2104, CH343P, etc.) → "Stays connected throughout sleep"; Native USB Serial/JTAG → "Drops and reconnects on wake (USB Serial/JTAG)"; Native USB CDC → "Drops and reconnects on wake (USB CDC)" |
 | LED feedback | WS2812/SK6812 → "Color: green = success, red = failure, off = sleep (WS2812)"; Simple GPIO active LOW → "On / off, active LOW"; Simple GPIO active HIGH → "On / off, active HIGH" |
 | WiFi scan coverage | v1 C6 boards are 2.4 GHz Wi-Fi 6. Omit this column unless a C6 board-spec documents a different band. |
-| Deep sleep floor | From board-spec Power Management table deep sleep current figure; use "See board-spec" if no figure is documented |
+| Deep sleep floor | From board-spec Power Management table deep sleep current figure; use "See board-spec" if no figure is documented. Exception: `lp-core-wakeup` leaves the LP core clocked. That example's cells say "RTC-only board-spec floor; LP-on current unmeasured" and do not print the microamp figure as this firmware's floor. |
 
 ### Formatting rules
 
@@ -668,8 +674,8 @@ Every path below is required. Do not add another guide for the AI-agent reader. 
 
 | File | Required content |
 |---|---|
-| `docs/guides/README.md` | One row per guide in this table, with a task-shaped description (what the reader is trying to do). Recommended Reading Order shows task A and task B from **Readers**. C/C++ readers are pointed at the why-ESP-IDF guide first. Prerequisites match the root README list. |
-| `docs/guides/01-toolchain-setup.md` | Install rustup stable, `rust-src`, clippy, rustfmt, target `riscv32imac-unknown-none-elf`, and `espflash`. MSRV comes from `shared-specs/rust-toolchain.md`. Link the why-ESP-IDF guide next to the "no ESP-IDF" statement. Name the DevKitC left UART-C port and the XIAO USB port. The common runner is `espflash flash --monitor`. A custom partition table appends `--partition-table partitions.csv`. Close with one sentence: this page installs the compiler and flasher; the agent path is guide 02 and `using-with-ai-agents.md`. |
+| `docs/guides/README.md` | One row per guide in this table, with a task-shaped description (what the reader is trying to do). Recommended Reading Order shows task A and task B from **Readers**. C/C++ readers are pointed at the why-ESP-IDF guide first. Prerequisites match the root README list, including the Thread leader host-tool sentence. |
+| `docs/guides/01-toolchain-setup.md` | Install rustup stable, `rust-src`, clippy, rustfmt, target `riscv32imac-unknown-none-elf`, and `espflash`. MSRV comes from `shared-specs/rust-toolchain.md`. Link the why-ESP-IDF guide next to the "no ESP-IDF" statement. Name the DevKitC left UART-C port and the XIAO USB port. The common runner is `espflash flash --monitor`. A custom partition table appends `--partition-table partitions.csv`. Say the Thread leader feature in `examples/thread-udp-pair` (`role-leader`) also needs Clang, CMake, and Ninja, that the default `cargo run` is the child role, and that a missing leader link is not a pass. Those tools are not required for the other examples. Close with one sentence: this page installs the compiler and flasher; the agent path is guide 02 and `using-with-ai-agents.md`. |
 | `docs/guides/02-install-skills.md` | Audience rules in **Readers**. After the definition, cover Claude Code, Grok, and any agent that can read Markdown. Optional `npx @agentskills/cli install RichNasz/esp32-rust-showcase#skills` stays optional. |
 | `docs/guides/03-first-example.md` | Task A. Open only `examples/blinky/`. DevKitC left USB-C. `cargo build --release`, `cargo clippy -- -D warnings`, `cargo run --release`. XIAO feature line. Closing note per **Readers**. |
 | `docs/guides/04-new-example.md` | Audience paragraphs from **Readers**, then the numbered workflow, then the locked layout from `specs/example-project-structure-spec.md` with each path labeled human-written or agent-written, then the **Allowed extras** list from that spec. **Chip ≠ board** one-liner in Hardware bar. A domain skill runs only for WS2812, BLE, deep sleep, hardware AES, or LP-core. ESP-NOW unicast, raw IEEE 802.15.4, Thread UDP pair, Matter over Wi-Fi, and HTTPS CRC slot-flip are steps inside `esp32-sdd-full-project-generator`, not separate skills. Do not send CRC HTTPS OTA to `esp32-hardware-crypto-configurer`. |

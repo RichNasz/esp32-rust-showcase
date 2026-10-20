@@ -64,14 +64,14 @@ A GPIO level alone produces no visible output — use an RMT (or equivalent `esp
 
 | Board | Serial monitor during deep sleep | LED feedback | Deep sleep floor |
 | --- | --- | --- | --- |
-| Espressif ESP32-C6-DevKitC-1-N8 *(default)* | Stays connected (left USB-C UART bridge) | WS2812: three green blinks (~200 ms) on GPIO wake, one slower amber blink (~500 ms) on timer wake, off before sleep | ~7–15 µA |
-| Seeed XIAO ESP32-C6 | Drops and reconnects on wake (USB Serial/JTAG) | On / off, active LOW, same timings. No colour | ~15 µA |
+| Espressif ESP32-C6-DevKitC-1-N8 *(default)* | Stays connected (left USB-C UART bridge) | WS2812: three green blinks (~200 ms) on GPIO wake, one slower amber blink (~500 ms) on timer wake, off before sleep | RTC-only board-spec floor; LP-on current unmeasured |
+| Seeed XIAO ESP32-C6 | Drops and reconnects on wake (USB Serial/JTAG) | On / off, active LOW, same timings. No colour | RTC-only board-spec floor; LP-on current unmeasured |
 
 The first-time difference that matters is the serial port. On DevKitC-C6, use the **left** USB-C UART bridge: the monitor stays connected and is silent during sleep. On XIAO, USB Serial/JTAG drops on the first sleep and `cargo run` exits; the port comes back on wake. That is expected, not a crash. Treat XIAO as LED-only observation unless one cycle of log is enough. The right USB-C port on DevKitC is the same USB Serial/JTAG drop.
 
 GPIO 9 on XIAO cannot wake the chip from deep sleep. It is not an RTC or LP GPIO. Wire a button to D0 (GPIO 0), or use the timer blinks. The wake pad stays GPIO 0 on both boards.
 
-The deep-sleep floor column is the board's RTC-only figure. This example leaves the LP core clocked, so sleep current is **above** that floor and is unmeasured.
+The deep-sleep floor column names the board-spec RTC-only floor and does not print it as this firmware's current. This example leaves the LP core clocked, so sleep current is **above** that floor and is unmeasured.
 
 ## Build & Flash
 

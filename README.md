@@ -79,6 +79,8 @@ Open **only** `examples/<name>/` in VS Code or Cursor when you are building that
 
 ESP-IDF, `idf.py`, `espup`, and the `esp` rustup channel are not prerequisites. This repository uses Espressif’s `no_std` HAL, `esp-hal`. ESP32-C6 is RISC-V, so rustup stable already has the compiler target. `espup` exists for Xtensa chips, which are not in v1. Build and flash with Cargo and `espflash`. Full explanation: [Why ESP-IDF is not required](docs/guides/why-esp-idf-is-not-required.md).
 
+The Thread leader role in `examples/thread-udp-pair` (`role-leader`) also needs Clang, CMake, and Ninja on the host. The default `cargo run` is the child role and does not. A missing leader link is not a leader pass.
+
 ## Examples
 
 Eleven examples, ordered by complexity. Start with `blinky`. **Firmware generated** means the crate is in the tree. It is not a hardware test result. As of 2026-10-20 every row is Firmware generated.

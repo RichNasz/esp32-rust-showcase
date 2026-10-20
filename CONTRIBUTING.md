@@ -1,58 +1,63 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
-     Generated from specs/contributing-spec.md using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Generated from specs/ using esp32-sdd-documentation-generator skill
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Contributing
 
-## The Golden Rule
+You want to change this project, including by using an AI coding agent to change the ESP32 Rust. You do not need to already know spec-driven development (SDD).
 
-**Never edit agent-generated files directly.** If something looks wrong in a generated file,
-fix the spec that drives it and regenerate.
+A **spec** is a Markdown file a person writes. It is the source of truth for firmware and for documentation. The agent reads it and writes the Rust and the Markdown. Generated files (`src/`, `Cargo.toml`, READMEs, `/docs/`, and everything outside the table below) are overwritten the next time the agent generates. When output is wrong, change the spec and ask the agent to generate again.
 
-## What You Can Edit
+The longer lesson is [Using an AI coding agent](docs/guides/using-with-ai-agents.md).
+
+## What you may edit
 
 | Path | You may edit? |
 |---|---|
-| `specs/*.md` | Yes — human-authored source of truth |
-| `shared-specs/*.md` | Yes — platform-wide constraints |
-| `examples/*/specs/FunctionalSpec.md` | Yes — per-example goals and requirements |
-| `examples/*/specs/CodingSpec.md` | Yes — per-example implementation guidance |
-| `examples/*/specs/TestSpec.md` | Yes — per-example testing requirements |
-| Everything else | No — agent-generated; regenerate instead |
+| `specs/*.md` | Yes — repo-wide rules |
+| `shared-specs/*.md` | Yes — platform constraints shared by every example |
+| `examples/*/specs/FunctionalSpec.md` | Yes — what the example does |
+| `examples/*/specs/CodingSpec.md` | Yes — architecture and constraints, no code |
+| `examples/*/specs/TestSpec.md` | Yes — how to check the example |
+| Everything else | No — the agent generates it |
 
 ## Workflow
 
-1. Edit the relevant file in `specs/`, `shared-specs/`, or `examples/*/specs/`.
-2. Activate the documentation generator:
-   > "Activate esp32-sdd-documentation-generator and rebuild all documentation."
-3. If an example's FunctionalSpec or CodingSpec changed, also activate
-   `esp32-sdd-full-project-generator` so the crate is regenerated.
-4. Commit **both** the spec change and all regenerated files together.
+1. Edit a file in `specs/`, `shared-specs/`, or `examples/*/specs/`.
+2. If the change affects documentation, ask the agent: "Activate esp32-sdd-documentation-generator and rebuild all documentation."
+3. If the change affects a crate, ask the agent: "Activate esp32-sdd-full-project-generator".
+4. Those phrases are typed to the agent, not in the shell.
+5. Commit the spec edit and the files the agent regenerated. Open the pull request with both.
 
-## Commit Convention
+A pull request contains the spec edit and the regenerated files. Do not hand-edit generated files. Do not open a pull request that only tweaks generated Rust or Markdown. Do not drop the regenerated files to leave a spec-only diff.
 
-All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) format:
+People write specs. The agent writes the Rust and the Markdown.
+
+License: MIT. Copyright holder: Richard Naszcyniec.
+
+## Commit convention
+
+All commits use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 <type>(<scope>): <short summary>
 ```
 
-**Types:**
-
 | Type | When to use |
 |---|---|
-| `feat` | New example, new skill, new spec section |
-| `fix` | Correction to spec content or generated output |
-| `spec` | Spec-only change (no generated output yet) |
-| `gen` | Regenerated files following a spec change |
-| `chore` | Maintenance (gitignore, tooling, non-spec files) |
-| `docs` | Documentation corrections that do not involve spec changes |
+| `feat` | New example, new skill, or new spec section |
+| `fix` | Correction to spec content, with regenerated output in this commit or the next `gen` commit |
+| `spec` | Spec-only change, only when generation has not been run yet |
+| `gen` | Regenerated files that follow a spec change already committed |
+| `spec+gen` | Spec edit and the regenerated files in one commit |
+| `chore` | Maintenance of files that are not agent-generated (for example `.gitignore`) |
+| `docs` | Do not use this type here. A documentation correction is a spec edit plus regeneration |
 
-**Scope:** optional; use the folder name (e.g., `blinky`, `skills`, `shared-specs`).
+Scope is optional. Use the folder name (`blinky`, `skills`, `shared-specs`).
 
-**Examples:**
+Summary: imperative mood, lowercase, no trailing period, 72 characters or fewer.
 
 ```
 feat(blinky): add FunctionalSpec for LED blink example
@@ -60,21 +65,10 @@ gen: regenerate docs after contributing-spec update
 fix(shared-specs): correct esp-hal version pin to 1.2.1
 chore: update .gitignore to exclude target/
 spec: retarget coding conventions to no_std
+spec+gen: describe the spec workflow and regenerate the docs
 ```
 
-Short summary: imperative mood, lowercase, no trailing period, ≤72 characters total.
-
-**AI attribution trailer:**
-
-For `gen:` and `spec+gen:` commits, append a `Generated-by:` trailer so that AI involvement is
-machine-readable in `git log` and searchable across the repository history. Use the
-**invoking agent name** (the agent that produced the commit), not a hardcoded product string.
-
-```
-Generated-by: Grok
-```
-
-Full example:
+For `gen` and `spec+gen` commits, append a trailer. Use the name of the agent that produced the commit.
 
 ```
 gen: regenerate CONTRIBUTING.md after contributing-spec update
@@ -82,23 +76,12 @@ gen: regenerate CONTRIBUTING.md after contributing-spec update
 Generated-by: Grok
 ```
 
-This aligns with the OpenSSF Security-Focused Guide for AI Code Assistant Instructions
-(Sep 2025) recommendation for machine-readable AI attribution in version history.
-
-## Submitting a Pull Request
-
-- PRs should contain a spec change as the driver — generated files are acceptable as companions.
-- Never open a PR that edits generated files without a corresponding spec change.
-- Every generated file must carry the standard agent-generated header comment.
-- Use the PR template (`.github/PULL_REQUEST_TEMPLATE.md`) — it enforces the SDD checklist.
+This matches the OpenSSF guidance (September 2025) for machine-readable AI attribution in git history.
 
 ## Code of Conduct
 
-This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). By participating you agree to
-uphold its standards.
+Participation is covered by [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Security
 
-To report a security concern, see [SECURITY.md](SECURITY.md).
-
-For full details see [specs/contributing-spec.md](specs/contributing-spec.md).
+Do not put vulnerability details in a public issue. See [SECURITY.md](SECURITY.md).

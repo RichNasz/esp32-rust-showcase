@@ -1,21 +1,16 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
-     Generated from specs/contributing-spec.md using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Generated from specs/ using esp32-sdd-documentation-generator skill
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Code of Conduct
 
 ## Our Pledge
 
-We as members, contributors, and maintainers pledge to make participation in this project a
-harassment-free experience for everyone, regardless of age, body size, visible or invisible
-disability, ethnicity, sex characteristics, gender identity and expression, level of experience,
-education, socio-economic status, nationality, personal appearance, race, caste, colour, religion,
-or sexual identity and orientation.
+We as members, contributors, and maintainers pledge to make participation in this project a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, colour, religion, or sexual identity and orientation.
 
-We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive,
-and healthy community.
+We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.
 
 ## Expected Behaviour
 
@@ -38,20 +33,9 @@ and healthy community.
 
 ## Enforcement
 
-Project maintainers are responsible for clarifying and enforcing these standards. Maintainers
-have the right to remove, edit, or reject contributions that violate this code of conduct, and
-to temporarily or permanently ban contributors for repeated or severe violations.
+Project maintainers are responsible for clarifying and enforcing these standards. Maintainers have the right to remove, edit, or reject contributions that violate this code of conduct, and to temporarily or permanently ban contributors for repeated or severe violations.
 
-## Reporting
-
-**Do not include sensitive or private details in a public issue.**
-
-To report a code of conduct concern or a security issue:
-
-1. Open a GitHub Issue and apply the `security` label.
-2. In the issue body, state only that you have a concern you would like to discuss privately.
-   Do not include any sensitive details in the public issue.
-3. A maintainer will acknowledge the issue within 48 hours and arrange private follow-up.
+To report a concern, open a GitHub Issue and apply the `security` label. Do not disclose vulnerability details in the public issue. A maintainer will follow up privately within 48 hours.
 
 ## Attribution
 

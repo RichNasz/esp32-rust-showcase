@@ -1,12 +1,12 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
-     Generated from board-specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Generated from specs/ using esp32-sdd-documentation-generator skill
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Pin Mapping Tables (v1 — ESP32-C6)
 
-Auto-derived from `board-specs/`. v1 firmware uses chip feature `esp32c6` only. Full tables remain in the board-spec files.
+Facts come from `board-specs/`, not from a second hand-typed source. The tables below are a short extract. If they ever disagree with the board spec, the board spec wins and this page is regenerated. v1 firmware uses chip feature `esp32c6` only. Do not add other SoCs.
 
 ## Espressif ESP32-C6-DevKitC-1-N8 *(default)*
 

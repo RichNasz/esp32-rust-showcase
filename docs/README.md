@@ -6,89 +6,91 @@
 
 # ESP32 Rust SDD Showcase — Full Documentation
 
-> **100% AI-first.** Every line of firmware and every piece of documentation in this repository is generated exclusively by AI agents from human-written specifications in `specs/`.
+This documentation is for a reader who wants an AI coding agent to help with ESP32 Rust and may not already know spec-driven development.
 
-## What Is This Project?
+**Spec-driven development (SDD)** means a **spec** — Markdown a person writes — is the source of truth. The agent reads those files and **generates** the Rust firmware and these docs. The firmware is rust-on-metal: `no_std` (Rust without the standard library, running on the chip through `esp-hal`) on the ESP32-C6. As of 2026-10-20 all nine examples are **Firmware generated**: nine crates, zero specs-only. That label means the crate is in the tree. It is not a hardware pass.
 
-The ESP32 Rust SDD Showcase is a reference implementation of **Spec-Driven Development (SDD)** for **rust-on-metal ESP32** (`no_std` `esp-hal` on ESP32-C6). Humans write specs. Agents generate firmware and these docs. As of 2026-10-20 the tree has generated crates for all nine examples, including raw IEEE 802.15.4 frames. `specs/showcase-master-spec.md` still lists the OTA example, the ESP-NOW example, and `lp-core-wakeup` as Specs only; humans own that catalog. Example 9 is Firmware generated there.
+The catalog matches that status. ESP-NOW is a sensor-to-gateway pair, not a mesh. HTTPS OTA is a slot flip with a CRC check, not a Secure Boot demo. LP-core wakeup is GPIO on RTC GPIO 0–7, not capacitive touch. Raw IEEE 802.15.4 is node and peer data frames, not Thread, Zigbee, or a mesh.
 
-**Chip ≠ board.** v1 firmware is **ESP32-C6 only** (`esp32c6`). rust-on-metal does not port across ESP32 / S3 / C6 the way ESP-IDF `idf.py set-target` often does. Required **board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported. `board-specs/` contains only those two boards. No ESP-IDF install is required — [why](guides/why-esp-idf-is-not-required.md).
+**Chip ≠ board.** The chip (SoC) is Cargo feature `esp32c6` only. The board is pins, LED, and USB: default `board-devkitc-c6` (ESP32-C6-DevKitC-1-N8) or optional `board-xiao-c6` (XIAO ESP32-C6). rust-on-metal is not ESP-IDF `idf.py set-target`. Swapping an S3 or classic ESP32 spec onto the C6 is not a flag flip. No ESP-IDF install is required — [why](guides/why-esp-idf-is-not-required.md).
 
-## Documentation Sections
+## Documentation sections
 
 | Section | Description |
-|---|---|
-| [Guides](guides/README.md) | Step-by-step tutorials: why no ESP-IDF, rustup + espflash, running your first example, adding a new board |
-| [Reference](reference/README.md) | Toolchain pins, Cargo conventions, pin mapping tables, spec format |
-| [Workflows](workflows/README.md) | The complete SDD workflow: from spec to flashed firmware |
-| [Board Specs](../board-specs/README.md) | AI-generated hardware specs for supported ESP32 boards; see also [Creating New Board Specs](guides/creating-new-board-specs.md) |
+| --- | --- |
+| [Guides](guides/README.md) | Flash an existing example, or change firmware and docs with an agent |
+| [Reference](reference/README.md) | Spec format, skill phrases, pin tables, shared constraints |
+| [Workflows](workflows/README.md) | Which file you edit, and which files the agent writes |
+| [Board specs](../board-specs/README.md) | The two ESP32-C6 boards; see [Creating New Board Specs](guides/creating-new-board-specs.md) |
 
-## Examples Catalog
+## Examples catalog
 
-| # | Example | Concept | Status |
-|---|---|---|---|
-| 1 | [blinky](../examples/blinky/) | Baseline: SDD structure + breathing LED, multi-board C6 | Firmware generated |
-| 2 | [deep-sleep-timer-node](../examples/deep-sleep-timer-node/) | RTC wakeup + persistent RAM | Firmware generated |
-| 3 | [deep-sleep-bme280-mqtt-sensor](../examples/deep-sleep-bme280-mqtt-sensor/) | IoT sensor node: BME280 + Wi-Fi + MQTT | Firmware generated |
-| 4 | [hardware-aes-secure-storage](../examples/hardware-aes-secure-storage/) | Hardware AES accelerator (plaintext key demo) | Firmware generated |
-| 5 | [ble-beacon-deep-sleep](../examples/ble-beacon-deep-sleep/) | Duty-cycled BLE beacon (10 s / 10 s demo) | Firmware generated |
-| 6 | [secure-ota-https](../examples/secure-ota-https/) | HTTPS slot flip, TLS 1.3, CRC. Not Secure Boot or auto-rollback | Firmware generated |
-| 7 | [esp-now-low-power-mesh](../examples/esp-now-low-power-mesh/) | ESP-NOW sensor-to-gateway unicast (not a mesh) | Firmware generated |
-| 8 | [lp-core-wakeup](../examples/lp-core-wakeup/) | LP-core GPIO 0 wakeup | Firmware generated |
-| 9 | [ieee802154-raw-frames](../examples/ieee802154-raw-frames/) | Raw IEEE 802.15.4 node/peer frames (not Thread or Zigbee) | Firmware generated |
+One-liners are copied from `specs/showcase-master-spec.md`. Status is the master-spec table as of 2026-10-20.
 
-## Agent Skills
+| # | Example | Description | Status |
+| --- | --- | --- | --- |
+| 1 | [blinky](../examples/blinky/) | breathing LED, multi-board (ESP32-C6-DevKitC-1-N8 + XIAO ESP32-C6) | Firmware generated |
+| 2 | [deep-sleep-timer-node](../examples/deep-sleep-timer-node/) | RTC wakeup + persistence | Firmware generated |
+| 3 | [deep-sleep-bme280-mqtt-sensor](../examples/deep-sleep-bme280-mqtt-sensor/) | BME280 readings over Wi-Fi MQTT, then deep sleep | Firmware generated |
+| 4 | [hardware-aes-secure-storage](../examples/hardware-aes-secure-storage/) | hardware AES and flash-backed storage (plaintext key demo) | Firmware generated |
+| 5 | [ble-beacon-deep-sleep](../examples/ble-beacon-deep-sleep/) | duty-cycled BLE beacon (demo window, not a multi-year budget) | Firmware generated |
+| 6 | [secure-ota-https](../examples/secure-ota-https/) | HTTPS download into the inactive OTA slot, CRC check, reboot. Not Secure Boot or flash-encryption enrollment | Firmware generated |
+| 7 | [esp-now-low-power-mesh](../examples/esp-now-low-power-mesh/) | ESP-NOW sensor-to-gateway unicast. The directory name is historical. This is not a multi-hop mesh | Firmware generated |
+| 8 | [lp-core-wakeup](../examples/lp-core-wakeup/) | LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch) | Firmware generated |
+| 9 | [ieee802154-raw-frames](../examples/ieee802154-raw-frames/) | raw IEEE 802.15.4 data frames between a node and a peer. Not Thread, not Zigbee, not a mesh | Firmware generated |
 
-Ten skills implement the full SDD pipeline. Skills live in `skills/<name>/SKILL.md` inside this repository. No extra install command is required once you open the project in an agent that reads that tree.
+## Agent skills
 
-See [docs/guides/using-with-ai-agents.md](guides/using-with-ai-agents.md) for setup and workflow details.
+A **skill** is a Markdown workflow in `skills/<name>/SKILL.md`. You ask the agent to follow it. It is not a shell command and not a Rust crate. `skills/` is already in the clone. Purposes below are copied from the master spec. Do not treat a different sentence as the purpose.
 
 | Skill | Purpose |
-|---|---|
-| `esp32-sdd-functional-spec-creator` | Guides creation of a new `FunctionalSpec.md` |
-| `esp32-sdd-full-project-generator` | Generates a complete `no_std` `esp-hal` Cargo crate from specs |
-| `esp32-board-spec-generator` | Produces board specs from vendor datasheets |
-| `esp32-ws2812-led-engineer` | Generates WS2812B RMT driver via `esp-hal` |
-| `esp32-ble-beacon-engineer` | Designs `esp-radio` + TrouBLE advertising and teardown before deep sleep |
-| `esp32-deep-sleep-engineer` | Designs sleep configurations and power budgets |
-| `esp32-hardware-crypto-configurer` | Configures hardware AES and `esp-storage` key storage |
-| `esp32-sdd-documentation-generator` | Regenerates all documentation from specs (this file!) |
-| `esp32-sdd-project-validator` | Validates any example against the locked crate structure |
-| `esp32-lp-core-engineer` | LP-core firmware (`esp-lp-hal`) and HP load/handshake |
+| --- | --- |
+| `esp32-sdd-functional-spec-creator` | Drafts a new `FunctionalSpec.md` with you |
+| `esp32-sdd-full-project-generator` | Writes the `no_std` Cargo crate from the example specs |
+| `esp32-sdd-documentation-generator` | Rewrites the Markdown docs from `specs/` |
+| `esp32-board-spec-generator` | Writes a board spec from a vendor page or datasheet |
+| `esp32-ws2812-led-engineer` | Applies the WS2812 timing and driver constraints |
+| `esp32-ble-beacon-engineer` | Designs BLE advertising and radio teardown before sleep |
+| `esp32-deep-sleep-engineer` | Designs sleep, wakeup, and the power budget |
+| `esp32-hardware-crypto-configurer` | Configures hardware AES and flash-backed key storage |
+| `esp32-sdd-project-validator` | Checks an example against the locked crate layout |
+| `esp32-lp-core-engineer` | Writes the LP-core program and the HP-core handshake |
 
-See [skills/README.md](../skills/README.md) for full details.
+Index: [skills/README.md](../skills/README.md). How to use them: [Using With AI Agents](guides/using-with-ai-agents.md).
 
-## Repository Layout
+## Repository layout
+
+People write specs. The agent writes the Rust and the Markdown.
 
 ```
 esp32-rust-showcase/
-├── specs/              ← HUMAN-AUTHORED: source of truth for everything
-├── shared-specs/       ← HUMAN-AUTHORED: cross-example platform constraints
-├── examples/           ← AGENT-GENERATED crates (specs/ is human)
-├── board-specs/        ← AGENT-GENERATED board hardware specs
-├── skills/             ← AGENT-GENERATED skill definitions
-├── templates/          ← AGENT-GENERATED crate and spec templates
-└── docs/               ← AGENT-GENERATED documentation (you are here)
+├── specs/                      ← human-written (repo-wide rules)
+├── shared-specs/               ← human-written (cross-example constraints)
+├── examples/<name>/specs/      ← human-written (Functional, Coding, Test)
+├── examples/<name>/src/        ← agent-written
+├── examples/<name>/Cargo.toml  ← agent-written
+├── examples/<name>/build.rs    ← agent-written
+├── examples/<name>/.cargo/     ← agent-written
+├── examples/<name>/README.md   ← agent-written
+├── board-specs/                ← agent-written
+├── skills/                     ← agent-written
+├── templates/                  ← agent-written
+├── docs/                       ← agent-written (you are here)
+├── README.md                   ← agent-written
+├── CONTRIBUTING.md             ← agent-written
+├── CODE_OF_CONDUCT.md          ← agent-written
+├── SECURITY.md                 ← agent-written
+└── AGENTS.md                   ← agent-written
 ```
+
+## What a spec is
+
+A spec is Markdown a person writes. It states what the firmware must do and what the docs must say. Specs are the source of truth for both firmware and documentation. An AI coding agent reads those files and writes the Rust and the Markdown. People do not hand-edit `src/`, `Cargo.toml`, `build.rs`, `.cargo/config.toml`, READMEs, or `docs/`. When generated output is wrong, change the spec and ask the agent to generate again. **Regenerate** means generate again: the agent overwrites the previous output and leaves the spec files in place.
 
 ## The SDD Workflow in Three Steps
 
-1. **Write a spec** — edit or create a file in `specs/` or `examples/*/specs/FunctionalSpec.md`
-2. **Activate a skill** — say "Activate esp32-sdd-full-project-generator skill"
-3. **Build and flash** — open the example folder in VS Code / Cursor and run `cargo run --release`
+1. **Write a spec** — edit `specs/`, `shared-specs/`, or `examples/<name>/specs/`.
+2. **Ask the agent to follow a skill** — for a crate, say "Activate esp32-sdd-full-project-generator". That phrase goes to the agent, not the shell.
+3. **Build and flash** — open the example folder and run `cargo run --release`.
 
-Full workflow details: [docs/workflows/README.md](workflows/README.md)
-
-## IDE Integration
-
-Each example is a standalone Cargo package. For the best development experience open **only the example folder** (e.g. `examples/blinky/`) in VS Code or Cursor — not the repository root — so rust-analyzer uses that crate.
-
-See [guides/using-with-ai-agents.md](guides/using-with-ai-agents.md) for full setup details.
-
-## Contributing
-
-Only `specs/`, `shared-specs/`, and `examples/*/specs/{Functional,Coding,Test}Spec.md` are open to human edits. Everything else is agent-generated. After any spec change:
-
-> "Activate esp32-sdd-documentation-generator and rebuild all documentation."
-
-See [specs/contributing-spec.md](../specs/contributing-spec.md) for the full contribution rules.
+Full workflows: [docs/workflows/README.md](workflows/README.md). The longer lesson is [Using With AI Agents](guides/using-with-ai-agents.md).

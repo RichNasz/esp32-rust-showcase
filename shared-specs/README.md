@@ -1,12 +1,12 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # shared-specs/
 
-Specifications that apply across multiple examples or the entire project. These files capture platform-level constraints, coding standards, and reusable hardware patterns. Individual example `FunctionalSpec.md` files reference these by name; the **esp32-sdd-full-project-generator** skill reads them automatically during crate generation.
+These files are human-written constraints that apply to every example. A **spec** is Markdown a person writes. The agent reads these files when it generates a crate. If you have not used that workflow, start at [Using an AI coding agent](../docs/guides/using-with-ai-agents.md). Individual example `FunctionalSpec.md` files name the shared specs they need. A **skill** is a Markdown workflow the agent follows. `esp32-sdd-full-project-generator` reads the shared specs you list.
 
 ## Essential Reading
 

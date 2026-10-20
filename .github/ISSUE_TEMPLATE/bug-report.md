@@ -8,8 +8,10 @@ assignees: ""
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
+
+If the bug is in generated code, the fix is a spec change and a regeneration, not a hand-edit of `src/`.
 
 ## Which example?
 
@@ -21,11 +23,11 @@ assignees: ""
 
 ## Board
 
-<!-- e.g. ESP32-C6-DevKitC-1-N8, Seeed XIAO ESP32-C6 -->
+<!-- ESP32-C6-DevKitC-1-N8 or Seeed XIAO ESP32-C6 -->
 
 ## Describe the bug
 
-<!-- A clear and concise description of what the bug is. -->
+<!-- What went wrong -->
 
 ## Steps to reproduce
 
@@ -35,20 +37,19 @@ assignees: ""
 
 ## Expected behaviour
 
-<!-- What did you expect to happen? -->
+<!-- What the spec says should happen -->
 
 ## Actual behaviour
 
-<!-- What actually happened? -->
+<!-- What you observed. Firmware generated is not a claim that a board run passed. -->
 
 ## `cargo build --release` log
 
 ```
-<!-- Paste the relevant output from cargo build --release or cargo run --release here -->
+paste the log here
 ```
 
 ## Checklist
 
-- [ ] I confirmed that the file exhibiting the bug is agent-generated (has the agent-generated header comment)
-- [ ] I have **not** manually edited the generated file before filing this report
-- [ ] I have tried with a clean build (`cargo clean` then `cargo build --release`)
+- [ ] I confirmed this is not a hand-edit of generated files
+- [ ] I did not include an ESP-IDF version (this repo does not use ESP-IDF)

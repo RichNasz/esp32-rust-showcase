@@ -1,12 +1,12 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # templates/
 
-Canonical structural templates for creating new specs and crate files. Agent skills use these as starting points during generation; they also serve as a reference for humans authoring new `FunctionalSpec.md` files.
+These files are starting points the agent reads when it generates a crate or a board spec. A **spec** is Markdown a person writes. `FunctionalSpec.template.md` shows the sections that file needs. You do not copy a template by hand. If you have not used specs as the source of truth, start at [Using an AI coding agent](../docs/guides/using-with-ai-agents.md).
 
 ## Available Templates
 
@@ -30,8 +30,10 @@ If you want to see what sections a `FunctionalSpec.md` needs before running the 
 
 `esp32-sdd-full-project-generator` does **not** seed or overwrite `specs/FunctionalSpec.md`. Only `esp32-sdd-functional-spec-creator` writes that file.
 
-## Editing Templates
+## Changing a template
 
-Only modify template files when the project's structural conventions change (e.g. adding a required section to all functional specs). After any template change:
+Templates are agent-generated. A structural change starts in `specs/example-project-structure-spec.md` or `specs/documentation-generation-spec.md`. Then ask the agent (not the shell):
 
-> "Activate esp32-sdd-documentation-generator and rebuild all documentation."
+> Activate esp32-sdd-documentation-generator and rebuild all documentation.
+
+Do not hand-edit the template files.

@@ -1,68 +1,62 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Creating New Board Specs
 
-This guide explains how to add a new ESP32 board to the `board-specs/` catalog using the **esp32-board-spec-generator** skill. The Espressif ESP32-C6-DevKitC-1-N8 is the v1 default board.
+This is the long form of [05 — Add a Board Spec](05-add-board-spec.md). The walkthrough board is the Espressif **ESP32-C6-DevKitC-1-N8**, which is the required default in v1.
 
----
+A **board spec** is the Markdown description of one board's pins, LED, USB, and power; the agent turns those facts into `src/board.rs`. A **spec** is Markdown a person writes. A **skill** is a Markdown workflow in `skills/<name>/SKILL.md`. You say the activate phrase to the agent, not in the shell. **Generate** means the agent writes that Markdown from the vendor page. Do not hand-edit a generated board spec. Change the source facts and generate again.
 
-## Overview
+v1 is ESP32-C6 boards only. A board spec does not add a chip feature. Cargo chip feature `esp32c6` stays the SoC. Board features in v1 are `board-devkitc-c6` (default) and `board-xiao-c6`. Do not add other SoCs.
 
-A board spec is an authoritative, structured Markdown file that describes the hardware layout of one specific development board or module. It is the single source of truth for GPIO numbers, power limits, strapping pin constraints, and peripheral assignments. All example projects reference board specs instead of hard-coding pin numbers. Generated `src/board.rs` is the only place pin numbers belong.
+The filled file for this walkthrough is [`board-specs/espressif/esp32-c6-devkitc-1-n8.md`](../../board-specs/espressif/esp32-c6-devkitc-1-n8.md). The section order is [`templates/BoardSpec.template.md`](../../templates/BoardSpec.template.md). This page does not publish a second template.
 
-Location: `board-specs/<vendor-slug>/<board-slug>.md`
-
-v1 **firmware** compiles only for ESP32-C6 (`esp32c6`). Chip ≠ board: a board-spec does not add a chip feature. Add only ESP32-C6 boards. Do not add other SoCs.
-
----
-
-## When to Use esp32-board-spec-generator
+## When to generate a board spec
 
 | Situation | Action |
-|---|---|
-| Adding a new board to a `FunctionalSpec.md` that has no existing board spec | Generate the spec first, then write the FunctionalSpec |
-| Existing board spec is missing sections (power, strapping, ADC warnings) | Regenerate — never hand-edit |
-| Vendor released a hardware revision with changed pin assignments | Regenerate with updated source URL |
-| A board spec was created as a placeholder with unverified data | Regenerate with verified authoritative source |
+| --- | --- |
+| A FunctionalSpec names a C6 board that has no board spec yet | Generate the board spec first, then name it in the FunctionalSpec checklist |
+| A board spec is missing power, strapping, or USB facts | Regenerate from the vendor page. Do not hand-edit the file |
+| The vendor shipped a revision with different pins | Regenerate with the updated source URL |
+| A draft contains unverified pin numbers | Regenerate from the schematic or the vendor wiki |
 
----
+## What you give the agent
 
-## What to Provide to the Agent
+### Authoritative source
 
-When invoking the skill, include all of the following in your prompt:
+Prefer the vendor's own page:
 
-### 1. Authoritative source URL
+- Espressif dev kits: `docs.espressif.com`
+- Seeed: `wiki.seeedstudio.com`
 
-Prefer the **vendor's official wiki** over GitHub READMEs or third-party guides:
+DevKitC-1-N8 source used for the current board spec:
 
-- Espressif: `docs.espressif.com` + devkit product pages
-- Seeed Studio: `wiki.seeedstudio.com`
+`https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c6/esp32c6-devkitc-1/index.html`
 
-### 2. Key facts to verify before running
-
-Cross-check these against the vendor schematic or wiki before handing them to the agent — they are the highest-risk items for hallucination:
+### Facts to verify before you ask
 
 | Fact | How to verify |
-|---|---|
-| Onboard LED GPIO number, type (simple GPIO vs WS2812), and polarity | Vendor wiki "Pinout" or schematic net list |
-| Strapping pin numbers | ESP32-C6 Technical Reference Manual + board schematic |
-| PSRAM type (none / SPI / OPI) and size | Module datasheet |
-| Deep sleep current | Vendor datasheet power table |
-| USB console | UART bridge chip vs native USB Serial/JTAG vs USB CDC — **do not** emit `CONFIG_ESP_CONSOLE_*` (there is no sdkconfig) |
-| RTC / LP GPIOs | C6: GPIO **0–7 only**. GPIO 9 is **not** RTC-capable. |
+| --- | --- |
+| Onboard LED GPIO, type (simple GPIO or WS2812), and polarity | Vendor pinout or schematic |
+| Strapping pins | ESP32-C6 Technical Reference Manual plus the board schematic |
+| PSRAM (none, SPI, or OPI) and size | Module datasheet |
+| Deep-sleep current | Vendor power table |
+| USB console | UART bridge chip, USB Serial/JTAG, or USB CDC. Do not emit `CONFIG_ESP_CONSOLE_*`. There is no sdkconfig |
+| RTC / LP GPIOs | On the C6, GPIO **0–7 only**. GPIO 9 is not RTC-capable |
 
-### 3. Board name slug
+### Slug
 
-Use lowercase-kebab: `esp32-c6-devkitc-1-n8`, `xiao-esp32c6`.
+Lowercase kebab: `esp32-c6-devkitc-1-n8`, `xiao-esp32c6`. The file lands at `board-specs/<vendor-slug>/<board-slug>.md`.
 
 ### Example invocation
 
+Type this to the agent:
+
 ```
-Activate esp32-board-spec-generator.
+Activate esp32-board-spec-generator skill
 
 Source: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c6/esp32c6-devkitc-1/index.html
 Board: Espressif ESP32-C6-DevKitC-1-N8
@@ -73,73 +67,68 @@ Pre-verified facts:
 - Strapping pins: GPIO 0, 4, 5, 8, 9, 15
 - PSRAM: none
 - Deep sleep: ~7–15 µA
-- USB: left USB-C = UART bridge (CH343P → UART0); right USB-C = USB Serial/JTAG
+- USB: left USB-C = UART bridge (CH343P → UART0 GPIO 16 TX / GPIO 17 RX); right USB-C = USB Serial/JTAG
 ```
 
----
+## Section list
 
-## Board Spec Template (Required Sections)
+Every board spec uses these sections, in this order, from `templates/BoardSpec.template.md`. Do not invent a parallel outline.
 
-Every board spec must contain these sections in this order (see `templates/BoardSpec.template.md`):
+| Section | What it records |
+| --- | --- |
+| **Module / SoC** | Chip, module, flash, PSRAM, antenna, form factor |
+| **Power Management** | 3V3 rail, USB input, battery input, deep-sleep current |
+| **Onboard Peripherals** | LEDs and buttons: GPIO, polarity, simple GPIO versus WS2812 |
+| **GPIO & Pin Rules / Warnings** | The four subsections below |
+| Strapping Pins (do not drive during reset/boot) | Pins sampled at reset, and the safe default |
+| ADC Restrictions | Which ADC the SoC actually has, and what not to use during radio |
+| USB Serial / Console | Exactly one of: UART bridge (`espflash` on the UART-C port), USB Serial/JTAG, or USB CDC |
+| Reserved / Internal Pins (do not use in user code) | Flash and USB pads the application must leave alone |
+| **Complete Pin Mapping Table** | The two subsections below |
+| User-Accessible Pads | Header label, GPIO, ADC, and default peripheral |
+| Internal / Special GPIOs | Onboard LED and other pads that are not on the Arduino-style header |
+| **Board Advantages for SDD Projects** | What a FunctionalSpec author should know about this board |
+| **Cargo chip / board features** | `esp32c6` plus one board feature. Not `idf.py set-target` |
 
-| Section | Purpose |
-|---|---|
-| Agent-generated header | Marks file as generated; includes source URL and date |
-| **Module / SoC** | Chip variant, flash, PSRAM, antenna type, form factor |
-| **Power Management** | 3V3 regulator limit, USB input, battery charger, deep sleep µA |
-| **Onboard Peripherals** | GPIO-mapped peripherals (LEDs, buttons, sensors) with polarity |
-| **GPIO & Pin Rules / Warnings** | Strapping pins, ADC restrictions, reserved internal pins, USB console |
-| **Complete Pin Mapping Table** | All user-accessible pads with GPIO, ADC channel, and default peripheral |
-| **Board Advantages for SDD Projects** | Why this board suits which types of SDD examples |
-| **Chip / board Cargo features** | `esp32c6` plus `board-devkitc-c6` or `board-xiao-c6` (no `idf.py set-target`) |
+USB console wording is one of:
 
-USB console wording:
+- UART bridge (`espflash` on the UART-C port) — name the bridge chip and the TX/RX GPIOs
+- USB Serial/JTAG
+- USB CDC
 
-- UART bridge chip → "UART bridge (`espflash` on the UART-C port)"
-- Native USB Serial/JTAG → "USB Serial/JTAG"
-- Native USB CDC → "USB CDC"
+If a part is absent, write `None`. Do not drop the section.
 
----
+## Walkthrough: ESP32-C6-DevKitC-1-N8
 
-## Best Practices
+These facts match [`board-specs/espressif/esp32-c6-devkitc-1-n8.md`](../../board-specs/espressif/esp32-c6-devkitc-1-n8.md). The pin table in that file is the source. This page does not retype a second full map.
 
-**Verify the LED GPIO with a blink crate first.** Board wikis sometimes describe an older PCB revision.
+| Fact | Value |
+| --- | --- |
+| SoC / module | ESP32-C6, module ESP32-C6-WROOM-1 (PCB antenna). N8 means 8 MB flash. PSRAM: none |
+| LED | WS2812 on GPIO 8 (GRB, 800 kHz NRZ). A GPIO level produces no visible output — use RMT. GPIO 8 is also a strapping pin |
+| Boot button | GPIO 0, active LOW, RTC-capable (LP GPIO 0) |
+| Strapping | GPIO 0, 4, 5, 8, 9, 15. Leave them floating at reset |
+| Left USB-C | UART bridge, CH343P, UART0 GPIO 16 TX / GPIO 17 RX. This is the `espflash` port. The monitor stays up through deep sleep |
+| Right USB-C | Native USB Serial/JTAG (GPIO 12 D−, GPIO 13 D+). It drops when USB powers down for deep sleep. It is not USB CDC |
+| Deep sleep | About 7 µA typical with the RTC domain off; about 15 µA with the RTC domain active |
+| Battery | None. No onboard LiPo charger |
+| Cargo | Chip `esp32c6`. Board `board-devkitc-c6` (default). RTC / LP GPIOs are 0–7 only |
 
-**Prefer the vendor wiki over community GitHub repos.** GitHub READMEs are often outdated.
+How those facts sit in the template:
 
-**List strapping pins even if they seem obvious.** Strapping pins are the #1 cause of "my board won't boot" issues.
+- **Module / SoC** records the WROOM-1, 8 MB flash, no PSRAM, and the PCB antenna.
+- **Power Management** records the dual USB-C 5 V input, no battery connector, and the 7–15 µA floor.
+- **Onboard Peripherals** records the WS2812 on GPIO 8 and the boot button on GPIO 0.
+- **USB Serial / Console** classifies the board as a UART bridge for the default workflow, and names the right port as USB Serial/JTAG.
+- **Cargo chip / board features** records `esp32c6` and `board-devkitc-c6`. It does not add another chip.
 
-**For WS2812, note that a GPIO level produces no visible output.** Use RMT (or the equivalent `esp-hal` driver) for the 800 kHz NRZ waveform. Brightness cap 64/255.
+XIAO ESP32-C6 is the other v1 board (`board-xiao-c6`). Its user LED is GPIO 15, active LOW. Its boot button is GPIO 9, which is **not** an RTC GPIO. Switch boards with Cargo features, not `menuconfig`. Do not add a non-C6 board beside these two.
 
-**For active-LOW LEDs, note polarity explicitly** so generated `src/board.rs` inverts drive logic.
+## After the board spec exists
 
-**Never omit a section because the board "probably" doesn't have it.** If no PSRAM: write `None`. If no LiPo charger: write `None`.
+1. Add the board to the example FunctionalSpec checklist. Pins still come from `board-specs/`, not from that checklist.
+2. If a pin changed, regenerate the crate so `src/board.rs` updates. Say: Activate esp32-sdd-full-project-generator.
+3. Say: Activate esp32-sdd-project-validator skill. Fix a failure in the spec and regenerate. Do not hand-edit the crate.
+4. Say: Activate esp32-sdd-documentation-generator and rebuild all documentation. Supported Boards tables pick up `board-specs/` by discovery.
 
----
-
-## Live Example: Espressif ESP32-C6-DevKitC-1-N8
-
-### Step 1 — Identify the authoritative source
-
-Source used: `https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c6/esp32c6-devkitc-1/index.html`
-
-### Step 2 — Extract and verify key facts
-
-| Fact | Value | Verification |
-|---|---|---|
-| LED | WS2812 GPIO 8 | Dev-kit user guide + schematic |
-| Boot button | GPIO 0, active LOW, RTC-capable | C6 TRM RTC GPIO 0–7; schematic |
-| UART | GPIO 16 TX / GPIO 17 RX via CH343P on **left** USB-C | User guide dual USB-C section |
-| Deep sleep | ~7 µA typical / ~15 µA RTC domain active | Datasheet power table |
-| Flash | 8 MB (N8) | Module suffix |
-
-### Step 3 — Downstream impact
-
-When a board spec is corrected or updated:
-
-1. Check all `FunctionalSpec.md` files that reference this board spec.
-2. If GPIO assignments changed, regenerate `src/board.rs` via `esp32-sdd-full-project-generator`.
-3. Run `esp32-sdd-project-validator` on the regenerated example.
-4. Run `esp32-sdd-documentation-generator` so Supported Boards tables stay in sync.
-
-> **blinky reference**: DevKitC-C6 LED is WS2812 GPIO 8. XIAO ESP32-C6 LED is GPIO 15, active LOW, simple GPIO. Switch boards with Cargo features, not menuconfig.
+For a WS2812, state GRB, 800 kHz NRZ, and a brightness cap of 64/255. Brightness 8/255 is invisible in room light. For an active-LOW LED, state the polarity so `src/board.rs` inverts the drive.

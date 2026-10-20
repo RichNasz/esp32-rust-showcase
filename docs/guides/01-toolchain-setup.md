@@ -1,12 +1,14 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # 01 — Toolchain Setup
 
-Install the rust-on-metal toolchain used by every example in this repository. There is **no ESP-IDF install** — C developers: [Why ESP-IDF is not required](why-esp-idf-is-not-required.md). Pins live in [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md).
+Install the compiler and the flasher used by every example. Pins and the MSRV live in [`shared-specs/rust-toolchain.md`](../../shared-specs/rust-toolchain.md). There is no ESP-IDF install, no `espup`, and no `esp` rustup channel. [Why ESP-IDF is not required](why-esp-idf-is-not-required.md).
+
+`no_std` here means Rust without the standard library, running on the chip through `esp-hal`. ESP32-C6 is RISC-V, so rustup **stable** already has the target. Xtensa chips need `espup`; they are not in v1.
 
 ## 1. rustup stable
 
@@ -16,16 +18,16 @@ rustup default stable
 rustc --version   # MSRV 1.95.0 or newer
 ```
 
-Do **not** install the `esp` rustup channel or `espup`. RISC-V ESP32-C6 `no_std` uses rustup **stable** (Xtensa chips need `espup`; they are not in v1). See [Why ESP-IDF is not required](why-esp-idf-is-not-required.md).
+The minimum supported Rust version is **1.95.0**.
 
-## 2. Component and target
+## 2. Components and target
 
 ```sh
 rustup component add rust-src clippy rustfmt
 rustup target add riscv32imac-unknown-none-elf
 ```
 
-## 3. Flash / monitor
+## 3. Flash and monitor
 
 ```sh
 cargo install espflash
@@ -33,7 +35,7 @@ cargo install espflash
 cargo install cargo-espflash
 ```
 
-The generated `.cargo/config.toml` sets `runner = "espflash flash --monitor"`, so `cargo run --release` flashes and opens a serial monitor.
+Generated `.cargo/config.toml` sets `runner = "espflash flash --monitor"`, so `cargo run --release` flashes and opens a serial monitor.
 
 ## 4. Verify
 
@@ -48,8 +50,8 @@ You should see the stable toolchain, target `riscv32imac-unknown-none-elf`, and 
 ## Hardware
 
 | Board | Role | USB |
-|---|---|---|
-| **ESP32-C6-DevKitC-1-N8** | Required default | **Left** USB-C = UART bridge (`espflash`); right USB-C = native USB Serial/JTAG |
-| Seeed XIAO ESP32-C6 | Also supported | Native USB Serial/JTAG (port drops in deep sleep) |
+| --- | --- | --- |
+| **ESP32-C6-DevKitC-1-N8** | Required default | **Left** USB-C is the UART-C port (CH343P UART bridge). Use it for `espflash`. The right USB-C port is native USB Serial/JTAG |
+| Seeed XIAO ESP32-C6 | Also supported | Native USB (USB Serial/JTAG). The port drops in deep sleep |
 
-Next: [02 — Install Skills](02-install-skills.md).
+This page installs the compiler and flasher; the agent path is [guide 02](02-install-skills.md) and [using-with-ai-agents.md](using-with-ai-agents.md).

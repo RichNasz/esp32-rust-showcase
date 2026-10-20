@@ -14,7 +14,7 @@ generate touch-pad calibration, `esp_sleep_enable_touchpad_wakeup`, or an ESP32-
 
 ## Implementation status
 
-**Specs only** as of 2026-10-20. These Functional, Coding, and Test specs are the current design (C6 LP-core GPIO 0, not capacitive touch). There is no `Cargo.toml` and no `src/` until `esp32-sdd-full-project-generator` runs. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
+**Firmware generated** as of 2026-10-20. These specs are the current design (C6 LP-core GPIO wakeup, not capacitive touch). The crate is in the tree. A host build is not a board pass. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
 
 ## Target Hardware
 

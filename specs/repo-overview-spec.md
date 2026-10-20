@@ -1,14 +1,17 @@
 # Repo Overview Specification
 
 ## Purpose
-Comprehensive showcase of Spec-Driven Development (SDD) for rust-on-metal ESP32 (`no_std` `esp-hal` on ESP32-C6).
-Every line of firmware and every piece of documentation is generated exclusively by AI agents from human-written specifications.
+Show how to use an AI coding agent for rust-on-metal ESP32-C6 firmware (`no_std` `esp-hal`).
+
+The method is spec-driven development: a person writes Markdown specs, and the agent generates the firmware and the documentation from those specs. Readers are not assumed to know that method. The root README and `docs/README.md` follow `specs/documentation-generation-spec.md` section **Readers**, including the plain-language definition of a spec and the link to `docs/guides/using-with-ai-agents.md`.
 
 ## Key Features
-- AI-generated board specs from vendor docs (Espressif and Seeed)
-- 9 progressive examples on ESP32-C6 leveraging hardware superpowers (deep sleep, LP core, radio, AES, OTA, raw IEEE 802.15.4)
-- Full suite of published Agent Skills (`skills/<name>/SKILL.md`; mirrored for Claude; Grok via `AGENTS.md`)
-- Strict 100 % AI-first workflow: humans edit specs only; agents generate Rust and Markdown
+Copy example one-liners and skill purposes from `specs/showcase-master-spec.md`. Do not invent a second list.
+
+- Board specs generated from vendor docs (Espressif and Seeed), then turned into `src/board.rs`
+- 9 examples on ESP32-C6: breathing LED, deep sleep, a BME280 MQTT sensor, hardware AES, a BLE beacon, HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, LP-core GPIO wakeup, and raw IEEE 802.15.4 frames. Status counts come from the master-spec table.
+- Skills: Markdown workflows in `skills/<name>/SKILL.md` that a person asks the agent to follow. They are not a separate install.
+- People edit specs. The agent writes Rust and Markdown.
 - No ESP-IDF / `idf.py` / `sdkconfig` — rust-on-metal `esp-hal` on RISC-V ESP32-C6 (see Why ESP-IDF is not required)
 - Chip (SoC) ≠ board: v1 chip feature `esp32c6` only; boards are `board-devkitc-c6` / `board-xiao-c6`. rust-on-metal is not IDF `set-target` portability
 
@@ -21,10 +24,16 @@ This repository uses Espressif’s official `no_std` `esp-hal` path. It does **n
 ESP32-C6-DevKitC-1-N8 required; XIAO ESP32-C6 also supported. The board catalog is those two ESP32-C6 boards. Do not add other SoCs. Chip feature `esp32c6` only.
 
 ## Quick Start
+The root README Quick Start follows `specs/documentation-generation-spec.md` section **Quick Start (root README)**. Two tasks. Do not tell the reader to install skills as a required step. `skills/` is already in the clone.
+
+**Task A — flash blinky.** No AI agent.
 1. git clone this repo
-2. Install Agent Skills from this repository's `skills/` tree
-3. rustup stable + `rust-src` + target `riscv32imac-unknown-none-elf`; `cargo install espflash`
-4. `cd examples/blinky && cargo run --release`
-5. Edit any `FunctionalSpec.md` → activate the full-project-generator skill
+2. rustup stable + `rust-src` + target `riscv32imac-unknown-none-elf`; `cargo install espflash`
+3. `cd examples/blinky && cargo run --release`
+
+**Task B — change firmware or docs with an AI coding agent.** The reader may not know what a spec is. Point them at `docs/guides/using-with-ai-agents.md` before any activate phrase.
+1. Open the cloned repo in the agent.
+2. Edit a human spec. `examples/blinky/specs/FunctionalSpec.md` is what the LED does.
+3. Ask the agent: "Activate esp32-sdd-full-project-generator" for the crate, or "Activate esp32-sdd-documentation-generator and rebuild all documentation." for Markdown. Those lines go to the agent, not the shell.
 
 Full documentation → [docs/README.md](docs/README.md)

@@ -6,53 +6,53 @@
 
 # examples/
 
-Nine progressive rust-on-metal ESP32-C6 examples. They are ordered by complexity — start with `blinky` and work forward. As of 2026-10-20, **all nine have generated crates**. `specs/showcase-master-spec.md` still lists `secure-ota-https`, `esp-now-low-power-mesh`, and `lp-core-wakeup` as Specs only; humans own that catalog. Example 9 (`ieee802154-raw-frames`) is Firmware generated there. A specs-only folder contains `specs/` and a README until `esp32-sdd-full-project-generator` runs. The tree below is the target layout. `lp-core-wakeup` also has the allowed nested `lp-core/` crate.
+Nine rust-on-metal ESP32-C6 examples, ordered so you can start with `blinky`. As of 2026-10-20, **nine crates are generated** and **zero examples are specs only**. Every folder below contains a generated crate, and the locked directory tree is the layout on disk. **Firmware generated** means the crate is in the tree. It is not a hardware test result.
 
-**Chip ≠ board.** v1 chip is ESP32-C6 (`esp32c6`) only — not `idf.py set-target` portability. **Required board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported.
+A **spec** is Markdown a person writes. The agent generates the crate from `examples/<name>/specs/`. The lesson is [Using an AI coding agent](../docs/guides/using-with-ai-agents.md).
 
-## Learning Progression
+**Chip ≠ board.** v1 chip is ESP32-C6 (`esp32c6`) only. That is not `idf.py set-target`. **Required board:** ESP32-C6-DevKitC-1-N8 (`board-devkitc-c6`). XIAO ESP32-C6 (`board-xiao-c6`) is optional.
 
-Start at example 1 and work forward — each example introduces new hardware features and builds on patterns from the previous one.
+## Learning progression
 
-| # | Example | What You Learn | Key ESP32-C6 Feature | Status | Complexity |
-|---|---|---|---|---|---|
-| 1 | [blinky](blinky/) | SDD pipeline, multi-board Cargo features, WS2812 vs GPIO LED | RMT / GPIO LED | Firmware generated | ★☆☆☆☆ |
-| 2 | [deep-sleep-timer-node](deep-sleep-timer-node/) | Deep sleep, RTC timer wakeup, persistent RAM | RTC sleep + `#[esp_hal::ram(persistent)]` | Firmware generated | ★★☆☆☆ |
-| 3 | [deep-sleep-bme280-mqtt-sensor](deep-sleep-bme280-mqtt-sensor/) | I2C sensor, Wi-Fi STA, MQTT publish, duty-cycled sleep | I2C + `esp-radio` Wi-Fi + MQTT | Firmware generated | ★★★☆☆ |
-| 4 | [hardware-aes-secure-storage](hardware-aes-secure-storage/) | Hardware AES, flash-backed blobs (plaintext key) | `esp-hal` AES + `esp-storage` | Firmware generated | ★★★☆☆ |
-| 5 | [ble-beacon-deep-sleep](ble-beacon-deep-sleep/) | BLE advertising, radio teardown, demo duty cycle | `esp-radio` BLE + deep sleep | Firmware generated | ★★★★☆ |
-| 6 | [secure-ota-https](secure-ota-https/) | HTTPS slot flip, TLS 1.3, CRC before activate. Not Secure Boot | Dual OTA partitions + `embedded-tls` | Firmware generated | ★★★★☆ |
-| 7 | [esp-now-low-power-mesh](esp-now-low-power-mesh/) | ESP-NOW unicast pair (directory name is historical, not a mesh) | `esp-radio` ESP-NOW + sensor deep sleep | Firmware generated | ★★★★☆ |
-| 8 | [lp-core-wakeup](lp-core-wakeup/) | LP-core firmware, GPIO 0 wakeup from HP deep sleep | `esp-lp-hal` + GPIO 0–7 | Firmware generated | ★★★★★ |
-| 9 | [ieee802154-raw-frames](ieee802154-raw-frames/) | Raw IEEE 802.15.4 node/peer data frames (not Thread or Zigbee) | `esp-radio` `ieee802154` | Firmware generated | ★★★★☆ |
+| # | Example | What you can observe | Status |
+|---|---|---|---|
+| 1 | [blinky](blinky/) | Breathing LED, multi-board (ESP32-C6-DevKitC-1-N8 + XIAO ESP32-C6) | Firmware generated |
+| 2 | [deep-sleep-timer-node](deep-sleep-timer-node/) | RTC wakeup + persistence | Firmware generated |
+| 3 | [deep-sleep-bme280-mqtt-sensor](deep-sleep-bme280-mqtt-sensor/) | BME280 readings over Wi-Fi MQTT, then deep sleep | Firmware generated |
+| 4 | [hardware-aes-secure-storage](hardware-aes-secure-storage/) | Hardware AES and flash-backed storage (plaintext key demo) | Firmware generated |
+| 5 | [ble-beacon-deep-sleep](ble-beacon-deep-sleep/) | Duty-cycled BLE beacon (demo window, not a multi-year budget) | Firmware generated |
+| 6 | [secure-ota-https](secure-ota-https/) | HTTPS download into the inactive OTA slot, CRC check, reboot. Not Secure Boot or flash-encryption enrollment | Firmware generated |
+| 7 | [esp-now-low-power-mesh](esp-now-low-power-mesh/) | ESP-NOW sensor-to-gateway unicast. The directory name is historical. This is not a multi-hop mesh | Firmware generated |
+| 8 | [lp-core-wakeup](lp-core-wakeup/) | LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch) | Firmware generated |
+| 9 | [ieee802154-raw-frames](ieee802154-raw-frames/) | Raw IEEE 802.15.4 data frames between a node and a peer. Not Thread, not Zigbee, not a mesh | Firmware generated |
 
-## Example Structure
+`lp-core-wakeup` also has the nested `lp-core/` crate the generator is allowed to add.
 
-Every example folder follows this exact, permanently locked layout (see `specs/example-project-structure-spec.md`):
+## Example structure
+
+Every example matches [`specs/example-project-structure-spec.md`](../specs/example-project-structure-spec.md):
 
 ```
 examples/<kebab-name>/
-├── specs/                          ← human-only
-│   ├── FunctionalSpec.md
-│   ├── CodingSpec.md
-│   └── TestSpec.md
-├── src/                            ← 100% agent-generated
+├── specs/                          ← human-written
+│   ├── FunctionalSpec.md           ← what you can observe
+│   ├── CodingSpec.md               ← architecture and constraints, no code
+│   └── TestSpec.md                 ← how to check
+├── src/                            ← agent-written
 │   └── main.rs                     ← #![no_std] #![no_main]; extra modules as needed
-├── Cargo.toml
-├── build.rs
-├── .cargo/config.toml              ← target = riscv32imac-unknown-none-elf, runner = espflash
-├── README.md
-├── .gitignore
+├── Cargo.toml                      ← agent-written
+├── build.rs                        ← agent-written
+├── .cargo/config.toml              ← agent-written; target = riscv32imac-unknown-none-elf, runner = espflash
+├── README.md                       ← agent-written
+├── .gitignore                      ← agent-written
 └── target/                         ← gitignored
 ```
 
-Examples are **standalone Cargo packages**, not members of a repository-level workspace. There is no root `Cargo.toml` workspace, no `sdkconfig`, no `main.c`, and no `CMakeLists.txt`.
+Examples are standalone Cargo packages. There is no root workspace, no `sdkconfig`, no `main.c`, and no `CMakeLists.txt`.
 
-Board selection is via mutually exclusive Cargo features: default `board-devkitc-c6`, optional `board-xiao-c6`. Chip feature `esp32c6` only in v1. Generated `src/board.rs` holds GPIO/LED/button constants derived from `board-specs/` — never hardcode pins in `main.rs`.
+Board selection uses Cargo features: default `board-devkitc-c6`, optional `board-xiao-c6`. Chip feature `esp32c6` only. Generated `src/board.rs` holds the pins. Do not hardcode pins in `main.rs`.
 
-## Building an Example
-
-### Command line
+## Building blinky
 
 ```sh
 cd examples/blinky
@@ -67,24 +67,8 @@ Optional XIAO ESP32-C6:
 cargo run --release --no-default-features --features board-xiao-c6
 ```
 
-### VS Code / Cursor
+In VS Code or Cursor, use **File → Open Folder…** and open `examples/blinky/` only, so rust-analyzer uses that crate.
 
-Each example folder is a **complete, standalone Cargo package**. For the best experience:
+## Adding an example
 
-1. **File → Open Folder…** and select the specific example folder (e.g. `examples/blinky/`)
-2. rust-analyzer uses that crate's `Cargo.toml` and `.cargo/config.toml`
-3. Build/flash: `cargo run --release`
-
-> Do **not** open the repository root as your active workspace when developing an example.
-
-See [docs/guides/using-with-ai-agents.md](../docs/guides/using-with-ai-agents.md) for full IDE setup details.
-
-## Generating a New Example
-
-1. Create the example folder and its `specs/` subdirectory.
-   > Need to add a new board first? See [docs/guides/creating-new-board-specs.md](../docs/guides/creating-new-board-specs.md).
-2. Create spec files (say: **"Activate esp32-sdd-functional-spec-creator skill"**) — output goes in `specs/FunctionalSpec.md`.
-3. Add `specs/CodingSpec.md`.
-4. Say: **"Activate esp32-sdd-full-project-generator skill"**
-
-> `specs/FunctionalSpec.md`, `specs/CodingSpec.md`, and `specs/TestSpec.md` are the only files humans write. Everything else is agent-generated and must not be edited by hand.
+Edit `specs/showcase-master-spec.md`, then ask the agent to draft `FunctionalSpec.md`. The steps, and what each spec file is for, are in [Create a new example](../docs/guides/04-new-example.md). Read [Using an AI coding agent](../docs/guides/using-with-ai-agents.md) first if you have not used specs as the source of truth.

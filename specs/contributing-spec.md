@@ -1,13 +1,24 @@
 # Contributing Specification
 
-## SDD Contribution Rules (AI-first)
+Generated `CONTRIBUTING.md` copies this file and follows `specs/documentation-generation-spec.md` section **Readers**. The opening of the generated page is the next section, in this wording, before the rule list.
 
-- Never edit generated files directly.
-- Humans only edit `specs/`, `shared-specs/`, and `examples/*/specs/{Functional,Coding,Test}Spec.md`.
-- After any spec change: "Activate esp32-sdd-documentation-generator and rebuild all documentation."
-- Submit PRs with spec changes only — generated files are regenerated, not hand-edited.
+## Who this page is for
 
-This keeps the repository 100% spec-driven.
+You want to change this project, including by using an AI coding agent to change the ESP32 Rust. You do not need to already know spec-driven development.
+
+A **spec** is a Markdown file a person writes. It is the source of truth for firmware and for documentation. The agent reads it and writes the Rust and the Markdown. Generated files (`src/`, `Cargo.toml`, READMEs, `/docs/`, and the rest outside the list below) are overwritten the next time the agent generates. When output is wrong, change the spec and ask the agent to generate again.
+
+The longer lesson is `docs/guides/using-with-ai-agents.md`. Link it from the opening.
+
+## Contribution rules
+
+- A person edits only `specs/`, `shared-specs/`, and `examples/*/specs/{Functional,Coding,Test}Spec.md`.
+- After a spec change that affects documentation, ask the agent: "Activate esp32-sdd-documentation-generator and rebuild all documentation."
+- After a spec change that affects a crate, ask the agent: "Activate esp32-sdd-full-project-generator".
+- Those phrases are typed to the agent, not in the shell.
+- A pull request contains the spec edit **and** the files the agent regenerated from it. Do not hand-edit generated files. Do not open a pull request that only tweaks generated Rust or Markdown. Do not drop the regenerated files to leave a spec-only diff.
+
+People write specs. The agent writes the Rust and the Markdown.
 
 License: MIT. Copyright holder: Richard Naszcyniec.
 
@@ -23,11 +34,12 @@ All commits must follow the Conventional Commits format:
 
 **Types:**
 - `feat` — new example, new skill, new spec section
-- `fix` — correction to spec content or generated output
-- `spec` — spec-only change (no generated output yet)
-- `gen` — regenerated files following a spec change
-- `chore` — maintenance (gitignore, tooling, non-spec files)
-- `docs` — documentation corrections that do not involve spec changes
+- `fix` — correction to spec content, with the regenerated output in the same commit or the following `gen` commit
+- `spec` — spec-only change, used only when generation has not been run yet
+- `gen` — regenerated files that follow a spec change already committed
+- `spec+gen` — spec edit and the regenerated files in one commit
+- `chore` — maintenance of files that are not agent-generated (for example `.gitignore`)
+- `docs` — do not use this type in this repository. A documentation correction is a spec edit plus regeneration (`spec+gen`, or `spec` followed by `gen`). Generated Markdown is not hand-edited.
 
 **Scope:** optional, use the folder name (e.g., `blinky`, `skills`, `shared-specs`).
 
@@ -38,6 +50,7 @@ gen: regenerate docs after contributing-spec update
 fix(shared-specs): correct esp-hal version pin to 1.2.1
 chore: update .gitignore to exclude target/
 spec: retarget coding conventions to no_std
+spec+gen: describe the spec workflow and regenerate the docs
 ```
 
 Short summary: imperative mood, lowercase, no trailing period, ≤72 characters total.

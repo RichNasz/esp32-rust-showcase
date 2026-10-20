@@ -13,7 +13,7 @@ There is no relay, no hop count, no beacon discovery, and no Wi-Fi RSSI scan.
 
 ## Implementation status
 
-**Specs only** as of 2026-10-20. These Functional, Coding, and Test specs are the current design (sensor-to-gateway unicast; the directory name is historical). There is no `Cargo.toml` and no `src/` until `esp32-sdd-full-project-generator` runs. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
+**Firmware generated** as of 2026-10-20. These specs are the current design (sensor-to-gateway unicast; the directory name is historical). The crate is in the tree. A host build is not an on-air pass. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
 
 ## Target Hardware
 

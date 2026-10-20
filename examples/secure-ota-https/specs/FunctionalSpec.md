@@ -13,7 +13,7 @@ turn on flash encryption. The stock `espflash` bootloader does not auto-rollback
 
 ## Implementation status
 
-**Specs only** as of 2026-10-20. These Functional, Coding, and Test specs are the current design (HTTPS slot flip, CRC32, no Secure Boot). There is no `Cargo.toml` and no `src/` until `esp32-sdd-full-project-generator` runs. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
+**Firmware generated** as of 2026-10-20. These specs are the current design (HTTPS slot flip, CRC32, no Secure Boot, no stock-`espflash` auto-rollback). The crate is in the tree. A host build is not a hardware pass. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
 
 ## Target Hardware
 

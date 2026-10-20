@@ -1,0 +1,18 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Heap is justified (ESP-NOW / Wi-Fi radio blob). build-std includes alloc.
+# Channel and gateway MAC are compile-time env, never string literals in src/.
+# Placeholders exist so `cargo build --release` succeeds with no second board.
+# A shell export overrides this [env] table. Never treat the MAC as a secret.
+
+[build]
+target = "riscv32imac-unknown-none-elf"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "espflash flash --monitor"
+
+[unstable]
+build-std = ["core", "alloc"]
+
+[env]
+ESPNOW_CHANNEL = "1"
+ESPNOW_GATEWAY_MAC = "00:00:00:00:00:00"

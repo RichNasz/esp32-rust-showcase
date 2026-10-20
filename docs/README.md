@@ -10,7 +10,7 @@
 
 ## What Is This Project?
 
-The ESP32 Rust SDD Showcase is a reference implementation of **Spec-Driven Development (SDD)** for **rust-on-metal ESP32** (`no_std` `esp-hal` on ESP32-C6). Humans write specs. Agents generate firmware and these docs. As of 2026-10-20 the tree has generated crates for blinky, deep sleep, the BME280 MQTT node, hardware AES, a duty-cycled BLE beacon, and the HTTPS OTA slot flip. The ESP-NOW sensor-to-gateway pair and LP-core GPIO wakeup are **specs only** — the designs are written, the crates are not. `specs/showcase-master-spec.md` still lists the OTA example as Specs only; humans own that catalog.
+The ESP32 Rust SDD Showcase is a reference implementation of **Spec-Driven Development (SDD)** for **rust-on-metal ESP32** (`no_std` `esp-hal` on ESP32-C6). Humans write specs. Agents generate firmware and these docs. As of 2026-10-20 the tree has generated crates for blinky, deep sleep, the BME280 MQTT node, hardware AES, a duty-cycled BLE beacon, the HTTPS OTA slot flip, and the ESP-NOW sensor-to-gateway pair. LP-core GPIO wakeup is **specs only** — the design is written, the crate is not. `specs/showcase-master-spec.md` still lists the OTA example and the ESP-NOW example as Specs only; humans own that catalog.
 
 **Chip ≠ board.** v1 firmware is **ESP32-C6 only** (`esp32c6`). rust-on-metal does not port across ESP32 / S3 / C6 the way ESP-IDF `idf.py set-target` often does. Required **board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported. Other SoCs in `board-specs/` are hardware reference until a chip feature exists. No ESP-IDF install is required — [why](guides/why-esp-idf-is-not-required.md).
 
@@ -33,7 +33,7 @@ The ESP32 Rust SDD Showcase is a reference implementation of **Spec-Driven Devel
 | 4 | [hardware-aes-secure-storage](../examples/hardware-aes-secure-storage/) | Hardware AES accelerator (plaintext key demo) | Firmware generated |
 | 5 | [ble-beacon-deep-sleep](../examples/ble-beacon-deep-sleep/) | Duty-cycled BLE beacon (10 s / 10 s demo) | Firmware generated |
 | 6 | [secure-ota-https](../examples/secure-ota-https/) | HTTPS slot flip, TLS 1.3, CRC. Not Secure Boot or auto-rollback | Firmware generated |
-| 7 | [esp-now-low-power-mesh](../examples/esp-now-low-power-mesh/) | ESP-NOW sensor-to-gateway unicast (not a mesh) | Specs only |
+| 7 | [esp-now-low-power-mesh](../examples/esp-now-low-power-mesh/) | ESP-NOW sensor-to-gateway unicast (not a mesh) | Firmware generated |
 | 8 | [lp-core-wakeup](../examples/lp-core-wakeup/) | LP-core GPIO 0 wakeup | Specs only |
 
 ## Agent Skills

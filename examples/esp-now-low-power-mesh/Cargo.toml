@@ -1,0 +1,33 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Radio pin: git-pin esp-hal, esp-radio, esp-rtos, esp-bootloader-esp-idf,
+# and esp-alloc from tag esp-hal-v1.2.1. Never mix crates.io esp-rtos or
+# esp-bootloader-esp-idf with git esp-hal.
+# ESP-NOW needs the wifi driver feature plus esp-now. Both are unstable.
+# Sleep, RTC, and RMT also need esp-hal feature `unstable`.
+# esp-radio is an unstable beta. No embassy-net and no AP association.
+
+[package]
+name = "esp_now_low_power_mesh"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[dependencies]
+esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }
+esp-radio = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable", "wifi", "esp-now"] }
+esp-rtos = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "embassy", "esp-radio"] }
+esp-alloc = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1" }
+esp-bootloader-esp-idf = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6"] }
+embassy-executor = "0.10"
+embassy-time = "0.5"
+esp-backtrace = { version = "0.20.0", features = ["esp32c6", "panic-handler", "println"] }
+esp-println = { version = "0.18.0", features = ["esp32c6", "log-04"] }
+log = "0.4"
+
+[features]
+default = ["board-devkitc-c6", "role-sensor"]
+board-devkitc-c6 = []
+board-xiao-c6 = []
+role-sensor = []
+role-gateway = []

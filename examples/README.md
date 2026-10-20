@@ -6,7 +6,7 @@
 
 # examples/
 
-Eight progressive rust-on-metal ESP32-C6 examples. They are ordered by complexity — start with `blinky` and work forward. As of 2026-10-20, **six have generated crates** and **two are specs only** (`esp-now-low-power-mesh`, `lp-core-wakeup`). `specs/showcase-master-spec.md` still lists `secure-ota-https` as Specs only; humans own that catalog. A specs-only folder contains `specs/` and a README until `esp32-sdd-full-project-generator` runs. The tree below is the target layout, not a claim that every folder already has `src/`.
+Eight progressive rust-on-metal ESP32-C6 examples. They are ordered by complexity — start with `blinky` and work forward. As of 2026-10-20, **seven have generated crates** and **one is specs only** (`lp-core-wakeup`). `specs/showcase-master-spec.md` still lists `secure-ota-https` and `esp-now-low-power-mesh` as Specs only; humans own that catalog. A specs-only folder contains `specs/` and a README until `esp32-sdd-full-project-generator` runs. The tree below is the target layout, not a claim that every folder already has `src/`.
 
 **Chip ≠ board.** v1 chip is ESP32-C6 (`esp32c6`) only — not `idf.py set-target` portability. **Required board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported.
 
@@ -22,7 +22,7 @@ Start at example 1 and work forward — each example introduces new hardware fea
 | 4 | [hardware-aes-secure-storage](hardware-aes-secure-storage/) | Hardware AES, flash-backed blobs (plaintext key) | `esp-hal` AES + `esp-storage` | Firmware generated | ★★★☆☆ |
 | 5 | [ble-beacon-deep-sleep](ble-beacon-deep-sleep/) | BLE advertising, radio teardown, demo duty cycle | `esp-radio` BLE + deep sleep | Firmware generated | ★★★★☆ |
 | 6 | [secure-ota-https](secure-ota-https/) | HTTPS slot flip, TLS 1.3, CRC before activate. Not Secure Boot | Dual OTA partitions + `embedded-tls` | Firmware generated | ★★★★☆ |
-| 7 | [esp-now-low-power-mesh](esp-now-low-power-mesh/) | ESP-NOW unicast pair (directory name is historical, not a mesh) | `esp-radio` ESP-NOW + sensor deep sleep | Specs only | ★★★★☆ |
+| 7 | [esp-now-low-power-mesh](esp-now-low-power-mesh/) | ESP-NOW unicast pair (directory name is historical, not a mesh) | `esp-radio` ESP-NOW + sensor deep sleep | Firmware generated | ★★★★☆ |
 | 8 | [lp-core-wakeup](lp-core-wakeup/) | LP-core firmware, GPIO 0 wakeup from HP deep sleep | `esp-lp-hal` + GPIO 0–7 | Specs only | ★★★★★ |
 
 ## Example Structure

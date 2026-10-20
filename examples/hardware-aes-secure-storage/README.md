@@ -1,12 +1,16 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-full-project-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Hardware AES Secure Storage — ESP32-C6
 
 > On-chip AES-256-CBC via `esp-hal` plus flash-backed ciphertext in `esp-storage`.
+
+## Implementation status
+
+**Firmware generated** as of 2026-10-20. `Cargo.toml` and `src/main.rs` are in this folder (generated 2026-09-08 from the specs). The build commands below apply to this crate. The firmware stores the AES key in plaintext flash on purpose. This is not a record of a hardware test on 2026-10-20.
 
 This example enables `esp-hal` feature **`unstable`** because the AES accelerator, FLASH singleton, and RMT (WS2812) APIs are unstable on the 1.2.1 pin. Those APIs may change with `esp-hal` minor releases.
 

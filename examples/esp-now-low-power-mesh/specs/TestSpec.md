@@ -1,199 +1,137 @@
-# Testing Specification — ESP-NOW Low-Power Mesh with WiFi RSSI Sensing
+# Testing Specification — ESP-NOW Sensor to Gateway (ESP32-C6)
 
 ## Testing Philosophy
 
-Automated testing using native ESP-IDF tools is strongly preferred.
+Automated testing using native Cargo / rustc tools is strongly preferred.
 Additional tools are only allowed with explicit justification and documented benefits.
 Manual testing is used only when no practical automated alternative exists.
+
+Do not specify `idf.py`, ESP-IDF Unity, or CMake-based harnesses.
 
 ---
 
 ## Automated Tests
 
-### T-A1 — Zero-Warning Build (Sensor Role)
+### T-A1 — Zero-warning build (DevKitC-C6 sensor, default features)
 
-**Tool**: `idf.py` (native)
-
-```sh
-cd examples/esp-now-low-power-mesh
-idf.py set-target esp32s3 && idf.py build
-```
-
-Pass: exit code 0, zero compiler warnings. Default `sdkconfig.defaults` selects sensor role.
-
----
-
-### T-A2 — Zero-Warning Build (Relay Role)
-
-**Tool**: `idf.py` (native)
+**Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
+**What it verifies**: Default features (`board-devkitc-c6`, `role-sensor`) compile cleanly
+with the git-pinned `esp-radio` ESP-NOW stack and placeholder channel / MAC env values.
 
 ```sh
 cd examples/esp-now-low-power-mesh
-SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.relay" idf.py fullclean build
+cargo build --release
+cargo clippy --release -- -D warnings
 ```
 
-Pass: exit code 0, zero compiler warnings for relay role.
+Pass criterion: both commands exit 0 with no warnings.
 
 ---
 
-### T-A3 — Zero-Warning Build (Gateway Role)
+### T-A2 — Zero-warning build (DevKitC-C6 gateway)
 
-**Tool**: `idf.py` (native)
+**Tool**: `cargo` (native)
+**What it verifies**: The always-on receive role compiles. `--no-default-features` is
+required so `role-sensor` is not also enabled.
 
 ```sh
 cd examples/esp-now-low-power-mesh
-SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.gateway" idf.py fullclean build
+cargo build --release --no-default-features --features board-devkitc-c6,role-gateway
+cargo clippy --release --no-default-features --features board-devkitc-c6,role-gateway -- -D warnings
 ```
 
-Pass: exit code 0, zero compiler warnings for gateway role.
+Pass criterion: both commands exit 0 with no warnings.
 
 ---
 
-### T-A4 — Payload Size Compile-Time Assert
+### T-A3 — Zero-warning builds (XIAO ESP32-C6, both roles)
 
-**Tool**: `idf.py` (native — `static_assert` fires at build time)
+**Tool**: `cargo` (native)
+**What it verifies**: The GPIO LED path compiles for each role.
 
-Covered by T-A1. The source file contains:
-
-```c
-static_assert(sizeof(espnow_payload_t) <= 250,
-              "espnow_payload_t exceeds ESP-NOW 250-byte maximum");
+```sh
+cd examples/esp-now-low-power-mesh
+cargo build --release --no-default-features --features board-xiao-c6,role-sensor
+cargo clippy --release --no-default-features --features board-xiao-c6,role-sensor -- -D warnings
+cargo build --release --no-default-features --features board-xiao-c6,role-gateway
+cargo clippy --release --no-default-features --features board-xiao-c6,role-gateway -- -D warnings
 ```
 
-Pass: T-A1 build succeeds, confirming `sizeof(espnow_payload_t) <= 250`.
+Pass criterion: all four commands exit 0 with no warnings.
+
+---
+
+### T-A4 — Role features are mutually exclusive
+
+**Tool**: `cargo` (native)
+**What it verifies**: Both roles together, and a board with no role, fail at compile time.
+
+```sh
+cd examples/esp-now-low-power-mesh
+cargo build --release --no-default-features --features board-devkitc-c6,role-sensor,role-gateway
+cargo build --release --no-default-features --features board-devkitc-c6
+```
+
+Pass criterion: both commands fail to compile. The default build (T-A1) still succeeds.
 
 ---
 
 ## Manual Tests
 
-*ESP-NOW packet exchange and real RSSI values require physical boards and a real RF
-environment. Inter-device radio communication and live WiFi scanning cannot be
-simulated without multi-device hardware-in-the-loop tooling.*
+*Manual tests are used only when no practical automated alternative exists.*
 
----
+### T-M1 — Two-board unicast (DevKitC-C6)
 
-### T-M1 — Direct Path: Sensor to Gateway (2 boards)
+**Why manual**: ESP-NOW delivery and deep-sleep retention need two radios and a real RTC domain.
 
-**Why manual**: Real ESP-NOW packet exchange over the air requires two XIAO ESP32S3 boards.
-
-Hardware: 2× XIAO ESP32S3. One or more real WiFi access points in range.
-
-Setup:
-
-1. Build gateway firmware once:
-   `SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.gateway" idf.py fullclean build`
-   Flash board A. Note the `node_id=NN mac=AA:BB:CC:DD:EE:FF` line from its startup log.
-2. Build sensor firmware once (configure `CONFIG_TARGET_SSID_1` to a known AP SSID first):
-   `idf.py build`
-   Flash board B with the same binary. Note its `node_id` from the startup log.
+Hardware: two Espressif ESP32-C6-DevKitC-1-N8 boards. Sensor on the **left** USB-C UART-C
+port so the monitor survives sleep. Gateway on either USB-C port.
 
 Steps:
 
-1. Power on gateway (board A) first. Confirm beacon broadcast log every 5 seconds.
-2. Power on sensor (board B). Confirm it logs "gateway discovered" after beacon reception.
-3. Watch gateway serial monitor for 5 consecutive receive log lines showing board B's node_id.
-4. Confirm `msg_count` increments by 1 on each packet (no drops).
-5. Confirm `hop_count = 0` on all received packets (direct path).
-6. Confirm at least one `rssi[]` value is in the range –30 to –90 dBm for a known AP.
+1. Flash the gateway:
+   `cargo run --release --no-default-features --features board-devkitc-c6,role-gateway`
+   from `examples/esp-now-low-power-mesh/`. Copy the logged station MAC.
+2. Rebuild the sensor with `ESPNOW_CHANNEL` matching the gateway and
+   `ESPNOW_GATEWAY_MAC` set to that MAC. Flash with `cargo run --release` on the second board
+   (default features) after exporting those variables the way the README describes.
+3. Watch at least five sensor wakes. Confirm the sensor boot count increments by 1, the
+   gateway prints that count and the sender MAC, and the sensor RGB LED flashes once
+   (green, visible, cap 64/255) then stays dark during the ~15 s sleep.
+4. Confirm the sensor monitor stays connected across sleep.
 
-Pass: 5/5 packets received; msg_count monotonically increases; hop_count=0; at least one
-RSSI value is non-INT8_MIN and within –30 to –90 dBm.
-
----
-
-### T-M2 — Relayed Path: Sensor through Relay to Gateway (3 boards)
-
-**Why manual**: Multi-hop routing requires three boards and physical separation to force
-the sensor out of direct range of the gateway.
-
-Hardware: 3× XIAO ESP32S3. Arrange boards so that the relay is physically between sensor
-and gateway, with the sensor unable to reach the gateway directly (e.g. different rooms,
-or attenuate with a metal enclosure).
-
-Setup:
-
-1. Flash board A with gateway firmware, board B with relay firmware, board C with sensor
-   firmware. All boards of the same role receive the identical binary — no per-device
-   build needed. Note the `node_id` printed on each board's startup log.
-2. Power on gateway, then relay, then sensor.
-
-Steps:
-
-1. Confirm gateway logs beacon every 5 seconds.
-2. Confirm relay logs "gateway discovered" and enters receive mode.
-3. Confirm sensor logs "gateway discovered" via relay beacon reception or direct beacon.
-4. Watch gateway for 5 consecutive packets from board C's node_id (shown on its startup log).
-5. Confirm `hop_count = 1` on received packets (one relay hop).
-6. Confirm relay serial log shows forwarded packets with incremented hop_count.
-
-Pass: 5/5 packets received at gateway with hop_count=1; relay logs confirm forwarding.
+Pass criterion: five matching counts on the gateway, no skipped sensor counts, LED dark
+during sleep, no hang.
 
 ---
 
-### T-M3 — Relay Dedup: No Duplicate Delivery
+### T-M2 — Unconfigured sensor does not hang (DevKitC-C6)
 
-**Why manual**: Requires observing that a packet arriving via two paths (direct + relay)
-is delivered exactly once at the gateway.
-
-Hardware: 3× XIAO ESP32S3, sensor within range of both relay and gateway simultaneously.
+**Why manual**: The skip path is a timed sleep on hardware. The placeholder MAC is the
+default build.
 
 Steps:
 
-1. Flash all three boards as in T-M2 but place sensor within range of both relay and
-   gateway.
-2. Let sensor transmit 5 packets.
-3. Confirm gateway receives exactly 5 packets total (not 10 — no duplicates from relay).
+1. Flash the default sensor image without overriding `ESPNOW_GATEWAY_MAC`.
+2. Confirm the log says the gateway MAC is unset, the LED shows the failure colour, and
+   the device sleeps within about 3 seconds. Repeat for two cycles.
 
-Pass: exactly 5 unique (node_id, msg_count) pairs received at gateway.
+Pass criterion: no hang, counter still increments, failure indication visible.
 
 ---
 
-### T-M4 — RSSI Plausibility
+### T-M3 — XIAO sensor LED (optional)
 
-**Why manual**: Requires a real WiFi AP in the environment.
+**Why manual**: Active-LOW polarity and the USB drop on sleep are visual / host-port behaviour.
 
-Hardware: 1× XIAO ESP32S3 (sensor role) + any WiFi AP with known SSID.
-
-Steps:
-
-1. Configure `CONFIG_TARGET_SSID_1` to match a known AP in the environment.
-2. Flash as sensor, connect a serial monitor.
-3. On first wake, confirm sensor logs RSSI for the configured SSID.
-4. Confirm the value is in the range –30 to –90 dBm.
-5. Move board to a more distant location and confirm RSSI decreases (more negative).
-
-Pass: logged RSSI is in –30 to –90 dBm range at close range; decreases with distance.
-
----
-
-### T-M5 — Sensor Active Window ≤ 600 ms
-
-**Why manual**: Precise sleep/wake timing requires serial timestamp observation on real hardware.
-
-Hardware: 1× XIAO ESP32S3 (sensor role) + 1× gateway.
+Hardware: Seeed XIAO ESP32-C6 as the sensor, any C6 gateway from T-M1 on the same channel.
 
 Steps:
 
-1. Open sensor serial monitor.
-2. Record timestamp of "wake" log line and "entering deep sleep" log line.
-3. Difference must be ≤ 600 ms.
+1. `cargo run --release --no-default-features --features board-xiao-c6,role-sensor`
+   with a real gateway MAC.
+2. Expect the USB monitor to exit on the first sleep. Watch GPIO 15: one blink per
+   successful send, off during sleep.
 
-Pass: active window ≤ 600 ms per serial timestamps on at least 5 consecutive cycles.
-
----
-
-### T-M6 — Sensor Sleeps When No Gateway Is Reachable
-
-**Why manual**: Requires physical absence of the gateway to test the timeout path.
-
-Hardware: 1× XIAO ESP32S3 (sensor role), no gateway powered on.
-
-Steps:
-
-1. Flash sensor. Do not power on any gateway board.
-2. Monitor sensor serial output.
-3. Confirm sensor wakes, listens for beacon, logs "no gateway discovered", then enters
-   deep sleep.
-4. Confirm no blocking hang. Confirm sleep entry within 600 ms of wake.
-
-Pass: sensor returns to deep sleep within 600 ms of wake with no gateway present.
+Pass criterion: blink matches a successful send observed on the gateway. The USB drop is
+not a firmware failure.

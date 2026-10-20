@@ -1,0 +1,22 @@
+# AGENT-GENERATED — DO NOT EDIT BY HAND
+# Heap is justified (Wi-Fi blob, embassy-net, TLS certificate checks).
+# Flash size is chip-detected. DevKitC-1-N8 is 8 MB; XIAO ESP32-C6 is 4 MB.
+# Pass `--flash-size 8mb` or `--flash-size 4mb` only when auto-detect is wrong.
+# The main stack is leftover RWDATA. This key fails the link if that leftover
+# is under 32 KiB (TLS handshake frame plus esp-storage's sector buffer).
+# TLS record buffers live in static Scratch, not on this stack.
+
+[build]
+target = "riscv32imac-unknown-none-elf"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "espflash flash --monitor --partition-table partitions.csv"
+
+[unstable]
+build-std = ["core", "alloc"]
+
+[env]
+ESP_HAL_CONFIG_ENSURE_MAIN_STACK_MINIMUM = "32768"
+WIFI_SSID = "unset"
+WIFI_PASSWORD = "unset"
+OTA_URL = "https://192.0.2.1/firmware.bin"

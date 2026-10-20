@@ -1,25 +1,31 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
-# ESP-NOW Low-Power Mesh with WiFi RSSI Sensing
+# ESP-NOW Sensor to Gateway — ESP32-C6
 
-> Infrastructure-free multi-hop sensor network on ESP32-C6 using ESP-NOW.
+> One sensor deep-sleeps and sends a single unicast datagram. One gateway stays awake and logs it. The directory name `esp-now-low-power-mesh` is historical. This is not a mesh.
 
-This example enables `esp-hal` feature **`unstable`** (radio + sleep / RTC). **`esp-radio` is an unstable beta** (git-pinned with the `esp-hal` monorepo stack at tag `esp-hal-v1.2.1`). Those APIs may change with `esp-hal` minor releases.
+## Implementation status
+
+**Specs only** as of 2026-10-20. The Functional, Coding, and Test specs in this folder are the current design. There is no `Cargo.toml` and no `src/`. `cargo build` and `cargo run` fail in this directory until `esp32-sdd-full-project-generator` runs. This README describes the spec. It is not a record of packets on the air.
+
+The design enables `esp-hal` feature **`unstable`** (ESP-NOW, sleep, RTC, RMT). **`esp-radio` is an unstable beta**, and the `esp-now` feature is unstable. Crates are git-pinned at tag `esp-hal-v1.2.1`. Those APIs may change with `esp-hal` minor releases.
 
 ## Overview
 
-Four roles run on the same firmware, selected at build time via mutually exclusive **Cargo features** (not Kconfig): **sensor**, **relay**, **gateway**, and **sensor-relay**.
+One firmware image, two mutually exclusive Cargo features:
 
-- **Sensor** — wakes on an RTC timer, scans nearby Wi-Fi APs for RSSI, sends one ESP-NOW packet toward the gateway, tears the radio down, sleeps.
-- **Relay** — always-on; forwards unseen packets toward the gateway; hop count; dedup table.
-- **Gateway** — always-on; beacons so nodes discover it without a hardcoded MAC; logs packets (ANSI dashboard via `esp-println` when specified).
-- **Sensor-relay** — light-sleep forwarder that also periodically scans and transmits its own payload.
+- `role-sensor` (default, with `board-devkitc-c6`) — wake on an RTC timer of about 15 seconds (and optional GPIO 0), send one datagram to a compile-time gateway MAC, tear the radio down, sleep.
+- `role-gateway` — never sleep. Log the station MAC at boot. Log each datagram whose magic matches, and blink once.
 
-Gateway discovery is dynamic. Payload includes per-SSID RSSI. Tear down `esp-radio` before deep sleep on the sensor role.
+Neither role associates to an access point. There is no relay, no beacon discovery, no hop count, and no Wi-Fi RSSI scan. Both images must use the same `ESPNOW_CHANNEL` (default `1`). A channel mismatch looks like a dead gateway.
+
+The placeholder gateway MAC `00:00:00:00:00:00` means "not configured". The sensor logs that, shows the failure indication, and sleeps. It must not hang.
+
+GPIO 9 (XIAO BOOT) cannot wake the sensor. GPIO 0 can: DevKitC BOOT, or an external button on XIAO D0.
 
 ## Prerequisites
 
@@ -27,14 +33,13 @@ Gateway discovery is dynamic. Payload includes per-SSID RSSI. Tear down `esp-rad
 - rustup component `rust-src`
 - rustup target `riscv32imac-unknown-none-elf`
 - `espflash` and/or `cargo-espflash`
-- Hardware: **two or more ESP32-C6-DevKitC-1-N8** (required default) or XIAO ESP32-C6 boards
-- One or more 2.4 GHz APs in range if you want non-empty RSSI
+- Two ESP32-C6 boards for the on-air test (DevKitC-C6, XIAO C6, or one of each). One board can still build either role after generation.
 
-ESP-IDF is **not** required. Never mix crates.io `esp-rtos = "0.4.0"` with git `esp-hal`.
+ESP-IDF is **not** required. No access point is required.
 
 ## Supported Boards
 
-Auto-discovered from `board-specs/` using the FunctionalSpec Board Compatibility Checklist (Wi-Fi present, deep sleep with RTC timer, C6 in `rust-toolchain.md`, user LED), filtered to ESP32-C6.
+Auto-discovered from `board-specs/`, filtered to ESP32-C6. Wi-Fi (for ESP-NOW) and a user LED are required.
 
 > Default board: Espressif ESP32-C6-DevKitC-1-N8
 
@@ -45,22 +50,22 @@ Auto-discovered from `board-specs/` using the FunctionalSpec Board Compatibility
 
 ¹ A GPIO level alone produces no visible output — use an RMT (or equivalent `esp-hal`) driver to generate the 800 kHz NRZ waveform.
 
-All four roles are supported on every board in this table.
-
-> **Excluded from v1:** Adafruit HUZZAH32 (ESP32), Seeed XIAO ESP32S3 (ESP32-S3), Seeed XIAO ESP32-C5 (ESP32-C5), YEJMKJ ESP32-S3-DevKitC-1-N16R8 (ESP32-S3) — not in v1 — C6 only. ESP32-H2 has no Wi-Fi and cannot run ESP-NOW.
+> **Excluded from v1:** Adafruit HUZZAH32 (ESP32), Seeed XIAO ESP32S3 (ESP32-S3), Seeed XIAO ESP32-C5 (ESP32-C5), YEJMKJ ESP32-S3-DevKitC-1-N16R8 (ESP32-S3) — not in v1 — C6 only. ESP32-H2 has no Wi-Fi, so it cannot run ESP-NOW. It is not in v1 anyway.
 
 ## Per-Board Behavior
 
 | Board | Serial monitor during deep sleep | LED feedback | Deep sleep floor |
 | --- | --- | --- | --- |
-| Espressif ESP32-C6-DevKitC-1-N8 *(default)* | Stays connected throughout sleep | Color: green = success, red = failure, off = sleep (WS2812) | ~7–15 µA |
-| Seeed XIAO ESP32-C6 | Drops and reconnects on wake (USB Serial/JTAG) | On / off, active LOW | ~15 µA |
+| Espressif ESP32-C6-DevKitC-1-N8 *(default)* | Stays connected throughout sleep (sensor on the **left** USB-C) | WS2812, cap 64/255. Sensor: green = sent, red = failed or skipped. Gateway: blue flash per accepted frame | ~7–15 µA (sensor, after radio teardown) |
+| Seeed XIAO ESP32-C6 | Drops and reconnects on wake (USB Serial/JTAG) | On / off, active LOW. One blink = success, double blink = failure | ~15 µA (sensor, after radio teardown) |
 
-UART-bridge boards keep the serial monitor connected through deep sleep; native USB boards drop and reconnect — this is expected, not a crash. Both boards scan **2.4 GHz Wi-Fi 6** only (no 5 GHz).
+The gateway does not sleep, so either USB port can monitor it. Use a UART-bridge DevKitC for the sensor when you need more than one cycle of logs. Forgetting radio teardown leaves the sensor in milliamps during sleep.
 
-## Build & Flash
+## After the crate is generated
 
-Default (sensor role, DevKitC):
+These commands are the intended workflow. **They fail today** because this folder has no `Cargo.toml`.
+
+Sensor, DevKitC-C6 (default features `board-devkitc-c6` + `role-sensor`):
 
 ```sh
 cargo build --release
@@ -68,86 +73,51 @@ cargo clippy -- -D warnings
 cargo run --release
 ```
 
-Role selection (mutually exclusive Cargo features; names as generated by the full-project-generator):
+Gateway, DevKitC-C6. `--no-default-features` is required so `role-sensor` is not also enabled:
 
 ```sh
-cargo run --release --features role-gateway
-cargo run --release --features role-relay
-cargo run --release --features role-sensor-relay
+cargo run --release --no-default-features --features board-devkitc-c6,role-gateway
 ```
 
-Optional XIAO ESP32-C6 (combine with a role feature as generated):
+XIAO sensor and gateway:
 
 ```sh
-cargo run --release --no-default-features --features board-xiao-c6
+cargo run --release --no-default-features --features board-xiao-c6,role-sensor
+cargo run --release --no-default-features --features board-xiao-c6,role-gateway
 ```
+
+Set `ESPNOW_CHANNEL` on both images. Copy the gateway's logged station MAC into the sensor's `ESPNOW_GATEWAY_MAC`. Enabling both role features, or neither, must fail at compile time.
+
+> **Never edit generated source files directly.** To change behaviour, update the specs and regenerate.
 
 ### Opening in VS Code / Cursor
 
-This folder is a complete standalone Cargo package. Open **only this folder**
-(not the repository root) so rust-analyzer uses this crate.
+After generation this folder is a standalone Cargo package. Open **only this folder**.
 
 **File → Open Folder… → select `examples/esp-now-low-power-mesh/`**
 
-This gives rust-analyzer the crate's `Cargo.toml` and `.cargo/config.toml`
-(RISC-V target + `espflash` runner). Do not open the top-level repository
-folder as your active workspace while developing this example.
-
-## Expected Serial Output
-
-Gateway:
-
-```
-mesh-gw: beacon
-mesh-gw: rx node_id=2 hop=0 msg=5 rssi[0]=-62
-```
-
-Sensor:
-
-```
-mesh-sensor: gateway discovered
-mesh-sensor: tx ok; radio teardown; sleeping
-```
+Until then the folder is specs plus this README.
 
 ## Key Concepts
 
-- **ESP-NOW** via `esp-radio` (unstable beta)
-- **Dynamic gateway beacon** — no compile-time MAC
-- **Wi-Fi scan RSSI** as real payload
-- **Deep sleep + persistent topology cache** on sensors
-- **ANSI dashboard** on the gateway when the spec requests it (`esp-println`, not a GUI)
-- **Radio teardown** before HP sleep
+- **Unicast pair** — one sender, one receiver, fixed channel, compile-time peer MAC. Not a routing protocol.
+- **Radio teardown** — the sensor drops `esp-radio` before `sleep_deep`. ESP-NOW shares the 802.11 radio. There is no `embassy-net` and no AP association.
+- **Persistent boot count** — `#[esp_hal::ram(persistent)]` on the sensor only. Lost on power-cycle. Guarded by magic and a checksum.
+- **Payload** — boot count plus a fixed magic, under the 250-byte ESP-NOW maximum.
+- **Application descriptor** — `esp_app_desc!()` is required for current `espflash`. This is not an ESP-IDF install.
 
 ## Limitations
 
-This example implements a **tree topology with dynamic discovery and partial recovery** — not a self-healing mesh. Understanding the distinction prevents over-claiming the network's capabilities when deploying or presenting this example.
+| This example is NOT | Why |
+|---|---|
+| A multi-hop mesh | No relay and no routing table |
+| Dynamic gateway discovery | The sensor address is compile-time. The gateway prints its MAC so you can copy it |
+| A Wi-Fi scanner | No SSID RSSI scan |
+| A light-sleep forwarder | The gateway is fully awake. The sensor uses deep sleep, not light-sleep relay |
+| Encrypted ESP-NOW | Frames are plaintext lab traffic |
+| An access-point client | No association, no DHCP, no TCP |
 
-### What this example is NOT
-
-| Claim | Reality |
-| --- | --- |
-| "Self-healing mesh" | No. There is no alternate-path selection. If the relay between a sensor and the gateway fails, the sensor has no way to find a different relay. It fails until the original relay recovers or the sensor regains direct gateway range. |
-| "Multi-hop mesh" | Partially. Packets traverse at most one relay hop in the current implementation. A sensor cannot route through two relays in sequence. |
-| "Fault-tolerant" | Partially. The gateway is a single point of failure. If the gateway goes down, all nodes lose their destination. There is no backup gateway. |
-| "Mesh routing" | No. Nodes do not exchange routing tables, path metrics, or topology advertisements. Each node knows only its single cached next hop. |
-
-### Specific shortcomings
-
-1. **Single gateway, no failover** — all paths terminate at one gateway. A gateway reboot is survivable (sensors and relays rediscover via beacon) but a gateway failure with no recovery means the network is dark until the gateway is restored.
-2. **Single relay path, no alternate selection** — sensors cache one next-hop MAC. If that relay fails, the sensor has no fallback (unless it can reach the gateway directly).
-3. **One relay hop maximum** — a relay never forwards to another relay, so depth is capped at sensor → relay → gateway.
-4. **No path quality metric** — a sensor accepts the first beacon it hears (gateway preferred, relay as fallback).
-5. **No topology advertisement** — relay beacons carry only a node type byte and sequence number.
-
-### How to extend toward a true self-healing mesh
-
-| Extension | Approach |
-| --- | --- |
-| **Multiple relay candidates** | Store up to N relay MACs ranked by beacon RSSI. On primary relay failure, promote the next candidate without waiting for a full discovery window. |
-| **Relay-to-relay forwarding** | Add a "distance to gateway" field to relay beacons. A relay that receives a packet from another relay forwards it if its own distance is smaller. |
-| **Backup gateway** | Broadcast beacon from two gateway nodes on the same channel. |
-| **Path quality selection** | During the discovery window, collect all relay beacons; select the strongest RSSI. |
-| **Production mesh stack** | For deployments requiring true self-healing, replace this example with a production mesh stack that implements automatic tree restructuring and root failover. |
+IEEE 802.15.4 raw frames are a deferred catalog item, not a feature of this example.
 
 ## Testing
 
@@ -155,57 +125,25 @@ Testing philosophy: automated first, manual only when hardware observation is un
 
 ### Automated Tests
 
-1. **T-A1 — Zero-warning build (sensor / default)**
+Run these only after the crate exists. From `examples/esp-now-low-power-mesh/`:
 
-   ```sh
-   cargo build --release
-   cargo clippy -- -D warnings
-   ```
-
-   Pass: exit 0, zero warnings.
-
-2. **T-A2 — Zero-warning build (gateway role)**
-
-   ```sh
-   cargo build --release --features role-gateway
-   cargo clippy --features role-gateway -- -D warnings
-   ```
-
-   Pass: exit 0.
-
-3. **T-A3 — Zero-warning build (relay role)**
-
-   ```sh
-   cargo build --release --features role-relay
-   ```
-
-   Pass: exit 0.
-
-4. **T-A4 — Payload size** — covered by T-A1: the crate must not compile if the ESP-NOW payload exceeds the 250-byte maximum.
+1. **T-A1 — DevKitC sensor (default)** — `cargo build --release` and `cargo clippy --release -- -D warnings` exit 0.
+2. **T-A2 — DevKitC gateway** — the same two commands with `--no-default-features --features board-devkitc-c6,role-gateway`.
+3. **T-A3 — XIAO, both roles** — `board-xiao-c6,role-sensor` and `board-xiao-c6,role-gateway`, each with `--no-default-features`.
+4. **T-A4 — roles are exclusive** — a build with both role features, and a build with the board feature and no role, must fail to compile.
 
 ### Manual Tests — hardware required
 
-**T-M1 — Direct path: sensor to gateway (2 boards)**
+Why manual: delivery and deep-sleep retention need two radios.
 
-Why manual: real ESP-NOW over the air needs two C6 boards and a live RF environment.
+**T-M1 — Two DevKitC boards.** Flash the gateway first and copy its MAC. Flash the sensor with that MAC and the same channel. Watch at least five wakes. The gateway count matches the sensor. The sensor LED flashes once and is dark during the ~15 s sleep. The left USB-C monitor stays connected.
 
-1. Flash board A as gateway: `cargo run --release --features role-gateway`
-2. Flash board B as sensor: `cargo run --release`
-3. Power gateway first; confirm beacons.
-4. Power sensor; confirm "gateway discovered".
-5. Confirm five consecutive receives with incrementing `msg_count`, `hop_count = 0`, and at least one RSSI in –30 to –90 dBm if an AP is present.
+**T-M2 — Unconfigured sensor.** Default MAC, no override. The log says the MAC is unset, the failure colour shows, and the device sleeps within about 3 seconds.
 
-Pass: 5/5 packets; monotonic `msg_count`; hop 0.
-
-Use DevKitC **left** USB-C on the sensor if you need serial through sleep.
+**T-M3 — XIAO sensor (optional).** USB Serial/JTAG exits on the first sleep. That is expected. GPIO 15 blinks once per send the gateway accepted.
 
 ## Spec Files
 
 - [specs/FunctionalSpec.md](specs/FunctionalSpec.md)
 - [specs/CodingSpec.md](specs/CodingSpec.md)
 - [specs/TestSpec.md](specs/TestSpec.md)
-
-## Board Specs
-
-- [board-specs/espressif/esp32-c6-devkitc-1-n8.md](../../board-specs/espressif/esp32-c6-devkitc-1-n8.md)
-- [board-specs/seeed/xiao-esp32c6.md](../../board-specs/seeed/xiao-esp32c6.md)

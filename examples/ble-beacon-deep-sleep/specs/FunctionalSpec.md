@@ -19,6 +19,10 @@ advertisement. On XIAO ESP32-C6 the onboard boot button is GPIO 9, which is
 external button on LP GPIO 0–7 (this example arms GPIO 0 / D0 as that external
 wake pin).
 
+## Implementation status
+
+**Firmware generated** as of 2026-10-20. `Cargo.toml` and `src/main.rs` are present (generated 2026-09-08). The 10 s / 10 s cycle is a demo, not a multi-year budget. This line is not a hardware-test result. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
+
 ## Target Hardware
 
 v1 chip: **ESP32-C6** only (`esp32c6`). Other SoCs are not in v1.

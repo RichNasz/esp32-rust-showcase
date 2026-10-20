@@ -1,12 +1,12 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # examples/
 
-Eight progressive rust-on-metal ESP32-C6 examples, each generated from its `FunctionalSpec.md` and `CodingSpec.md` by the **esp32-sdd-full-project-generator** skill. They are ordered by complexity — start with `blinky` and work forward.
+Eight progressive rust-on-metal ESP32-C6 examples. They are ordered by complexity — start with `blinky` and work forward. As of 2026-10-20, **six have generated crates** and **two are specs only** (`esp-now-low-power-mesh`, `lp-core-wakeup`). `specs/showcase-master-spec.md` still lists `secure-ota-https` as Specs only; humans own that catalog. A specs-only folder contains `specs/` and a README until `esp32-sdd-full-project-generator` runs. The tree below is the target layout, not a claim that every folder already has `src/`.
 
 **Chip ≠ board.** v1 chip is ESP32-C6 (`esp32c6`) only — not `idf.py set-target` portability. **Required board:** ESP32-C6-DevKitC-1-N8. XIAO ESP32-C6 is also supported.
 
@@ -14,16 +14,16 @@ Eight progressive rust-on-metal ESP32-C6 examples, each generated from its `Func
 
 Start at example 1 and work forward — each example introduces new hardware features and builds on patterns from the previous one.
 
-| # | Example | What You Learn | Key ESP32-C6 Feature | Complexity |
-|---|---|---|---|---|
-| 1 | [blinky](blinky/) | SDD pipeline, multi-board Cargo features, WS2812 vs GPIO LED | RMT / GPIO LED | ★☆☆☆☆ |
-| 2 | [deep-sleep-timer-node](deep-sleep-timer-node/) | Deep sleep, RTC timer wakeup, persistent RAM | RTC sleep + `#[esp_hal::ram(persistent)]` | ★★☆☆☆ |
-| 3 | [deep-sleep-bme280-mqtt-sensor](deep-sleep-bme280-mqtt-sensor/) | I2C sensor, Wi-Fi STA, MQTT publish, duty-cycled sleep | I2C + `esp-radio` Wi-Fi + MQTT | ★★★☆☆ |
-| 4 | [hardware-aes-secure-storage](hardware-aes-secure-storage/) | Hardware AES, flash-backed blobs | `esp-hal` AES + `esp-storage` | ★★★☆☆ |
-| 5 | [ble-beacon-deep-sleep](ble-beacon-deep-sleep/) | BLE advertising, duty-cycled radio, WS2812, ANSI dashboard | `esp-radio` BLE + deep sleep | ★★★★☆ |
-| 6 | [secure-ota-https](secure-ota-https/) | HTTPS OTA, TLS, rollback | Dual OTA partitions + TLS | ★★★★☆ |
-| 7 | [esp-now-low-power-mesh](esp-now-low-power-mesh/) | ESP-NOW peer comms, dual-role firmware | ESP-NOW + power management | ★★★★☆ |
-| 8 | [lp-core-wakeup](lp-core-wakeup/) | LP-core firmware, GPIO wakeup from HP deep sleep | `esp-lp-hal` + GPIO 0–7 | ★★★★★ |
+| # | Example | What You Learn | Key ESP32-C6 Feature | Status | Complexity |
+|---|---|---|---|---|---|
+| 1 | [blinky](blinky/) | SDD pipeline, multi-board Cargo features, WS2812 vs GPIO LED | RMT / GPIO LED | Firmware generated | ★☆☆☆☆ |
+| 2 | [deep-sleep-timer-node](deep-sleep-timer-node/) | Deep sleep, RTC timer wakeup, persistent RAM | RTC sleep + `#[esp_hal::ram(persistent)]` | Firmware generated | ★★☆☆☆ |
+| 3 | [deep-sleep-bme280-mqtt-sensor](deep-sleep-bme280-mqtt-sensor/) | I2C sensor, Wi-Fi STA, MQTT publish, duty-cycled sleep | I2C + `esp-radio` Wi-Fi + MQTT | Firmware generated | ★★★☆☆ |
+| 4 | [hardware-aes-secure-storage](hardware-aes-secure-storage/) | Hardware AES, flash-backed blobs (plaintext key) | `esp-hal` AES + `esp-storage` | Firmware generated | ★★★☆☆ |
+| 5 | [ble-beacon-deep-sleep](ble-beacon-deep-sleep/) | BLE advertising, radio teardown, demo duty cycle | `esp-radio` BLE + deep sleep | Firmware generated | ★★★★☆ |
+| 6 | [secure-ota-https](secure-ota-https/) | HTTPS slot flip, TLS 1.3, CRC before activate. Not Secure Boot | Dual OTA partitions + `embedded-tls` | Firmware generated | ★★★★☆ |
+| 7 | [esp-now-low-power-mesh](esp-now-low-power-mesh/) | ESP-NOW unicast pair (directory name is historical, not a mesh) | `esp-radio` ESP-NOW + sensor deep sleep | Specs only | ★★★★☆ |
+| 8 | [lp-core-wakeup](lp-core-wakeup/) | LP-core firmware, GPIO 0 wakeup from HP deep sleep | `esp-lp-hal` + GPIO 0–7 | Specs only | ★★★★★ |
 
 ## Example Structure
 

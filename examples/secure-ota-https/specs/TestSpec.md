@@ -1,118 +1,110 @@
-# Testing Specification — Secure OTA via HTTPS
+# Testing Specification — HTTPS OTA Slot Flip (ESP32-C6)
 
 ## Testing Philosophy
 
-Automated testing using native ESP-IDF tools is strongly preferred.
+Automated testing using native Cargo / rustc tools is strongly preferred.
 Additional tools are only allowed with explicit justification and documented benefits.
 Manual testing is used only when no practical automated alternative exists.
+
+Do not specify `idf.py`, ESP-IDF Unity, or CMake-based harnesses.
 
 ---
 
 ## Automated Tests
 
-### T-A1 — Zero-Warning Build
+### T-A1 — Zero-warning build (ESP32-C6-DevKitC-1-N8, default features)
 
-**Tool**: `idf.py` (native)
+**Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
+**What it verifies**: The crate compiles cleanly for DevKitC-C6 with the git-pinned radio
+stack, `embedded-tls` without `std`, and placeholder Wi-Fi / URL / CA values. No `rustc`
+or clippy warnings.
 
 ```sh
 cd examples/secure-ota-https
-idf.py set-target esp32s3 && idf.py build
+cargo build --release
+cargo clippy --release -- -D warnings
 ```
 
-Pass: exit code 0, zero compiler warnings.
+Pass criterion: both commands exit 0 with no warnings. The build must not require a live
+access point or a real password in `src/`.
 
 ---
 
-### T-A2 — Partition Table Validation
+### T-A2 — Zero-warning build (Seeed XIAO ESP32-C6)
 
-**Tool**: `idf.py` (native)
-
-```sh
-idf.py partition-table 2>&1 | grep -E "ota_0|ota_1"
-```
-
-Pass: both `ota_0` and `ota_1` partitions listed with ≥ 1536K (1.5 MB) each.
-
----
-
-### T-A3 — Rollback Config Present
-
-**Tool**: `idf.py` (native — config check)
+**Tool**: `cargo` (native)
+**What it verifies**: The GPIO-LED path and the 4 MB board feature compile cleanly.
 
 ```sh
-grep "CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y" examples/secure-ota-https/sdkconfig.defaults
+cd examples/secure-ota-https
+cargo build --release --no-default-features --features board-xiao-c6
+cargo clippy --release --no-default-features --features board-xiao-c6 -- -D warnings
 ```
 
-Pass: line present.
-
----
-
-### T-A4 — Server Cert Embedded in Binary
-
-**Tool**: `idf.py` (native)
-
-```sh
-idf.py build 2>&1 | grep "server_cert"
-```
-
-Pass: `server_cert.pem` appears in build output (confirms `target_add_binary_data` is working).
+Pass criterion: both commands exit 0 with no warnings.
 
 ---
 
 ## Manual Tests
 
-*End-to-end OTA requires a real HTTPS server, Wi-Fi AP, and target hardware. These tests cannot be reliably automated without a complex multi-process CI rig.*
+*Manual tests are used only when no practical automated alternative exists. Each step explains
+why automation is not applicable.*
 
-### T-M1 — Full OTA Download and Flash (default GitHub server)
+### T-M1 — Slot flip on a real board (ESP32-C6-DevKitC-1-N8)
 
-**Why manual**: Requires a live Wi-Fi network and real target hardware.
+**Why manual**: The boot slot, Wi-Fi association, TLS handshake, flash write, and WS2812
+colour are hardware and network behaviour. A host build cannot certify them.
 
-The default configuration uses GitHub raw content as the OTA server
-(`CONFIG_OTA_SERVER_URL` default) and ISRG Root X1 as the embedded CA
-(`main/server_cert.pem`). No local server setup is needed for this path.
+Hardware and lab setup:
 
-Prerequisites:
-- A built firmware binary pushed to the repository at the URL in `CONFIG_OTA_SERVER_URL`.
-- Wi-Fi credentials configured via Kconfig (`idf.py menuconfig → OTA Configuration`).
+- Espressif ESP32-C6-DevKitC-1-N8, **left** USB-C UART-C port.
+- A 2.4 GHz WPA2-Personal AP.
+- A TLS 1.3 HTTPS server whose certificate chains to the CA embedded in the firmware.
+- An enveloped image: `espflash save-image` of this example for `esp32c6`, then an 8-byte
+  little-endian prefix (image length, IEEE CRC32 of the image). Serve that body at the
+  configured URL with no redirect.
 
 Steps:
-1. Set `OTA_WIFI_SSID` and `OTA_WIFI_PASSWORD` via `idf.py menuconfig`.
-2. Build and flash: `idf.py -p /dev/cu.usbmodem2101 flash monitor`
-3. Confirm serial log: Wi-Fi connected → "Ready — press button to trigger OTA".
-4. Press the button (GPIO 7).
-5. Confirm progress log: downloading → writing → rebooting.
-6. Confirm device reboots into new firmware; opposite status LED lights up; log shows "app marked valid".
 
-Pass: OTA completes; device boots new firmware; rollback not triggered.
+1. Override the placeholder SSID, password, URL, and CA via the documented environment
+   variables. Do not commit those values.
+2. From `examples/secure-ota-https/`: `cargo run --release`.
+3. Confirm the log names `ota_0` and the RGB LED is blue (cap 64/255, visible in room light).
+4. Press BOOT (GPIO 0) only after the log says it is waiting. Confirm a blink during transfer.
+5. After reboot, confirm the log names `ota_1` and the LED is amber.
+6. Press BOOT again and confirm the device returns to `ota_0` (blue).
 
-**Alternative: Local self-signed server**
-
-For testing cert rejection or non-GitHub servers:
-- `openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"`
-- Serve the binary over HTTPS; place `cert.pem` in `main/server_cert.pem`; rebuild.
+Pass criterion: each successful press changes the logged slot and the LED colour. The
+monitor shows CRC success before reboot. The password does not appear in the log.
 
 ---
 
-### T-M2 — TLS Certificate Rejection (Invalid Cert)
+### T-M2 — Reject a bad certificate and a bad CRC (DevKitC-C6)
 
-**Why manual**: Negative TLS test requires a deliberate certificate mismatch on real hardware.
+**Why manual**: Negative TLS and CRC behaviour depends on a live server and on flash not
+changing boot selection.
 
-1. Replace `main/server_cert.pem` with a certificate from a *different* CA.
-2. Build and flash.
-3. Confirm serial log shows TLS handshake failure / certificate verify error.
-4. Confirm device does not flash the new binary (stays on current firmware).
+Steps:
 
-Pass: TLS error logged; no reboot; current firmware intact.
+1. Point the URL at a TLS 1.3 server whose certificate does **not** chain to the embedded CA.
+   Press BOOT. Confirm the log reports a certificate or handshake failure, the LED shows
+   the error pattern, and a reboot does not happen. The slot log is unchanged if the device
+   is reset by hand afterwards.
+2. Restore a trusted server, but serve a body whose CRC prefix does not match the bytes.
+   Press BOOT. Confirm the log reports a CRC or length failure and the boot slot does not change.
+
+Pass criterion: neither case activates a new slot.
 
 ---
 
-### T-M3 — Automatic Rollback
+### T-M3 — XIAO blink count (Seeed XIAO ESP32-C6)
 
-**Why manual**: Rollback requires a firmware image that intentionally fails to call `mark_app_valid`, which cannot be simulated without a second custom-built binary.
+**Why manual**: Active-LOW blink count is visual. USB Serial/JTAG is usable here because
+this example does not deep-sleep.
 
-1. Build a "bad" firmware variant that does not call `esp_ota_mark_app_valid_cancel_rollback()`.
-2. OTA-flash the bad firmware via T-M1 procedure.
-3. Confirm bootloader rolls back to the previous image on the next boot.
-4. Confirm serial log shows the rollback boot cause.
+Steps:
 
-Pass: device rolls back automatically; previous firmware resumes.
+1. From `examples/secure-ota-https/`: `cargo run --release --no-default-features --features board-xiao-c6`
+2. Confirm one short blink when the log says `ota_0`, and two short blinks after a successful flip to `ota_1`.
+
+Pass criterion: blink count matches the slot. GPIO 15 active LOW (LED off while idle after the indication).

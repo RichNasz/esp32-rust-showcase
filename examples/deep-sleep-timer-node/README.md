@@ -1,12 +1,16 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-full-project-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Deep Sleep Timer Node — ESP32-C6
 
 > RTC timer wakeup with boot-counter persistence and a per-cycle LED heartbeat.
+
+## Implementation status
+
+**Firmware generated** as of 2026-10-20. `Cargo.toml` and `src/main.rs` are in this folder (generated 2026-09-08 from the specs). The build commands below apply to this crate. This is not a record of a hardware test on 2026-10-20.
 
 This example uses `esp-hal` sleep / RTC and RMT APIs gated on feature **`unstable`**. Those APIs may change with `esp-hal` minor releases.
 

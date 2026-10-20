@@ -1,12 +1,16 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-full-project-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Deep Sleep BME280 + MQTT — Real IoT Sensor Node
 
 > Duty-cycled IoT node: wake → I2C sense → Wi-Fi STA → MQTT publish → deep sleep.
+
+## Implementation status
+
+**Firmware generated** as of 2026-10-20. `Cargo.toml` and `src/main.rs` are in this folder (generated 2026-09-08 from the specs). The build commands below apply to this crate. This is not a record of a hardware test on 2026-10-20.
 
 This example enables `esp-hal` feature **`unstable`** (radio + sleep / RTC + RMT). **`esp-radio` is an unstable beta** (git-pinned with the rest of the `esp-hal` monorepo stack at tag `esp-hal-v1.2.1`). Those APIs may change with `esp-hal` minor releases.
 

@@ -1,96 +1,96 @@
-# Testing Specification — Capacitive Touch Wakeup
+# Testing Specification — LP-Core GPIO Wakeup (ESP32-C6)
 
 ## Testing Philosophy
 
-Automated testing using native ESP-IDF tools is strongly preferred.
+Automated testing using native Cargo / rustc tools is strongly preferred.
 Additional tools are only allowed with explicit justification and documented benefits.
 Manual testing is used only when no practical automated alternative exists.
+
+Do not specify `idf.py`, ESP-IDF Unity, or CMake-based harnesses.
 
 ---
 
 ## Automated Tests
 
-### T-A1 — Zero-Warning Build
+### T-A1 — Zero-warning build (ESP32-C6-DevKitC-1-N8, default features)
 
-**Tool**: `idf.py` (native)
+**Tool**: `cargo` (native; rustup stable + `riscv32imac-unknown-none-elf` + `rust-src`)
+**What it verifies**: The HP crate and the nested `lp-core/` image compile cleanly for
+DevKitC-C6. `build.rs` must produce the LP image without CMake. No `rustc` or clippy
+warnings on the HP package.
 
 ```sh
-cd examples/capacitive-touch-wakeup
-idf.py set-target esp32s3 && idf.py build
+cd examples/lp-core-wakeup
+cargo build --release
+cargo clippy --release -- -D warnings
 ```
 
-Pass: exit code 0, zero compiler warnings.
+Pass criterion: both commands exit 0 with no warnings. The build log shows the LP crate
+being compiled. No `CMakeLists.txt` is created.
 
 ---
 
-### T-A2 — Binary Size Check
+### T-A2 — Zero-warning build (Seeed XIAO ESP32-C6)
 
-**Tool**: `idf.py` (native)
-
-```sh
-idf.py size | grep "Total binary size"
-```
-
-Pass: < 1 MB.
-
----
-
-### T-A3 — Timer Wakeup via Wokwi Simulation
-
-**Tool**: Wokwi CLI — justification: the 20-second backup timer wakeup path is testable in simulation; only the touch wakeup path requires physical hardware.
-
-Prerequisites: Wokwi CLI installed; `wokwi.toml` + `diagram.json` at example root (no touch pad wired — forces timer wakeup path).
+**Tool**: `cargo` (native)
+**What it verifies**: The active-LOW GPIO LED path and the same LP image compile when the
+XIAO board feature is selected. The wake pad remains GPIO 0, not GPIO 9.
 
 ```sh
-wokwi-cli --timeout 30000 --expect "Timer wake" .
+cd examples/lp-core-wakeup
+cargo build --release --no-default-features --features board-xiao-c6
+cargo clippy --release --no-default-features --features board-xiao-c6 -- -D warnings
 ```
 
-Pass: `Timer wake` appears in simulated serial output within 30 seconds.
+Pass criterion: both commands exit 0 with no warnings.
 
 ---
 
 ## Manual Tests
 
-*Capacitive touch sensing is a physical human-interface phenomenon. Touch detection quality (threshold, false-positive rate) and the deep-sleep touch wakeup mechanism require real ESP32-S3 hardware.*
+*Manual tests are used only when no practical automated alternative exists.*
 
-### T-M1 — Touch Wakeup from Deep Sleep
+### T-M1 — GPIO wake and timer wake (ESP32-C6-DevKitC-1-N8)
 
-**Why manual**: Physical finger contact activates the capacitive sense circuit. Simulation cannot model finger capacitance or threshold drift.
+**Why manual**: LP-core wake, persistent RAM, and deep sleep need the real RTC domain and
+the onboard button.
 
-Hardware: XIAO ESP32S3 + a wire or conductive pad connected to D0 (GPIO 1).
+Hardware: Espressif ESP32-C6-DevKitC-1-N8, **left** USB-C UART-C port.
 
-1. Flash to XIAO ESP32S3: `idf.py set-target esp32s3 && idf.py build flash`
-2. Open serial monitor: `idf.py monitor`
-3. Wait for device to enter deep sleep (confirm "Sleeping" log).
-4. Touch the wire/pad on D0.
-5. Confirm wake within 100 ms of touch.
-6. Confirm serial shows touch wakeup log with pad number, touch count, and threshold.
-7. Confirm LED blinks exactly 3×.
+Steps:
 
-Pass: wakeup on touch within 100 ms; 3 LED blinks; touch_count increments.
+1. From `examples/lp-core-wakeup/`: `cargo run --release`.
+2. Confirm a first-boot log and then sleep. Do not hold BOOT while resetting.
+3. Wait for a timer wake (~20 s). Confirm one slow amber blink, a timer log line, and
+   that the GPIO counter does not increment.
+4. After the device sleeps again, press BOOT (GPIO 0) briefly. Confirm a wake well under
+   a second, three green blinks, and a counter increment of 1.
+5. Repeat the press twice more. Confirm the counter is monotonic.
+6. Power-cycle the board. Confirm the next boot is a first boot and the counter reset.
+7. Confirm the monitor stayed connected through the sleep intervals.
 
----
-
-### T-M2 — Threshold Calibration Stability
-
-**Why manual**: Calibration accuracy depends on real sensor ambient noise levels.
-
-1. Run T-M1 hardware setup.
-2. Power-cycle the board 3 times.
-3. On each boot, confirm calibration log shows a consistent mean (within ±10% across power cycles) in the same ambient conditions.
-4. Confirm no false touch wakeup occurs when the pad is not touched.
-
-Pass: calibration stable within ±10%; no false wakeups in idle environment.
+Pass criterion: timer wakes do not increment the counter; GPIO wakes increment it by 1;
+LED patterns differ; monitor stays up on UART-C; blinks are visible in room light
+(cap 64/255).
 
 ---
 
-### T-M3 — Timer Wakeup (No Touch)
+### T-M2 — GPIO 9 does not wake XIAO; timer and D0 do
 
-**Why manual**: Confirms the backup 20-second timer wakeup fires when no touch occurs.
+**Why manual**: The XIAO BOOT key is the wrong pad. Only a person looking at the board
+can confirm which button was pressed. USB Serial/JTAG drops on sleep, so the LED is the
+instrument.
 
-1. Flash and monitor.
-2. Do not touch the pad.
-3. After 20 seconds, confirm "Timer wake" log and single slow LED blink.
-4. Confirm device recalibrates and returns to sleep.
+Hardware: Seeed XIAO ESP32-C6. Optional momentary button from D0 (GPIO 0) to GND.
 
-Pass: timer wakeup fires at ~20 s; single LED blink; device sleeps again.
+Steps:
+
+1. `cargo run --release --no-default-features --features board-xiao-c6`.
+2. Expect the USB monitor to exit on the first sleep. That is not a failure.
+3. Press the onboard BOOT button (GPIO 9) several times during sleep. Confirm the user
+   LED does not run the three-blink pattern.
+4. Confirm a single slow blink about every 20 seconds (timer path, active LOW).
+5. If a button is wired to D0, press it during sleep. Confirm three blinks.
+
+Pass criterion: GPIO 9 does nothing visible. Timer blinks continue. D0, when wired,
+produces the three-blink pattern.

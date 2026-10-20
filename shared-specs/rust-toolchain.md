@@ -65,7 +65,9 @@ Each example's `FunctionalSpec.md` must declare C6 (and which boards). Generated
 | `esp-backtrace` | **0.20.0** | Panic handler + println. |
 | `esp-alloc` | **0.11.0** (non-radio, crates.io) / **git** tag **`esp-hal-v1.2.1`** (radio, when heap is justified) | Heap only when the CodingSpec justifies it. Radio examples that need a heap git-pin `esp-alloc` from the same tag (in-tree `0.11.0`). |
 | `esp-bootloader-esp-idf` | **0.6.0** (non-radio, crates.io) / **git** tag **`esp-hal-v1.2.1`** (radio) | **Required on every example.** Emits the ESP-IDF-compatible application descriptor current `espflash` requires (`esp_app_desc!()`). Feature `esp32c6`. This crate is **not** ESP-IDF. Radio examples git-pin it with the rest of the monorepo stack so Cargo does not build two `esp-hal` packages. |
-| `esp-storage` | **0.10.0** | Flash access. |
+| `esp-storage` | **0.10.0** (crates.io, non-radio) / **git** tag **`esp-hal-v1.2.1`** (radio, in-tree `0.10.0`) | Flash access. Radio examples that write partitions (OTA) git-pin it with the rest of the monorepo stack. Mixing crates.io `esp-storage` with git `esp-hal` builds two HALs. |
+| `esp-lp-hal` | **git** tag **`esp-hal-v1.2.1`** (in-tree **0.3.0**) | LP-core firmware only. Feature `esp32c6`. Nested `lp-core/` crate. Does not force the HP crate off crates.io when that crate has no radio. |
+| `embedded-tls` | **0.19.0** | `secure-ota-https` only. TLS 1.3 client, `no_std` (disable the default `std` feature). No allocator required by the crate. Not a TLS 1.2 stack. Looked up on crates.io 2026-10-20. |
 
 Related (not a substitute for the table above): `embassy-executor` **0.10**, `embassy-time` **0.5**, `embassy-sync` **0.8** (as used by the `esp-hal` 1.2.1 examples). Time is `embassy_time`. Embassy tasks via `esp-rtos` feature `embassy`.
 
@@ -80,7 +82,7 @@ Looked up 2026-09-08:
 - Git tags: `esp-hal-v1.2.1` (`3da4493d8fda1b1dc066b09b8d1db0c66f48906e`), `esp-hal-v1.2.0` (`dbd951f78c1276461ea3050c2ba71f552a3508ef`). There is **no** crates.io `esp-radio` tag/release for either.
 - At `esp-hal-v1.2.1`, `esp-radio/Cargo.toml` is still `version = "1.0.0-beta.0"` and has `esp-hal = { version = "~1.2.0", path = "../esp-hal" }`. `esp-rtos` is in-tree `0.4.0` with the same path dep. `esp-alloc` is in-tree `0.11.0`. Those path deps are conceptually compatible with HAL 1.2.1.
 
-Radio examples **must** git-pin **all** monorepo crates they use from `esp-rs/esp-hal` at tag **`esp-hal-v1.2.1`** (rev `3da4493d8fda1b1dc066b09b8d1db0c66f48906e`): at least `esp-hal`, `esp-radio`, `esp-rtos`, `esp-bootloader-esp-idf`, and `esp-alloc` when heap is justified. Mixing crates.io `esp-rtos = "0.4.0"` (or crates.io `esp-alloc` / crates.io `esp-bootloader-esp-idf`) with git `esp-hal` / `esp-radio` produces two `esp-hal` packages. This is still HAL 1.2.1, not a downgrade.
+Radio examples **must** git-pin **all** monorepo crates they use from `esp-rs/esp-hal` at tag **`esp-hal-v1.2.1`** (rev `3da4493d8fda1b1dc066b09b8d1db0c66f48906e`): at least `esp-hal`, `esp-radio`, `esp-rtos`, `esp-bootloader-esp-idf`, and `esp-alloc` when heap is justified. OTA examples also git-pin `esp-storage` from that tag. Mixing crates.io `esp-rtos = "0.4.0"` (or crates.io `esp-alloc` / `esp-bootloader-esp-idf` / `esp-storage`) with git `esp-hal` / `esp-radio` produces two `esp-hal` packages. This is still HAL 1.2.1, not a downgrade.
 
 ```toml
 esp-hal = { git = "https://github.com/esp-rs/esp-hal", tag = "esp-hal-v1.2.1", features = ["esp32c6", "unstable"] }

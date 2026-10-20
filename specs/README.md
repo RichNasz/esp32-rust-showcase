@@ -1,7 +1,7 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # specs/
@@ -12,7 +12,7 @@
 
 | File | Purpose |
 |---|---|
-| `showcase-master-spec.md` | Master catalog: eight examples (including lp-core-wakeup), eleven skills, C6 hardware bar |
+| `showcase-master-spec.md` | Master catalog: eight examples, eleven skills, C6 hardware bar, and the implementation-status table (firmware generated vs specs only) |
 | `repo-overview-spec.md` | Repository purpose, key features, and quick-start instructions |
 | `documentation-generation-spec.md` | Rules for AI documentation generation (AI-first rule, file layout, tone, Cargo + espflash) |
 | `contributing-spec.md` | Contribution guidelines: what humans may edit and how to trigger regeneration |

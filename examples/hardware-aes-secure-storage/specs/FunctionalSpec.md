@@ -12,6 +12,10 @@ This example demonstrates the hardware crypto API and flash persistence, **not**
 key lifecycle management. The AES key is stored in plaintext flash. Production systems must
 add flash encryption / eFuse key protection as noted in `shared-specs/security-baseline.md`.
 
+## Implementation status
+
+**Firmware generated** as of 2026-10-20. `Cargo.toml` and `src/main.rs` are present (generated 2026-09-08). The crate demonstrates the AES accelerator and plaintext key storage, not production key management. This line is not a hardware-test result. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
+
 ## Target Hardware
 
 v1 chip: **ESP32-C6** only (`esp32c6`). Other SoCs are not in v1.

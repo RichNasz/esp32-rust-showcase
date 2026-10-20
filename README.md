@@ -1,7 +1,7 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -20,7 +20,7 @@ This repository is a production-grade demonstration of **Spec-Driven Development
 
 ## Features
 
-- **8 progressive examples** on ESP32-C6 — breathing LED through BLE beacons, HTTPS OTA, ESP-NOW mesh, and **lp-core-wakeup** — every line of Rust generated from spec
+- **8 progressive examples** on ESP32-C6 — breathing LED, deep sleep, MQTT, hardware AES, a duty-cycled BLE beacon, an HTTPS OTA slot flip, an ESP-NOW sensor-to-gateway pair, and LP-core GPIO wakeup. **Six crates are generated** (blinky through secure-ota-https). **Two are specs only** as of 2026-10-20 (`esp-now-low-power-mesh`, `lp-core-wakeup`). `specs/showcase-master-spec.md` still lists example 6 as Specs only; humans own that catalog
 - **11 published agent skills** (10 original SDD skills plus `esp32-lp-core-engineer`) covering spec creation, crate generation, WS2812, BLE, deep sleep, LP-core, ANSI dashboards, hardware AES, board specs, documentation, and validation
 - **AI-generated board specs** from vendor datasheets (Espressif, Seeed, Adafruit, LilyGo, and more); v1 **chip** is ESP32-C6 (`esp32c6`); **boards** are ESP32-C6-DevKitC-1-N8 (required) and XIAO ESP32-C6
 - **Strict human/AI separation** — generated files carry agent headers; only `specs/`, `shared-specs/`, and `examples/*/specs/` are human-authored
@@ -69,18 +69,18 @@ C developers usually expect Espressif’s **ESP-IDF** (CMake, `idf.py`, `sdkconf
 
 ## Examples
 
-All eight examples are generated from their spec files. They are ordered by complexity — start with `blinky` and work forward. Required board: **ESP32-C6-DevKitC-1**.
+Eight examples, ordered by complexity. Start with `blinky`. Required board: **ESP32-C6-DevKitC-1**. **Firmware generated** means the crate is in the tree. **Specs only** means there is nothing to flash yet. Neither label is a hardware test result. `specs/showcase-master-spec.md` still lists example 6 as Specs only; that human catalog was not edited.
 
-| # | Example | Description | Link |
-|---|---|---|---|
-| 1 | blinky | Breathing LED, multi-board (ESP32-C6-DevKitC-1-N8 + XIAO ESP32-C6) | [examples/blinky](examples/blinky/) |
-| 2 | deep-sleep-timer-node | RTC wakeup + persistence | [examples/deep-sleep-timer-node](examples/deep-sleep-timer-node/) |
-| 3 | deep-sleep-bme280-mqtt-sensor | Real IoT sensor node (BME280 → Wi-Fi STA → MQTT) | [examples/deep-sleep-bme280-mqtt-sensor](examples/deep-sleep-bme280-mqtt-sensor/) |
-| 4 | hardware-aes-secure-storage | Hardware AES accelerator + flash-backed storage | [examples/hardware-aes-secure-storage](examples/hardware-aes-secure-storage/) |
-| 5 | ble-beacon-deep-sleep | Duty-cycled BLE beacon, multi-year battery life | [examples/ble-beacon-deep-sleep](examples/ble-beacon-deep-sleep/) |
-| 6 | secure-ota-https | Signed production updates over HTTPS | [examples/secure-ota-https](examples/secure-ota-https/) |
-| 7 | esp-now-low-power-mesh | Wi-Fi-free ESP-NOW mesh | [examples/esp-now-low-power-mesh](examples/esp-now-low-power-mesh/) |
-| 8 | lp-core-wakeup | LP-core GPIO wakeup (replaces capacitive-touch-wakeup) | [examples/lp-core-wakeup](examples/lp-core-wakeup/) |
+| # | Example | Description | Status | Link |
+|---|---|---|---|---|
+| 1 | blinky | Breathing LED, multi-board (ESP32-C6-DevKitC-1-N8 + XIAO ESP32-C6) | Firmware generated | [examples/blinky](examples/blinky/) |
+| 2 | deep-sleep-timer-node | RTC wakeup + persistence | Firmware generated | [examples/deep-sleep-timer-node](examples/deep-sleep-timer-node/) |
+| 3 | deep-sleep-bme280-mqtt-sensor | Real IoT sensor node (BME280 → Wi-Fi STA → MQTT) | Firmware generated | [examples/deep-sleep-bme280-mqtt-sensor](examples/deep-sleep-bme280-mqtt-sensor/) |
+| 4 | hardware-aes-secure-storage | Hardware AES accelerator + flash-backed storage | Firmware generated | [examples/hardware-aes-secure-storage](examples/hardware-aes-secure-storage/) |
+| 5 | ble-beacon-deep-sleep | Duty-cycled BLE beacon (10 s / 10 s demo, not a multi-year budget) | Firmware generated | [examples/ble-beacon-deep-sleep](examples/ble-beacon-deep-sleep/) |
+| 6 | secure-ota-https | HTTPS download into the inactive OTA slot, CRC check, reboot. Not Secure Boot | Firmware generated | [examples/secure-ota-https](examples/secure-ota-https/) |
+| 7 | esp-now-low-power-mesh | ESP-NOW sensor-to-gateway unicast. The directory name is historical. Not a mesh | Specs only | [examples/esp-now-low-power-mesh](examples/esp-now-low-power-mesh/) |
+| 8 | lp-core-wakeup | LP-core GPIO wakeup on RTC GPIO 0–7 (C6 has no capacitive touch) | Specs only | [examples/lp-core-wakeup](examples/lp-core-wakeup/) |
 
 ## Skills
 

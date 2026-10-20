@@ -1,12 +1,16 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-full-project-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Breathing LED — ESP32-C6
 
 > **SDD baseline.** Demonstrates the full spec-to-firmware pipeline on rust-on-metal ESP32-C6. Drives a smooth breathing effect on the onboard status LED using GPIO PWM (simple LED) or the `esp-hal` RMT peripheral (WS2812 RGB), selected at compile time via mutually exclusive Cargo board features.
+
+## Implementation status
+
+**Firmware generated** as of 2026-10-20. `Cargo.toml` and `src/main.rs` are in this folder (generated 2026-09-08 from the specs). The build commands below apply to this crate. This is not a record of a hardware test on 2026-10-20.
 
 ## Overview
 

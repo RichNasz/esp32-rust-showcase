@@ -1,7 +1,7 @@
 <!-- ================================================
      AGENT-GENERATED — DO NOT EDIT BY HAND
      Generated from specs/ using esp32-sdd-documentation-generator skill
-     Date: 2026-09-08 | Agent: Grok
+     Date: 2026-10-20 | Agent: Grok
      ================================================ -->
 
 # Reference
@@ -45,6 +45,6 @@ All reference material targets rustup **stable**, MSRV **1.95.0**, `esp-hal` **1
 | Wi-Fi | 2.4 GHz Wi-Fi 6 (ax) | — |
 | RTC / LP GPIO | **0–7 only** | — |
 | LP core | RISC-V 20 MHz (`esp-lp-hal`) | — |
-| Capacitive touch | No (use `lp-core-wakeup`) | — |
+| Capacitive touch | No. C6 has no touch peripheral. `lp-core-wakeup` is GPIO 0–7, not touch | — |
 
 Consult the relevant board spec in `board-specs/` for your exact module.

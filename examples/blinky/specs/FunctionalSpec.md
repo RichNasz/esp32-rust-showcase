@@ -7,6 +7,10 @@ ESP32-C6 (`no_std` `esp-hal`). Drives a smooth breathing effect on the onboard s
 using the RMT peripheral (800 kHz NRZ, WS2812 RGB) or LEDC PWM (simple GPIO LED), selected
 at compile time by mutually exclusive Cargo board features. Chip is ESP32-C6 only.
 
+## Implementation status
+
+**Firmware generated** as of 2026-10-20. `Cargo.toml` and `src/main.rs` are present (generated 2026-09-08). This line is not a hardware-test result. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
+
 ## Target Hardware
 
 v1 chip: **ESP32-C6** only (`esp32c6`). Other SoCs are not in v1.

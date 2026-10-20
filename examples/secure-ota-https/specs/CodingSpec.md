@@ -1,247 +1,150 @@
-# ==================== BOARD SELECTION ====================
-# Change only this section, then regenerate the project
-#
-# Board: YEJMKJ ESP32-S3-DevKitC-1-N16R8          ← ACTIVE / DEFAULT
-#
-# =======================================================
-# Institutional Memory: shared-specs/AIGenLessonsLearned.md — read before regenerating
+<!-- See shared-specs/AIGenLessonsLearned.md — read before generating. -->
 
-# Coding Specification — Secure OTA via HTTPS
+# Coding Specification — HTTPS OTA Slot Flip (ESP32-C6)
 
 ## Architecture
 
-Linear OTA pipeline. App_main performs Wi-Fi association, immediately checks for a pending
-rollback and validates the running image if needed, then initiates the HTTPS OTA download.
-A separate FreeRTOS task drives the LED blink during the download so app_main can block on the
-transfer without losing visual feedback. On success, app_main reboots. On any failure, the
-pipeline halts with a visible error LED pattern and does not reboot silently.
+Embassy firmware that stays awake. Entry is async main from `esp-rtos`. After
+`esp_hal::init`, start the Embassy executor on TIMG0 + `FROM_CPU_INTR0` (C6) and
+initialize a heap (justified below). Read the running app slot from the partition table,
+log it, drive the slot indication on the onboard LED, then wait for a qualified button
+press. A press runs one pipeline: Wi-Fi STA, one HTTPS GET, stream the image into the
+inactive OTA slot, check the envelope, activate that slot, reboot. Any failure tears the
+radio down if it is up, shows the error indication, and returns to the wait. Do not reboot
+on failure.
+
+Top-level wiring lives in `src/main.rs`. Board GPIO, LED kind, polarity, and the trigger
+button live only in generated `src/board.rs`. Split the HTTP/TLS reader and the slot
+writer into extra modules if `main.rs` would pass about 500 lines.
+
+There is one firmware image. Slot identity comes from the bootloader metadata, not from
+two separately authored programs.
+
+## Board Abstraction
+
+`src/board.rs` is generated from `board-specs/`. It exposes LED GPIO / kind / polarity and
+the runtime trigger GPIO (DevKitC GPIO 0, XIAO GPIO 9). `compile_error!` if both board
+features are enabled, or if neither is. Application code must not hardcode pin numbers.
+Chip feature is `esp32c6` only.
+
+- **WS2812** (default `board-devkitc-c6`): RMT 800 kHz NRZ, GRB, cap 64/255. Blue for
+  `ota_0`, amber for `ota_1`, blink during transfer, red on failure.
+- **GPIO LED** (`board-xiao-c6`): active LOW. One short blink for `ota_0`, two for
+  `ota_1`, rapid blink during transfer, a slower pattern on failure. No RMT on this board.
+
+## Partition and slot flip
+
+Use profile `dual-ota` (`shared-specs/partition-table-profiles.md`). Emit `partitions.csv`
+and an espflash flash-size setting: 8 MB on DevKitC-C6, 4 MB on XIAO C6. The first
+installed image must boot from `ota_0` at the profile offset. Do not invent a factory
+partition and do not emit `sdkconfig`.
+
+Slot updates go through `esp-bootloader-esp-idf`'s OTA updater plus `esp-storage` flash
+access. That is the same building block as the `esp-hal` 1.2.1 `examples/ota/update`
+example: read the table, write the inactive app partition, activate it. Reason: `otadata`
+stays in the format the IDF second-stage bootloader already understands. This crate is
+image metadata and partition helpers, not an ESP-IDF checkout.
+
+Write the image in flash-sized chunks while the body arrives. Do not hold the image in
+RAM. Activate the next slot only after the received length and IEEE CRC32 match the
+8-byte little-endian prefix (length, then CRC32 of the image bytes). On mismatch, leave
+the current boot selection in place.
+
+The stock `espflash` bootloader is **not** built with OTA auto-rollback. Recording the
+new image state is still appropriate so a rollback-capable bootloader can see it, but
+this example must not depend on automatic revert, and it must not look for
+`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`. Do not call ESP-IDF OTA C APIs.
+
+## Radio, HTTP, and TLS
+
+This is a **radio** example. Git-pin `esp-hal`, `esp-radio` (features `esp32c6`,
+`unstable`, `wifi`), `esp-rtos` (features `esp32c6`, `embassy`, `esp-radio`), `esp-alloc`,
+`esp-bootloader-esp-idf`, and `esp-storage` from tag `esp-hal-v1.2.1`. `esp-storage` at
+that tag path-depends on `esp-hal`; crates.io `esp-storage` next to git `esp-hal` builds
+two HALs.
+
+Wi-Fi STA uses `esp-radio` + `embassy-net` 0.9 with DHCPv4, same shape as the BME280
+example. Association is capped at about 15 seconds. DNS only if the URL host is not a
+literal IPv4 address.
+
+TLS is `embedded-tls` **0.19.0** with default `std` disabled. Reason: a `no_std` TLS 1.3
+client with a caller-supplied trust anchor, and no mbedTLS / ESP-IDF. The crate handles
+one record at a time; a record buffer larger than 16 KiB is unnecessary. The lab server
+must offer TLS 1.3. Verify the server certificate against the embedded CA. Do not provide
+a "skip verify" path.
+
+HTTP is one HTTP/1.1 GET written in-crate over that TLS stream, then a streamed body.
+Reason: the same tradeoff as the MQTT example's small encoder — one request does not
+justify a general HTTP client. The URL is final; do not follow redirects. Bound the
+overall transfer (on the order of 60 seconds, or end-of-body, whichever comes first) so
+a stalled server returns to the wait.
+
+Heap is justified for the Wi-Fi blob, `embassy-net`, and TLS records. Size it for those,
+not for a full OTA slot. `build-std` includes `alloc` when the radio stack needs it.
+`#[ram(reclaimed)]` is allowed only when the app descriptor is linked. The image must
+emit `esp_app_desc!()`. `build.rs` emits `-Tlinkall.x` last.
+
+## Credentials and trust anchor
+
+SSID, password, and the OTA URL are compile-time environment variables (`env!` / Cargo
+`[env]`), with placeholders so a clean build does not need a lab network. A placeholder
+SSID skips association and stays in the wait. The CA PEM is embedded at build time from
+a path the environment or the example tree supplies. Ship a placeholder CA that does not
+authenticate a real server, and document that the operator replaces it. Never log the
+password.
+
+## Button
+
+The trigger GPIO comes from `board.rs`. Treat the line as a press only after a release
+followed by a new active-LOW edge, debounced with Embassy time (tens of milliseconds).
+Reason: DevKitC GPIO 0 is the download strap if it is low at reset. Ignore a level that
+is already low when the wait begins.
 
 ## Key Constraints
 
-- Server certificate is embedded at build time from main/server_cert.pem using
-  target_add_binary_data in CMakeLists. This file is a placeholder — operators must replace it
-  with their actual CA certificate before use.
-- Wi-Fi association timeout: 30 seconds before the pipeline is abandoned.
-- HTTPS client timeout: 30 seconds to avoid indefinite blocking on a stalled server connection.
-- Partition table: dual OTA layout (ota_0 + ota_1 + otadata) defined in a custom partitions.csv
-  at the example root. The default ESP-IDF partition table is too small for two OTA app slots.
-- Rollback: CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y must be set. The newly-booted image must
-  call esp_ota_mark_app_valid_cancel_rollback() early in app_main — before any user logic that
-  could fail. Failure to do so causes the bootloader to roll back on the next reboot.
-- All configurable parameters (Wi-Fi credentials, OTA server URL) must be exposed via Kconfig,
-  not hardcoded.
+- No deep sleep, no LP core, no second firmware image, no external LED board.
+- Do not activate a slot on certificate failure, short read, length mismatch, or CRC mismatch.
+- Do not reboot on those failures.
+- No `std`. No FreeRTOS. No `sdkconfig`. No Kconfig. No `esp_https_ota`.
+- Embassy entry: `#[esp_rtos::main] async fn main(spawner: Spawner) -> !`.
+- Zero `unwrap()` / `expect()` on fallible HAL, radio, TLS, flash, or OTA calls in the
+  transfer path. Init may halt if clocks, heap, or RMT cannot start.
+- `esp-hal` feature `unstable` is required for Wi-Fi and RMT. Document that, and that
+  `esp-radio` is an unstable beta.
 
-## Preferred Libraries and APIs
+## Preferred Crates and APIs
 
-Use esp_https_ota for the OTA download. It handles chunked writes to the OTA flash partition,
-HTTPS negotiation, and progress callbacks in a single API call. Implementing this manually via
-esp_ota_write would duplicate logic that esp_https_ota already handles correctly.
-
-Use standard STA Wi-Fi with event loop for network connectivity — the same pattern as the
-deep-sleep-bme280-mqtt-sensor example. No reconnect or roaming logic is needed.
-
-## Hardware Interface
-
-| Signal         | GPIO | Direction | Notes                                      |
-|----------------|------|-----------|--------------------------------------------|
-| LED Left       | 4    | Output    | Active-high, 3.3 V drive; steady ON = ota_0 active |
-| LED Middle     | 5    | Output    | Active-high; blinks during OTA, error pattern on failure |
-| LED Right      | 6    | Output    | Active-high; steady ON = ota_1 active      |
-| Button Trigger | 7    | Input     | Active-low; ESP32-S3 internal pull-up enabled |
+- Git-pinned `esp-hal` / `esp-radio` / `esp-rtos` / `esp-alloc` / `esp-bootloader-esp-idf` /
+  `esp-storage` at `esp-hal-v1.2.1` (reason: one HAL, and the OTA updater lives on the
+  bootloader crate).
+- `embassy-net` 0.9 (reason: same STA stack as the other Wi-Fi example).
+- `embedded-tls` 0.19.0, no `std` (reason: TLS 1.3 trust-anchor check without ESP-IDF).
+- `esp-hal` RMT for the DevKitC WS2812; `embassy-time` for debounce, blinks, and timeouts.
+- `log` + `esp-println` (`log-04`).
 
 ## Non-Functional Requirements
 
-- OTA API failures must not trigger abort(). Log the error with esp_err_to_name, blink the
-  error LED pattern, and then loop without rebooting. Silent reboots on persistent OTA failure
-  would create an infinite retry loop if the server is unavailable.
-- Wi-Fi connection timeout must log a clear message and halt execution — do not reboot silently.
-  The operator must be able to observe the failure cause from the serial log.
-- The LED blink during download must run on a separate FreeRTOS task, because app_main blocks
-  on the esp_https_ota call for the full transfer duration.
-- All state transitions must be visible to the operator. Before the ANSI dashboard is
-  initialised (early boot, rollback check) use ESP_LOGx. After `draw_dashboard(true)` clears the
-  screen and suppresses logging, all diagnostic output is provided by the dashboard Status field.
-  Never use ESP_LOGx after log suppression begins — reflect errors in the Status field instead.
+- Logging: INFO for slot, association result without the PSK, coarse progress, CRC pass,
+  and activate. WARN for timeouts and CRC or certificate rejection. Never print the PSK.
+- Concurrency: a net-stack runner task plus main is enough. Blink from the download path
+  or from one short-lived Embassy task. No reconnect loop that ignores the timeout.
+- Error recovery: every failed stage returns to the button wait with the radio down.
+- The README must tell the operator how to build an image with `espflash save-image`, wrap
+  it in the 8-byte length-and-CRC prefix, serve it with TLS 1.3, and replace the
+  placeholder CA and Wi-Fi environment values. It must state that auto-rollback is not
+  provided by stock `espflash`.
 
 ## Gotchas
 
-- If rollback is enabled but esp_ota_mark_app_valid_cancel_rollback() is never called, the
-  device will roll back on every subsequent reboot even after a successful OTA. This call must
-  be unconditional and must happen before any user logic.
-- The PEM file embedded in the binary must be a CA certificate that can validate the OTA
-  server's TLS chain. The default OTA URL (GitHub raw content) uses Let's Encrypt, which
-  chains to ISRG Root X1 — embed that root CA (see main/server_cert.pem). For a
-  self-signed test server, embed the server's own certificate directly instead.
-- Custom partition tables require CONFIG_PARTITION_TABLE_CUSTOM=y and
-  CONFIG_PARTITION_TABLE_CUSTOM_FILENAME pointing to the CSV in sdkconfig.defaults.
-- The YEJMKJ board uses native USB only (no CH343P bridge). Its single USB-C connector
-  enumerates as a single port (`/dev/cu.usbmodem2101`). Both flash and monitor use the
-  same port: `idf.py -p /dev/cu.usbmodem2101 flash monitor`. Set
-  CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y in sdkconfig.defaults. Do NOT set
-  CONFIG_ESP_CONSOLE_USB_CDC=y.
-
-## Monitor Dashboard
-
-### Pattern choice
-
-Fixed-layout cursor-home + overwrite (Pattern B semantics from the `esp32-ansi-monitor-engineer`
-skill, adapted for always-on firmware). The OTA pipeline progresses through discrete sequential
-phases — no continuous scrolling event stream. A DECSTBM scroll region (Pattern A) would add
-complexity without benefit; cursor-home + overwrite produces a clean, readable fixed layout.
-
-### Dashboard layout — 7 rows
-
-```
-Row 1: title bar — "  OTA MONITOR   ESP32-SDD  " (bold, blue background)
-Row 2: Board: YEJMKJ ESP32-S3-DevKitC-1-N16R8   Partition: ota_0 / ota_1
-Row 3: Server: <OTA server URL, truncated to ~60 chars>
-Row 4: Wi-Fi: CONNECTING (N s) / CONNECTED (x.x.x.x) / FAILED
-Row 5: Status: BOOTING / READY — press button / DOWNLOADING / COMPLETE / ERROR: <reason>
-Row 6: Progress: [====================] 100%  47328 / 47328 B  (shown as "—" when not downloading)
-Row 7: separator line
-```
-
-### Status state machine
-
-- `BOOTING` — from `draw_dashboard(true)` until Wi-Fi connection attempt starts
-- `WIFI_CONNECTING` — while the Wi-Fi polling loop is running
-- `WIFI_FAILED` — if Wi-Fi times out or is rejected (shown in error loop)
-- `READY` — after Wi-Fi connects; waiting for button press
-- `DOWNLOADING` — from `run_ota()` start until it returns
-- `COMPLETE` — after `run_ota()` succeeds; drawn once before `esp_restart()`
-- `ERROR: <reason>` — on any failure; shown in the error loop
-
-### Refresh architecture
-
-No periodic `esp_timer` is needed — the OTA lifecycle drives redraws:
-
-1. **Boot phase**: Call `draw_dashboard(true)` once after `led_set_status()` and the rollback
-   check, before `wifi_connect()`. This clears the screen, hides the cursor, suppresses
-   ESP-IDF logs permanently, and shows `Status: BOOTING`.
-2. **Wi-Fi phase**: Replace the single blocking `xEventGroupWaitBits(…, WIFI_CONNECT_TIMEOUT_MS)`
-   with a polling loop using a 500 ms timeout per iteration. On each tick, increment
-   `s_wifi_elapsed_ms` by 500 and call `draw_dashboard(false)` to show elapsed time in Row 4.
-   On connection or failure, update `s_ota_status` and call `draw_dashboard(false)` once.
-3. **Ready phase**: Set `s_ota_status = OTA_STATUS_READY` and call `draw_dashboard(false)` once
-   before `xSemaphoreTake(s_button_sem, portMAX_DELAY)`.
-4. **Download phase**: Inside the `esp_https_ota_perform()` loop, update `s_bytes_read` and
-   `s_img_size` and call `draw_dashboard(false)` on each iteration where bytes read changes
-   (gate on ≥ 1 KB change to avoid excessive UART traffic on fast connections).
-5. **Final phase**: Set the terminal status, call `draw_dashboard(false)` once, then
-   `esp_restart()` (success) or enter the `led_error_pattern()` loop (failure).
-
-Only `app_main` and functions called from `app_main` may call `draw_dashboard()`. The Wi-Fi
-event handler must not call `esp_rom_printf()` or `draw_dashboard()` — it sets event group bits
-only.
-
-### Output discipline
-
-- `draw_dashboard(true)` must call `esp_log_level_set("*", ESP_LOG_NONE)` after the initial
-  clear — permanent log suppression for the rest of the session.
-- All terminal output after suppression via `esp_rom_printf()` exclusively — never `printf`,
-  `fprintf`, or `ESP_LOG*`. Pre-format with `snprintf` into a stack buffer, then emit with
-  `esp_rom_printf("%s", buf)`.
-- Every row ends with `ANSI_ERASE_EOL` to clear stale trailing characters from prior draws.
-- Write content first, then `ANSI_ERASE_EOL` — never blank the line first (causes visible flash
-  at 115200 baud while new content fills in).
-- Include `esp_rom_sys.h` and add `esp_rom` to `main/CMakeLists.txt REQUIRES`.
-
-## Wi-Fi Credential Safety (README documentation requirement)
-
-The README must include a dedicated section — "Setting Wi-Fi Credentials" — that explains
-both the mechanism and the security rationale. The target audience is someone unfamiliar with
-ESP-IDF who might otherwise edit sdkconfig.defaults or hardcode credentials in source.
-
-The section must cover the following points, in plain language:
-
-1. **How to set credentials** — run `idf.py menuconfig`, navigate to OTA Configuration,
-   and fill in Wi-Fi SSID and Wi-Fi Password. menuconfig writes them to `sdkconfig`.
-
-2. **Why this is safe for a public repo** — the `.gitignore` generated by this skill
-   explicitly excludes `sdkconfig` and `sdkconfig.old`. Real credentials written by menuconfig
-   never reach git. The `sdkconfig.defaults` checked into the repo contains only the
-   placeholder strings `"myssid"` and `"mypassword"` — never real values.
-
-3. **The rule to follow** — never put real network credentials in `sdkconfig.defaults`.
-   That file is committed to git. `sdkconfig` is not.
-
-4. **Optional: local override file** — for users who want to avoid re-entering credentials
-   after `idf.py fullclean`, document the `sdkconfig.defaults.local` pattern:
-   create a file named `sdkconfig.defaults.local` with the real values and build with:
-   `idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.local" build`.
-   Instruct them to add `sdkconfig.defaults.local` to their personal `.gitignore` or
-   global git exclude (`~/.config/git/ignore`) so it is never committed.
-
-5. **General principle** — this gitignored-sdkconfig pattern is the standard ESP-IDF
-   approach for keeping secrets out of public repositories. The same pattern applies to any
-   Kconfig symbol that holds a secret: API keys, MQTT passwords, device tokens, etc.
-
-## Firmware Update Push Workflow (README documentation requirement)
-
-The README must include a dedicated section — "Pushing a Firmware Update" — that explains
-the complete command-line workflow for building a new binary and making it available to
-devices via OTA. The target audience is someone who has already flashed a device and now
-wants to update the firmware the OTA server serves.
-
-The section must cover the following steps, presented as a numbered command-line workflow.
-Step order is critical: credentials must be secured in a persistent local file BEFORE
-sdkconfig is deleted, otherwise they are lost and must be re-entered.
-
-1. **Establish a persistent credentials file** — create `sdkconfig.defaults.local` (gitignored)
-   if it does not already exist. This file is the permanent credential store for this workflow;
-   once it exists, credentials survive all future clean builds and sdkconfig deletions.
-   ```sh
-   cat > sdkconfig.defaults.local << 'EOF'
-   CONFIG_OTA_WIFI_SSID="YourNetwork"
-   CONFIG_OTA_WIFI_PASSWORD="YourPassword"
-   EOF
-   ```
-   This step is a no-op on subsequent pushes — the file already exists.
-
-2. **Increment the app version** — open `sdkconfig.defaults` and bump `CONFIG_APP_PROJECT_VER`
-   (e.g. `"1.0.1"` → `"1.0.2"`). This makes the new build identifiable in the dashboard and
-   in the rollback state machine.
-
-3. **Delete stale sdkconfig** — sdkconfig must be deleted so the build system re-reads both
-   defaults files and picks up the new version. Deleting sdkconfig removes all locally-configured
-   values; that is safe here because step 1 ensures credentials are already in
-   `sdkconfig.defaults.local`. Never delete sdkconfig before step 1 is complete.
-   ```sh
-   rm -f sdkconfig sdkconfig.old
-   ```
-
-4. **Build** using both defaults files:
-   ```sh
-   idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.local" build
-   ```
-
-5. **Copy the binary to the example root** — tracked by git via the `!secure_ota_https.bin`
-   exception in `.gitignore`:
-   ```sh
-   cp build/secure_ota_https.bin .
-   ```
-
-6. **Commit and push** — include both `sdkconfig.defaults` (version bump) and the binary:
-   ```sh
-   git add sdkconfig.defaults secure_ota_https.bin
-   git commit -m "build(secure-ota-https): update OTA binary to v1.0.2"
-   git push
-   ```
-   Within seconds of the push, GitHub raw content serves the new binary at the OTA URL.
-
-7. **Verify** — confirm the binary size matches the build output. The OTA client validates
-   flash integrity before rebooting.
-
-The README must warn explicitly: **never delete `sdkconfig` before `sdkconfig.defaults.local`
-exists**. If sdkconfig is deleted first, credentials revert to placeholder values and the
-built binary will contain the wrong Wi-Fi network name and password.
-
-The README must also note that the binary is **not** a throwaway build artefact — it is the
-live OTA payload and must be kept in sync with `sdkconfig.defaults`. Every version bump must
-be accompanied by a matching binary push.
-
-## File Layout (non-standard files)
-
-- main/Kconfig.projbuild — Wi-Fi SSID/password, OTA server URL
-- main/server_cert.pem — placeholder PEM; operator replaces with real CA cert
-- partitions.csv — dual OTA partition table at example root
+- Activating a truncated image and rebooting looks like a dead board. The CRC gate is
+  the mitigation. Do not activate first and check later.
+- GPIO 0 low at reset on DevKitC enters the ROM download mode. The qualified-press rule
+  exists so a stuck button does not also fire OTA the moment the app starts.
+- `embedded-tls` 0.19.0 will not handshake with a TLS 1.2-only server. Say that in the README.
+- A single trust anchor is not a browser CA store. A public URL signed by a different root
+  fails closed. That is success for the negative test, not a bug.
+- XIAO has 4 MB flash. The `dual-ota` profile fits. An 8 MB-only layout does not.
+- Mixing crates.io `esp-storage` or `esp-bootloader-esp-idf` with git `esp-hal` duplicates
+  the HAL and fails the build in confusing ways.
+- WS2812 brightness above 64/255 is painfully bright; a GPIO toggle on GPIO 8 does not light the LED.
+- DevKitC logs belong on the left USB-C UART-C port.

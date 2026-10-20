@@ -11,6 +11,10 @@ heartbeat, then returns to deep sleep. Chip is ESP32-C6 only.
 On the DevKitC WS2812, each heartbeat uses a randomly selected colour from the project's
 standard 6-colour palette (cap 64/255).
 
+## Implementation status
+
+**Firmware generated** as of 2026-10-20. `Cargo.toml` and `src/main.rs` are present (generated 2026-09-08). This line is not a hardware-test result. The catalog table in `specs/showcase-master-spec.md` is the source of truth across examples.
+
 ## Target Hardware
 
 v1 chip: **ESP32-C6** only (`esp32c6`). Other SoCs are not in v1.

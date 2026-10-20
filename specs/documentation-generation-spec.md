@@ -32,6 +32,33 @@ Root README (project description or Features) and `docs/README.md` must each inc
 
 ---
 
+## Example implementation status
+
+`specs/showcase-master-spec.md` section **Implementation status** is the only catalog of which demos have a crate. Each example `FunctionalSpec.md` repeats that example's row in an **Implementation status** section. Generated docs copy those facts. They do not invent hardware results, and they do not describe a **Specs only** example as if `cargo run` works today.
+
+### Status labels
+
+| Label | Meaning in the tree |
+|---|---|
+| **Firmware generated** | `examples/<name>/Cargo.toml` and `src/main.rs` exist. Build commands in the README apply to that crate. |
+| **Specs only** | `specs/FunctionalSpec.md`, `CodingSpec.md`, and `TestSpec.md` exist. There is no crate. The README describes the spec. Generation has not been run. |
+
+A label is not a pass/fail from a board. Do not write "tested", "verified on hardware", or "flashes successfully" unless the master-spec note says that, with a date.
+
+### Where to render it
+
+- **Root `README.md` examples table:** columns `#`, Example, Description, Status, Link. Description is the one-liner from the master catalog, not a retired claim (no "multi-year battery", no "signed production updates", no "Wi-Fi-free mesh"). The Features bullet must state how many crates exist and how many examples are specs only, using the counts in the status table.
+- **`examples/README.md`:** the learning-progression table gains a Status column. The intro must not say every example folder already contains generated Rust. The locked directory tree is the *target* layout. Call out that **Specs only** folders contain `specs/` and `README.md` until `esp32-sdd-full-project-generator` runs. The build snippet stays on `blinky`, which is **Firmware generated**.
+- **`docs/README.md` examples catalog:** add a Status column. The opening paragraph must match the catalog (ESP-NOW is a sensor-to-gateway pair; OTA is a slot flip; LP-core is GPIO 0–7). Do not claim a mesh.
+- **Each `examples/<name>/README.md`:** an **Implementation status** section immediately after the title and tagline, before Overview. Quote the label, the date, and the note from the master-spec row. **Specs only** READMEs put `cargo build` / `cargo run` under a heading **After the crate is generated**, and say in that section that those commands fail today because there is no `Cargo.toml`.
+- **`specs/README.md`:** the `showcase-master-spec.md` row mentions the implementation-status table.
+- **`docs/guides/07-secure-your-project.md`:** the OTA paragraph must match `examples/secure-ota-https/specs/FunctionalSpec.md` (TLS 1.3, CRC32, no stock-`espflash` auto-rollback, **Specs only** until generation).
+- **`docs/reference/README.md` chip-variant table:** ESP32-C6 capacitive touch is **No**. C6 has no touch peripheral. Do not point that row at `lp-core-wakeup`. That example is LP-core GPIO wakeup on RTC GPIO 0–7, and it is **Specs only** until generation.
+
+When any spec changes status, regenerate these files. Do not leave a README describing the previous design (S3 touch, IDF mesh, signed Secure Boot demo).
+
+---
+
 ## Root README.md Required Sections
 
 The root `README.md` must contain the following 13 sections in this exact order:
@@ -46,7 +73,7 @@ The root `README.md` must contain the following 13 sections in this exact order:
 | 5 | Table of contents with jump links |
 | 6 | Quick Start |
 | 7 | Prerequisites (rustup stable, rust-src, riscv32imac-unknown-none-elf, espflash/cargo-espflash, ESP32-C6-DevKitC-1-N8 or XIAO ESP32-C6) |
-| 8 | Examples table (all examples: name + one-line description + link) |
+| 8 | Examples table (all examples: name + one-line description + **implementation status** + link). Status comes from `showcase-master-spec.md`. See Example implementation status. |
 | 9 | Skills table (all skills: skill name + purpose) |
 | 10 | Full Documentation link table |
 | 11 | Contributing (one paragraph + link to CONTRIBUTING.md) |
